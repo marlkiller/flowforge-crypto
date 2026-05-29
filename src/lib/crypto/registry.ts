@@ -10,6 +10,7 @@ import { kdfNodes } from "./nodes/kdf";
 import { eccNodes } from "./nodes/ecc";
 import { otpNodes } from "./nodes/otp";
 import { jwtNodes } from "./nodes/jwt";
+import { entropyNodes } from "./nodes/entropy";
 import { legacyNodes } from "./nodes/legacy";
 import type { DataFormat } from "./service";
 
@@ -25,6 +26,7 @@ const ALL_NODE_DEFS: Record<string, NodeDef>[] = [
   eccNodes,
   otpNodes,
   jwtNodes,
+  entropyNodes,
   legacyNodes,
 ];
 

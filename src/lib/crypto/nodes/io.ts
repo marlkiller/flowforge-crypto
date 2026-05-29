@@ -51,6 +51,7 @@ export const ioNodes: Record<string, NodeDef> = {
       label: "Join",
       category: "io",
       description: "Concatenate multiple inputs with a separator.",
+      defaultOutput: "hex",
       fields: [
         { id: "count", label: "Inputs", type: "number", placeholder: "2", defaultValue: "2" },
         {
@@ -107,5 +108,31 @@ export const ioNodes: Record<string, NodeDef> = {
       description: "Sink — displays bytes in chosen format.",
     },
     runner: (_, inputs) => inputs["data"] ?? inputs["default"] ?? new Uint8Array(0),
+  },
+  slice: {
+    meta: {
+      kind: "slice",
+      label: "Slice",
+      category: "io",
+      description: "Extract a range of bytes (supports negative indices).",
+      defaultOutput: "hex",
+      inputs: [{ id: "data", label: "Data" }],
+      fields: [
+        { id: "start", label: "Start Offset", type: "number", defaultValue: 0 },
+        { id: "end", label: "End Offset", type: "number", placeholder: "Optional (e.g. -32)" },
+      ],
+    },
+    runner: (node, inputs) => {
+      const data = inputs["data"] || new Uint8Array(0);
+      const start = parseInt(String(node.data["start"] || "0"), 10);
+      const endVal = node.data["end"];
+      const endStr = endVal !== undefined ? String(endVal) : undefined;
+      
+      if (endStr === undefined || endStr.trim() === "") {
+        return data.slice(start);
+      }
+      const end = parseInt(endStr, 10);
+      return data.slice(start, end);
+    },
   },
 };

@@ -65,6 +65,7 @@ import {
   getJWTSeed,
   getOTPSeed,
   getArgon2Seed,
+  getRNCryptorV3Seed,
 } from "@/demo/seeds";
 
 import {
@@ -716,6 +717,9 @@ function InnerEditor() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getArgon2Seed())} className="text-[11px] cursor-pointer">
                       Argon2 (Password Hash)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getRNCryptorV3Seed())} className="text-[11px] cursor-pointer">
+                      RNCryptor v3 (Standard)
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
