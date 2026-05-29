@@ -15,6 +15,16 @@ export function safeDecode(fn: () => Uint8Array, msg: string): Uint8Array {
   }
 }
 
+export function getField(node: GraphNode, id: string, defaultValue = ""): string {
+  return (node.data[id] as string) ?? defaultValue;
+}
+
+export function getNumberField(node: GraphNode, id: string, defaultValue = 0): number {
+  const val = node.data[id];
+  if (typeof val === "number") return val;
+  return parseInt((val as string) || String(defaultValue), 10);
+}
+
 // ─── Param Helper with Caching ───────────────────────────────────
 
 const paramCache = new WeakMap<Record<string, any>, Map<string, { raw: string; bytes: Uint8Array }>>();

@@ -1,6 +1,7 @@
-import type { NodeDef, GraphNode } from "../types";
-import { getProvider, type MacProvider, utf8ToBytes } from "../service";
-import { getParamBytes } from "../utils";
+import { registerNodeDef } from "../registry";
+import type { GraphNode, NodeDef } from "../types";
+import { getProvider, type MacProvider, utf8ToBytes, type DataFormat } from "../service";
+import { getField, getParamBytes } from "../utils";
 
 const HMAC_HASHES: { label: string; value: string; group: string }[] = [
   { label: "SHA-0",         value: "SHA-0",       group: "Legacy" },
@@ -49,7 +50,7 @@ function makeMacNode(
       label,
       category: "mac",
       description,
-      defaultOutput: "hex",
+      defaultOutput: "hex" as DataFormat,
       inputs: [
         { id: "data", label: "Data" },
         { id: "key", label: keyLabel },
@@ -77,15 +78,14 @@ function makeMacNode(
           label: "Signature (Hex/Base64)",
           type: "text",
           placeholder: "Paste signature to verify...",
-          visible: (d) => d["action"] === "verify",
+          visible: (d: Record<string, unknown>) => d["action"] === "verify",
         },
       ],
     },
-    runner: async (node, inputs) => {
-      const d = node.data;
-      const action = (d["action"] as string) ?? "sign";
+    runner: async (node: GraphNode, inputs: Record<string, Uint8Array>) => {
+      const action = getField(node, "action", "sign");
       const data = inputs["data"] ?? new Uint8Array(0);
-      const keyBytes = getParamBytes(node as GraphNode, inputs, "key");
+      const keyBytes = getParamBytes(node, inputs, "key");
 
       if (!keyBytes) throw new Error(`Key is required for ${label}`);
 
@@ -105,88 +105,87 @@ function makeMacNode(
   };
 }
 
-export const macNodes: Record<string, NodeDef> = {
-  hmac: {
-    meta: {
-      kind: "hmac",
-      label: "HMAC",
-      category: "mac",
-      description: "Keyed-hash message authentication using any supported hash function.",
-      defaultOutput: "hex",
-      inputs: [
-        { id: "data", label: "Data" },
-        { id: "key", label: "Key" },
-        { id: "signature", label: "Signature (hex)" },
-      ],
-      fields: [
-        {
-          id: "action",
-          label: "Action",
-          type: "select",
-          defaultValue: "sign",
-          options: [
-            { label: "Sign", value: "sign" },
-            { label: "Verify", value: "verify" },
-          ],
-        },
-        {
-          id: "hash",
-          label: "Hash Function",
-          type: "select",
-          defaultValue: "SHA-256",
-          options: HMAC_HASHES,
-        },
-        {
-          id: "key",
-          label: "Key (Hex/Base64)",
-          type: "password",
-          placeholder: "Shared secret key...",
-        },
-        {
-          id: "signature",
-          label: "Signature (Hex/Base64)",
-          type: "text",
-          placeholder: "Paste signature to verify...",
-          visible: (d) => d["action"] === "verify",
-        },
-      ],
-    },
-    runner: async (node, inputs) => {
-      const d = node.data;
-      const action = (d["action"] as string) ?? "sign";
-      const hash = (d["hash"] as string) ?? "SHA-256";
-      const algo = `HMAC-${hash}`;
-      const data = inputs["data"] ?? new Uint8Array(0);
-      const keyBytes = getParamBytes(node as GraphNode, inputs, "key");
-
-      if (!keyBytes) throw new Error("Key is required for HMAC");
-
-      const provider = getProvider(algo) as MacProvider;
-      if (!provider) throw new Error(`Provider for ${algo} not found`);
-
-      if (action === "verify") {
-        const signature =
-          inputs["signature"] ?? getParamBytes(node as GraphNode, inputs, "signature");
-        if (!signature) throw new Error("Signature is required for verification");
-        const isValid = await provider.verify(keyBytes, signature, data);
-        return utf8ToBytes(isValid ? "Valid" : "Invalid");
-      } else {
-        return provider.sign(keyBytes, data);
-      }
-    },
+registerNodeDef("hmac", {
+  meta: {
+    kind: "hmac",
+    label: "HMAC",
+    category: "mac",
+    description: "Keyed-hash message authentication using any supported hash function.",
+    defaultOutput: "hex",
+    inputs: [
+      { id: "data", label: "Data" },
+      { id: "key", label: "Key" },
+      { id: "signature", label: "Signature (hex)" },
+    ],
+    fields: [
+      {
+        id: "action",
+        label: "Action",
+        type: "select",
+        defaultValue: "sign",
+        options: [
+          { label: "Sign", value: "sign" },
+          { label: "Verify", value: "verify" },
+        ],
+      },
+      {
+        id: "hash",
+        label: "Hash Function",
+        type: "select",
+        defaultValue: "SHA-256",
+        options: HMAC_HASHES,
+      },
+      {
+        id: "key",
+        label: "Key (Hex/Base64)",
+        type: "password",
+        placeholder: "Shared secret key...",
+      },
+      {
+        id: "signature",
+        label: "Signature (Hex/Base64)",
+        type: "text",
+        placeholder: "Paste signature to verify...",
+        visible: (d: Record<string, unknown>) => d["action"] === "verify",
+      },
+    ],
   },
-  poly1305: makeMacNode(
-    "Poly1305",
-    "poly1305",
-    "Poly1305",
-    "One-time authenticator (requires 32-byte key). Requires unique key per message.",
-    "Key (32 bytes)",
-  ),
-  cmac: makeMacNode(
-    "CMAC",
-    "cmac",
-    "CMAC",
-    "Block-cipher based MAC (AES-CMAC, NIST SP 800-38B).",
-    "AES Key (16/24/32 bytes)",
-  ),
-};
+  runner: async (node: GraphNode, inputs: Record<string, Uint8Array>) => {
+    const action = getField(node, "action", "sign");
+    const hash = getField(node, "hash", "SHA-256");
+    const algo = `HMAC-${hash}`;
+    const data = inputs["data"] ?? new Uint8Array(0);
+    const keyBytes = getParamBytes(node, inputs, "key");
+
+    if (!keyBytes) throw new Error("Key is required for HMAC");
+
+    const provider = getProvider(algo) as MacProvider;
+    if (!provider) throw new Error(`Provider for ${algo} not found`);
+
+    if (action === "verify") {
+      const signature =
+        inputs["signature"] ?? getParamBytes(node, inputs, "signature");
+      if (!signature) throw new Error("Signature is required for verification");
+      const isValid = await provider.verify(keyBytes, signature, data);
+      return utf8ToBytes(isValid ? "Valid" : "Invalid");
+    } else {
+      return provider.sign(keyBytes, data);
+    }
+  },
+});
+
+registerNodeDef("poly1305", makeMacNode(
+  "Poly1305",
+  "poly1305",
+  "Poly1305",
+  "One-time authenticator (requires 32-byte key). Requires unique key per message.",
+  "Key (32 bytes)",
+));
+
+registerNodeDef("cmac", makeMacNode(
+  "CMAC",
+  "cmac",
+  "CMAC",
+  "Block-cipher based MAC (AES-CMAC, NIST SP 800-38B).",
+  "AES Key (16/24/32 bytes)",
+));

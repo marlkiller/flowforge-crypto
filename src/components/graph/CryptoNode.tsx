@@ -24,8 +24,6 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
     dot: "bg-muted-foreground",
   };
 
-  const hasOutput = d.kind !== "output";
-
   // Dynamic inputs support
   let dynamicInputs = meta.inputs || [];
   let dynamicFields = meta.fields || [];

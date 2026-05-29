@@ -1,4 +1,4 @@
-import type { NodeDef } from "../types";
+import { registerNodeDef } from "../registry";
 import { safeDecode } from "../utils";
 import {
   utf8ToBytes,
@@ -12,7 +12,6 @@ import {
   bytesToB58,
   b58ToBytes,
 } from "../service";
-
 import type { NodeFieldMeta } from "../types";
 
 const baseEncodingFields: NodeFieldMeta[] = [
@@ -27,83 +26,85 @@ const baseEncodingFields: NodeFieldMeta[] = [
   },
 ];
 
-export const encodingNodes: Record<string, NodeDef> = {
-  base64: {
-    meta: {
-      kind: "base64",
-      label: "Base64",
-      category: "encoding",
-      description: "Base64 encode / decode.",
-      fields: baseEncodingFields,
-    },
-    runner: (node, inputs) => {
-      const mainInput = inputs["data"] ?? new Uint8Array(0);
-      return node.data["mode"] === "decode"
-        ? safeDecode(() => b64ToBytes(bytesToUtf8(mainInput)), "Invalid Base64 input")
-        : utf8ToBytes(bytesToB64(mainInput));
-    },
+registerNodeDef("base64", {
+  meta: {
+    kind: "base64",
+    label: "Base64",
+    category: "encoding",
+    description: "Base64 encode / decode.",
+    fields: baseEncodingFields,
   },
-  hex: {
-    meta: {
-      kind: "hex",
-      label: "Hex",
-      category: "encoding",
-      description: "Hex encode / decode.",
-      fields: baseEncodingFields,
-    },
-    runner: (node, inputs) => {
-      const mainInput = inputs["data"] ?? new Uint8Array(0);
-      return node.data["mode"] === "decode"
-        ? safeDecode(() => hexToBytes(bytesToUtf8(mainInput)), "Invalid Hex input")
-        : utf8ToBytes(bytesToHex(mainInput));
-    },
+  runner: (node, inputs) => {
+    const mainInput = inputs["data"] ?? new Uint8Array(0);
+    return node.data["mode"] === "decode"
+      ? safeDecode(() => b64ToBytes(bytesToUtf8(mainInput)), "Invalid Base64 input")
+      : utf8ToBytes(bytesToB64(mainInput));
   },
-  url: {
-    meta: {
-      kind: "url",
-      label: "URL",
-      category: "encoding",
-      description: "URL component encode / decode.",
-      fields: baseEncodingFields,
-    },
-    runner: (node, inputs) => {
-      const mainInput = inputs["data"] ?? new Uint8Array(0);
-      return node.data["mode"] === "decode"
-        ? safeDecode(
-            () => utf8ToBytes(decodeURIComponent(bytesToUtf8(mainInput))),
-            "Invalid URL-encoded input",
-          )
-        : utf8ToBytes(encodeURIComponent(bytesToUtf8(mainInput)));
-    },
+});
+
+registerNodeDef("hex", {
+  meta: {
+    kind: "hex",
+    label: "Hex",
+    category: "encoding",
+    description: "Hex encode / decode.",
+    fields: baseEncodingFields,
   },
-  base32: {
-    meta: {
-      kind: "base32",
-      label: "Base32",
-      category: "encoding",
-      description: "Base32 encode / decode (RFC 4648).",
-      fields: baseEncodingFields,
-    },
-    runner: (node, inputs) => {
-      const mainInput = inputs["data"] ?? new Uint8Array(0);
-      return node.data["mode"] === "decode"
-        ? safeDecode(() => b32ToBytes(bytesToUtf8(mainInput)), "Invalid Base32 input")
-        : utf8ToBytes(bytesToB32(mainInput));
-    },
+  runner: (node, inputs) => {
+    const mainInput = inputs["data"] ?? new Uint8Array(0);
+    return node.data["mode"] === "decode"
+      ? safeDecode(() => hexToBytes(bytesToUtf8(mainInput)), "Invalid Hex input")
+      : utf8ToBytes(bytesToHex(mainInput));
   },
-  base58: {
-    meta: {
-      kind: "base58",
-      label: "Base58",
-      category: "encoding",
-      description: "Base58 encode / decode (Bitcoin alphabet).",
-      fields: baseEncodingFields,
-    },
-    runner: (node, inputs) => {
-      const mainInput = inputs["data"] ?? new Uint8Array(0);
-      return node.data["mode"] === "decode"
-        ? safeDecode(() => b58ToBytes(bytesToUtf8(mainInput)), "Invalid Base58 input")
-        : utf8ToBytes(bytesToB58(mainInput));
-    },
+});
+
+registerNodeDef("url", {
+  meta: {
+    kind: "url",
+    label: "URL",
+    category: "encoding",
+    description: "URL component encode / decode.",
+    fields: baseEncodingFields,
   },
-};
+  runner: (node, inputs) => {
+    const mainInput = inputs["data"] ?? new Uint8Array(0);
+    return node.data["mode"] === "decode"
+      ? safeDecode(
+          () => utf8ToBytes(decodeURIComponent(bytesToUtf8(mainInput))),
+          "Invalid URL-encoded input",
+        )
+      : utf8ToBytes(encodeURIComponent(bytesToUtf8(mainInput)));
+  },
+});
+
+registerNodeDef("base32", {
+  meta: {
+    kind: "base32",
+    label: "Base32",
+    category: "encoding",
+    description: "Base32 encode / decode (RFC 4648).",
+    fields: baseEncodingFields,
+  },
+  runner: (node, inputs) => {
+    const mainInput = inputs["data"] ?? new Uint8Array(0);
+    return node.data["mode"] === "decode"
+      ? safeDecode(() => b32ToBytes(bytesToUtf8(mainInput)), "Invalid Base32 input")
+      : utf8ToBytes(bytesToB32(mainInput));
+  },
+});
+
+registerNodeDef("base58", {
+  meta: {
+    kind: "base58",
+    label: "Base58",
+    category: "encoding",
+    description: "Base58 encode / decode (Bitcoin alphabet).",
+    fields: baseEncodingFields,
+  },
+  runner: (node, inputs) => {
+    const mainInput = inputs["data"] ?? new Uint8Array(0);
+    return node.data["mode"] === "decode"
+      ? safeDecode(() => b58ToBytes(bytesToUtf8(mainInput)), "Invalid Base58 input")
+      : utf8ToBytes(bytesToB58(mainInput));
+  },
+});
