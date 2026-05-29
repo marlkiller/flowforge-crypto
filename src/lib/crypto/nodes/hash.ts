@@ -28,5 +28,42 @@ export const hashNodes: Record<string, NodeDef> = {
   sha3256: makeHashNode("SHA3-256", "sha3256", "SHA3-256", "SHA3-256 digest."),
   sha3384: makeHashNode("SHA3-384", "sha3384", "SHA3-384", "SHA3-384 digest."),
   sha3512: makeHashNode("SHA3-512", "sha3512", "SHA3-512", "SHA3-512 digest."),
-  keccak256: makeHashNode("Keccak-256", "keccak256", "Keccak-256", "Keccak-256 digest (Ethereum standard)."),
+  keccak256: makeHashNode(
+    "Keccak-256",
+    "keccak256",
+    "Keccak-256",
+    "Keccak-256 digest (Ethereum standard).",
+  ),
+  blake2b: makeHashNode(
+    "BLAKE2b",
+    "blake2b",
+    "BLAKE2b",
+    "BLAKE2b hash (optimized for 64-bit platforms).",
+  ),
+  blake2s: makeHashNode(
+    "BLAKE2s",
+    "blake2s",
+    "BLAKE2s",
+    "BLAKE2s hash (optimized for 8/32-bit platforms).",
+  ),
+  blake3: makeHashNode(
+    "BLAKE3",
+    "blake3",
+    "BLAKE3",
+    "BLAKE3 hash (extremely fast, tree-structured).",
+  ),
+  ripemd160: makeHashNode(
+    "RIPEMD-160",
+    "ripemd160",
+    "RIPEMD-160",
+    "RIPEMD-160 digest (160-bit hash).",
+  ),
+  shake128: makeHashNode("SHAKE128", "shake128", "SHAKE128", "SHAKE128 XOF (32-byte output)."),
+  shake256: makeHashNode("SHAKE256", "shake256", "SHAKE256", "SHAKE256 XOF (64-byte output)."),
+  sm3: makeHashNode(
+    "SM3",
+    "sm3",
+    "SM3",
+    "SM3 (Chinese national hash standard, GB/T 32905-2016).",
+  ),
 };
