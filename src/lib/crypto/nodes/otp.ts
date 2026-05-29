@@ -11,7 +11,7 @@ export const otpNodes: Record<string, NodeDef> = {
       category: "protocol",
       description: "Time-based One-Time Password (RFC 6238).",
       defaultOutput: "utf8",
-      inputs: [{ id: "secret", label: "Secret" }],
+      inputs: [{ id: "secret", label: "Secret (base32)" }],
       fields: [
         { id: "issuer", label: "Issuer", type: "text", defaultValue: "FlowForge" },
         { id: "label", label: "Account Name", type: "text", defaultValue: "user@example.com" },
@@ -53,7 +53,7 @@ export const otpNodes: Record<string, NodeDef> = {
       category: "protocol",
       description: "HMAC-based One-Time Password (RFC 4226).",
       defaultOutput: "utf8",
-      inputs: [{ id: "secret", label: "Secret" }],
+      inputs: [{ id: "secret", label: "Secret (base32)" }],
       fields: [
         { id: "counter", label: "Counter", type: "number", defaultValue: 0 },
         { id: "digits", label: "Digits", type: "number", defaultValue: 6 },

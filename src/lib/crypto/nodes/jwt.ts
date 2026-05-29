@@ -13,7 +13,7 @@ export const jwtNodes: Record<string, NodeDef> = {
       defaultOutput: "utf8",
       inputs: [
         { id: "payload", label: "Payload (JSON)" },
-        { id: "key", label: "Secret/Private Key" },
+        { id: "key", label: "Secret/Private Key (PEM)" },
       ],
       fields: [
         {
@@ -78,7 +78,7 @@ export const jwtNodes: Record<string, NodeDef> = {
       defaultOutput: "utf8",
       inputs: [
         { id: "token", label: "JWT Token" },
-        { id: "key", label: "Secret/Public Key" },
+        { id: "key", label: "Secret/Public Key (PEM)" },
       ],
       fields: [
         {

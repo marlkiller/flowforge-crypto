@@ -58,7 +58,7 @@ export const eccNodes: Record<string, NodeDef> = {
       defaultOutput: "base64",
       inputs: [
         { id: "data", label: "Data" },
-        { id: "privateKey", label: "Private Key" },
+        { id: "privateKey", label: "Private Key (PEM)" },
       ],
       fields: [
         {
@@ -106,8 +106,8 @@ export const eccNodes: Record<string, NodeDef> = {
       defaultOutput: "utf8",
       inputs: [
         { id: "data", label: "Data" },
-        { id: "signature", label: "Signature" },
-        { id: "publicKey", label: "Public Key" },
+        { id: "signature", label: "Signature (base64)" },
+        { id: "publicKey", label: "Public Key (PEM)" },
       ],
       fields: [
         {
@@ -156,8 +156,8 @@ export const eccNodes: Record<string, NodeDef> = {
       description: "Derive bits using ECDH (Elliptic Curve Diffie-Hellman).",
       defaultOutput: "hex",
       inputs: [
-        { id: "privateKey", label: "My Private Key" },
-        { id: "publicKey", label: "Peer Public Key" },
+        { id: "privateKey", label: "My Private Key (PEM)" },
+        { id: "publicKey", label: "Peer Public Key (PEM)" },
       ],
       fields: [
         {

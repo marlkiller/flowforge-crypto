@@ -79,8 +79,8 @@ export const rsaNodes: Record<string, NodeDef> = {
       defaultOutput: "base64",
       inputs: [
         { id: "data", label: "Data" },
-        { id: "publicKey", label: "Public Key", visible: (d) => d["action"] !== "decrypt" },
-        { id: "privateKey", label: "Private Key", visible: (d) => d["action"] === "decrypt" },
+        { id: "publicKey", label: "Public Key (PEM)", visible: (d) => d["action"] !== "decrypt" },
+        { id: "privateKey", label: "Private Key (PEM)", visible: (d) => d["action"] === "decrypt" },
       ],
       fields: [
         {
@@ -165,7 +165,7 @@ export const rsaNodes: Record<string, NodeDef> = {
       defaultOutput: "base64",
       inputs: [
         { id: "data", label: "Data" },
-        { id: "privateKey", label: "Private Key" },
+        { id: "privateKey", label: "Private Key (PEM)" },
       ],
       fields: [
         {
@@ -221,8 +221,8 @@ export const rsaNodes: Record<string, NodeDef> = {
       defaultOutput: "utf8",
       inputs: [
         { id: "data", label: "Data" },
-        { id: "signature", label: "Signature" },
-        { id: "publicKey", label: "Public Key" },
+        { id: "signature", label: "Signature (base64)" },
+        { id: "publicKey", label: "Public Key (PEM)" },
       ],
       fields: [
         {

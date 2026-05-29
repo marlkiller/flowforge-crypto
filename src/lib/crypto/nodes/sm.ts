@@ -34,7 +34,7 @@ export const smNodes: Record<string, NodeDef> = {
       defaultOutput: "hex",
       inputs: [
         { id: "data", label: "Data" },
-        { id: "privateKey", label: "Private Key" },
+        { id: "privateKey", label: "Private Key (hex)" },
       ],
       fields: [
         {
@@ -66,8 +66,8 @@ export const smNodes: Record<string, NodeDef> = {
       defaultOutput: "utf8",
       inputs: [
         { id: "data", label: "Data" },
-        { id: "signature", label: "Signature" },
-        { id: "publicKey", label: "Public Key" },
+        { id: "signature", label: "Signature (hex)" },
+        { id: "publicKey", label: "Public Key (hex)" },
       ],
     },
     runner: async (node, inputs) => {

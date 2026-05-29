@@ -1,6 +1,6 @@
 import { Handle, Position, useNodeConnections, type NodeProps } from "@xyflow/react";
 import { NODE_KIND_META, CATEGORY_META } from "@/lib/crypto/registry";
-import type { NodeData, NodeFieldMeta } from "@/lib/crypto/types";
+import type { NodeData, NodeFieldMeta, NodeInputMeta } from "@/lib/crypto/types";
 import { graphStore } from "./store";
 import { Upload, File as FileIcon, Link2 } from "lucide-react";
 import { useEffect } from "react";
@@ -128,17 +128,7 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
       <div className="p-3 space-y-2 text-[11px] relative">
         {/* Orphan inputs (like 'Data') that don't have a matching field */}
         {orphanInputs.map((input) => (
-          <div key={input.id} className="relative h-5 flex items-center">
-            <Handle
-              type="target"
-              position={Position.Left}
-              id={input.id}
-              className="!w-4 !h-4 !bg-muted-foreground !border-2 !border-background !-left-[22px] transition-transform hover:scale-125 z-20"
-            />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              {input.label}
-            </span>
-          </div>
+          <OrphanInput key={input.id} nodeId={id} input={input} />
         ))}
 
         {d.kind === "file" && (
@@ -314,6 +304,33 @@ function NodeField({
           placeholder={field.placeholder}
           onClick={(e) => e.stopPropagation()}
         />
+      )}
+    </div>
+  );
+}
+
+function OrphanInput({ nodeId, input }: { nodeId: string; input: NodeInputMeta }) {
+  const connections = useNodeConnections({ id: nodeId, handleType: "target", handleId: input.id });
+  const isConnected = connections.length > 0;
+
+  return (
+    <div className="space-y-1 relative">
+      <div className="relative h-5 flex items-center">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id={input.id}
+          className="!w-4 !h-4 !bg-muted-foreground !border-2 !border-background !-left-[22px] transition-transform hover:scale-125 z-20"
+        />
+        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          {input.label}
+        </span>
+        {isConnected && <Link2 className="w-3 h-3 text-primary animate-pulse ml-1" />}
+      </div>
+      {isConnected && (
+        <div className="w-full bg-primary/5 border border-primary/20 rounded-md px-2.5 py-1.5 text-[10px] text-primary font-medium italic shadow-inner">
+          Value linked to input
+        </div>
       )}
     </div>
   );
