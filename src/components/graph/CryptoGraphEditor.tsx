@@ -40,6 +40,7 @@ import {
   Upload,
   MousePointer2,
   Loader2,
+  Github,
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -584,7 +585,16 @@ function InnerEditor() {
           {leftPanelOpen && (
             <>
               <h1 className="text-xs font-semibold text-foreground">CryptoFlow</h1>
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-1">
+                <a
+                  href="https://github.com/marlkiller/flowforge-crypto"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                  title="View on GitHub"
+                >
+                  <Github className="w-4 h-4" />
+                </a>
                 <ThemeToggle />
               </div>
             </>
