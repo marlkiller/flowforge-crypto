@@ -41,6 +41,7 @@ import {
   MousePointer2,
   Loader2,
   Github,
+  Share2,
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -76,6 +77,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+import { encodeWorkflows, decodeWorkflows, generateShareUrl, parseShareHash, type SharedWorkflow } from "@/lib/crypto/share";
 
 // Execution status component
 function ExecutionStatus({ errorCount, nodeCount }: { errorCount: number; nodeCount: number }) {
@@ -142,6 +145,14 @@ function InnerEditor() {
   const [importCandidates, setImportCandidates] = useState<Workflow[]>([]);
   const [importSelectedIds, setImportSelectedIds] = useState<Set<string>>(new Set());
 
+  // Share dialog state
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareSelectedIds, setShareSelectedIds] = useState<Set<string>>(new Set());
+
+  // Share import dialog state
+  const [shareImportDialogOpen, setShareImportDialogOpen] = useState(false);
+  const [sharedWorkflows, setSharedWorkflows] = useState<SharedWorkflow[]>([]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
 
@@ -179,7 +190,6 @@ function InnerEditor() {
   }, []);
 
   const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
-    if (!selectionMode) return;
     event.preventDefault();
     event.stopPropagation();
     const wrapper = wrapperRef.current;
@@ -397,10 +407,13 @@ function InnerEditor() {
       } else if (e.key === "z" && e.shiftKey) {
         e.preventDefault();
         graphStore.redo();
-      } else if (e.key === "c" && !isInput && wrapperRef.current?.contains(e.target as Node)) {
-        e.preventDefault();
-        copySelected();
-      } else if (e.key === "v" && !isInput && wrapperRef.current?.contains(e.target as Node)) {
+      } else if (e.key === "c" && !isInput) {
+        if ((window.getSelection()?.toString().length ?? 0) > 0) return;
+        if (rf?.getNodes().some((n) => n.selected)) {
+          e.preventDefault();
+          copySelected();
+        }
+      } else if (e.key === "v" && !isInput && clipboardRef.current) {
         e.preventDefault();
         pasteClipboard();
       }
@@ -535,6 +548,62 @@ function InnerEditor() {
     setImportDialogOpen(false);
     setImportCandidates([]);
   }, [importSelectedIds, importCandidates]);
+
+  // Share
+  const openShareDialog = useCallback(() => {
+    setShareSelectedIds(new Set(workflows.map((w) => w.id)));
+    setShareDialogOpen(true);
+  }, [workflows]);
+
+  const handleShareConfirm = useCallback(() => {
+    const ids = Array.from(shareSelectedIds);
+    if (ids.length === 0) {
+      toast.error("No workflows selected");
+      return;
+    }
+    const targets = workflows.filter((w) => ids.includes(w.id));
+    const encoded = encodeWorkflows(targets);
+    const url = generateShareUrl(encoded);
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success("Share link copied to clipboard!", {
+        description: `Includes ${targets.length} workflow${targets.length > 1 ? "s" : ""}. Anyone with this link can import ${targets.length > 1 ? "them" : "it"}.`,
+      });
+    }).catch(() => {
+      toast.error("Failed to copy link");
+    });
+    setShareDialogOpen(false);
+  }, [shareSelectedIds, workflows]);
+
+  const handleShareImportConfirm = useCallback(() => {
+    if (sharedWorkflows.length === 0) return;
+    const toImport = sharedWorkflows.map((sw) => ({
+      id: `wf_shared_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: sw.name,
+      nodes: sw.nodes,
+      edges: sw.edges,
+      selectedNodeId: null,
+      selectedEdgeId: null,
+    }));
+    const count = graphStore.addWorkflows(toImport);
+    toast.success(`Imported ${count} shared workflow${count > 1 ? "s" : ""}`);
+    setShareImportDialogOpen(false);
+    setSharedWorkflows([]);
+    window.location.hash = "";
+  }, [sharedWorkflows]);
+
+  // Check URL hash for shared workflow on mount
+  useEffect(() => {
+    const encoded = parseShareHash();
+    if (!encoded) return;
+    const decoded = decodeWorkflows(encoded);
+    if (decoded.length === 0) {
+      toast.error("Invalid shared workflow link");
+      window.location.hash = "";
+      return;
+    }
+    setSharedWorkflows(decoded);
+    setShareImportDialogOpen(true);
+  }, []);
 
   // Context menu actions
   const ctxNode = contextMenu ? nodes.find((n) => n.id === contextMenu.nodeId) : null;
@@ -682,6 +751,13 @@ function InnerEditor() {
                   className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-accent text-[9px] font-bold uppercase tracking-wider transition-all"
                 >
                   <Upload className="w-3 h-3" /> Import
+                </button>
+                <button
+                  onClick={openShareDialog}
+                  className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-accent text-[9px] font-bold uppercase tracking-wider transition-all"
+                  title="Share workflows via link"
+                >
+                  <Share2 className="w-3 h-3" /> Share
                 </button>
               </div>
               <div className="flex gap-1 justify-center">
@@ -1084,6 +1160,101 @@ function InnerEditor() {
               className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs transition-colors disabled:opacity-50"
             >
               Import ({importSelectedIds.size})
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share selection dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Share Workflows</DialogTitle>
+            <DialogDescription>
+              Select workflows to include in the share link
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+            {workflows.map((w) => (
+              <label
+                key={w.id}
+                className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent cursor-pointer text-sm transition-colors"
+              >
+                <Checkbox
+                  checked={shareSelectedIds.has(w.id)}
+                  onCheckedChange={(checked) => {
+                    setShareSelectedIds((prev) => {
+                      const next = new Set(prev);
+                      if (checked) next.add(w.id);
+                      else next.delete(w.id);
+                      return next;
+                    });
+                  }}
+                />
+                <span className="font-medium">{w.name}</span>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {w.nodes.length} nodes
+                </span>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <button className="px-3 py-1.5 rounded-md border border-border bg-background hover:bg-accent text-xs transition-colors">
+                Cancel
+              </button>
+            </DialogClose>
+            <button
+              onClick={handleShareConfirm}
+              disabled={shareSelectedIds.size === 0}
+              className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs transition-colors disabled:opacity-50"
+            >
+              Copy Link ({shareSelectedIds.size})
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share import dialog */}
+      <Dialog open={shareImportDialogOpen} onOpenChange={setShareImportDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Import Shared Workflow{sharedWorkflows.length > 1 ? "s" : ""}</DialogTitle>
+            <DialogDescription>
+              Someone shared {sharedWorkflows.length > 1 ? `${sharedWorkflows.length} workflows` : "a workflow"} with you. Import {sharedWorkflows.length > 1 ? "them" : "it"} into your workspace?
+            </DialogDescription>
+          </DialogHeader>
+          {sharedWorkflows.length > 0 && (
+            <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+              {sharedWorkflows.map((sw, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50 text-sm"
+                >
+                  <span className="font-medium">{sw.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {sw.nodes.length} nodes
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <button
+              onClick={() => {
+                setShareImportDialogOpen(false);
+                setSharedWorkflows([]);
+                window.location.hash = "";
+              }}
+              className="px-3 py-1.5 rounded-md border border-border bg-background hover:bg-accent text-xs transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleShareImportConfirm}
+              className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs transition-colors"
+            >
+              Import{sharedWorkflows.length > 1 ? ` All (${sharedWorkflows.length})` : " Workflow"}
             </button>
           </DialogFooter>
         </DialogContent>
