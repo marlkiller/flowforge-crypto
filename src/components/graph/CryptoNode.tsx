@@ -47,6 +47,7 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
     "ed_keygen",
     "keyGen",
     "random",
+    "sm2_keygen",
   ].includes(d.kind);
 
   const allInputs =
