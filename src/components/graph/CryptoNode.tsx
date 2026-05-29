@@ -13,9 +13,7 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
       <div
         className={`group min-w-[200px] max-w-[260px] rounded-xl border border-destructive/50 bg-card/90 shadow-lg ${selected ? "ring-4 ring-destructive/20" : ""}`}
       >
-        <div className="px-3 py-2 text-xs text-destructive font-bold">
-          Unknown node: "{d.kind}"
-        </div>
+        <div className="px-3 py-2 text-xs text-destructive font-bold">Unknown node: "{d.kind}"</div>
       </div>
     );
   }
@@ -41,7 +39,15 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
     }
   }
 
-  const isSourceNode = ["input", "file", "rsa_keygen", "ec_keygen"].includes(d.kind);
+  const isSourceNode = [
+    "input",
+    "file",
+    "rsa_keygen",
+    "ec_keygen",
+    "ed_keygen",
+    "keyGen",
+    "random",
+  ].includes(d.kind);
 
   const allInputs =
     dynamicInputs.length > 0
@@ -92,7 +98,7 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
     const reader = new FileReader();
     reader.onload = () => {
       const bytes = new Uint8Array(reader.result as ArrayBuffer);
-      update({ "fileName": file.name, "fileBytes": bytes });
+      update({ fileName: file.name, fileBytes: bytes });
     };
     reader.readAsArrayBuffer(file);
   };
@@ -146,7 +152,9 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
               {d.fileName ? (
                 <div className="flex flex-col items-center gap-1.5 text-foreground px-2 text-center">
                   <FileIcon className="w-5 h-5 text-primary" />
-                  <span className="text-[10px] font-medium line-clamp-1">{d["fileName"] as string}</span>
+                  <span className="text-[10px] font-medium line-clamp-1">
+                    {d["fileName"] as string}
+                  </span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover/file:text-foreground">
@@ -170,7 +178,8 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
         ))}
 
         {/* Multi-output handles */}
-        {visibleOutputs.length > 1 || (visibleOutputs.length === 1 && visibleOutputs[0].id !== "default") ? (
+        {visibleOutputs.length > 1 ||
+        (visibleOutputs.length === 1 && visibleOutputs[0].id !== "default") ? (
           <div className="pt-2 border-t border-border/50 space-y-2">
             {visibleOutputs.map((output) => (
               <div key={output.id} className="relative h-5 flex items-center justify-end">
@@ -211,7 +220,8 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
           </div>
           {d.error ? (
             <div className="rounded-md bg-destructive/15 border border-destructive/50 text-destructive px-2.5 py-2 break-all font-mono text-[10px] shadow-inner whitespace-pre-wrap">
-              <span className="font-bold">✕ </span>{d.error}
+              <span className="font-bold">✕ </span>
+              {d.error}
             </div>
           ) : (
             <div className="rounded-md bg-background border border-border text-foreground px-2.5 py-1.5 break-all font-mono max-h-20 overflow-auto text-[10px] shadow-inner custom-scrollbar whitespace-pre-wrap">

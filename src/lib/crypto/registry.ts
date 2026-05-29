@@ -12,6 +12,9 @@ import { otpNodes } from "./nodes/otp";
 import { jwtNodes } from "./nodes/jwt";
 import { entropyNodes } from "./nodes/entropy";
 import { legacyNodes } from "./nodes/legacy";
+import { eddsaNodes } from "./nodes/eddsa";
+import { bitwiseNodes } from "./nodes/bitwise";
+import { smNodes } from "./nodes/sm";
 import type { DataFormat } from "./service";
 
 const ALL_NODE_DEFS: Record<string, NodeDef>[] = [
@@ -24,10 +27,13 @@ const ALL_NODE_DEFS: Record<string, NodeDef>[] = [
   macNodes,
   kdfNodes,
   eccNodes,
+  eddsaNodes,
+  smNodes,
   otpNodes,
   jwtNodes,
   entropyNodes,
   legacyNodes,
+  bitwiseNodes,
 ];
 
 export const NODE_REGISTRY: Record<string, NodeDef> = ALL_NODE_DEFS.reduce(

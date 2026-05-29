@@ -23,7 +23,12 @@ import { NodeInspector } from "./NodeInspector";
 import { OutputConsole } from "./OutputConsole";
 import { graphStore, useGraphStore, type Workflow } from "./store";
 import { executeGraph } from "@/lib/crypto/executor";
-import { NODE_KIND_META, CATEGORY_META, defaultOutputFormat, getActiveCategories } from "@/lib/crypto/registry";
+import {
+  NODE_KIND_META,
+  CATEGORY_META,
+  defaultOutputFormat,
+  getActiveCategories,
+} from "@/lib/crypto/registry";
 import type { GraphEdge, GraphNode, NodeExecutionLog } from "@/lib/crypto/types";
 import { formatBytes } from "@/lib/crypto/service";
 import { toast } from "sonner";
@@ -67,18 +72,32 @@ import {
   getOTPSeed,
   getArgon2Seed,
   getRNCryptorV3Seed,
+  getEd25519X25519SuiteSeed,
+  getXChaCha20Seed,
+  getAesGcmSivSeed,
+  getBcryptSeed,
+  getModernHashSeed,
+  getModernMacSeed,
+  getSM3Seed,
+  getSM4Seed,
+  getSM2SuiteSeed,
 } from "@/demo/seeds";
 
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { encodeWorkflows, decodeWorkflows, generateShareUrl, parseShareHash, type SharedWorkflow } from "@/lib/crypto/share";
+import {
+  encodeWorkflows,
+  decodeWorkflows,
+  generateShareUrl,
+  parseShareHash,
+  type SharedWorkflow,
+} from "@/lib/crypto/share";
 
 // Execution status component
 function ExecutionStatus({ errorCount, nodeCount }: { errorCount: number; nodeCount: number }) {
@@ -189,18 +208,21 @@ function InnerEditor() {
     setContextMenu(null);
   }, []);
 
-  const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-    const rect = wrapper.getBoundingClientRect();
-    setContextMenu({
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      multi: true,
-    });
-  }, [selectionMode]);
+  const onPaneContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
+      setContextMenu({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+        multi: true,
+      });
+    },
+    [selectionMode],
+  );
 
   const duplicateSelected = useCallback(() => {
     const selected = rf?.getNodes().filter((n) => n.selected);
@@ -217,8 +239,9 @@ function InnerEditor() {
         selected: false,
       };
     });
-    const dupEdges: GraphEdge[] = graphStore.getActive().edges
-      .filter((e) => ids.has(e.source) && ids.has(e.target))
+    const dupEdges: GraphEdge[] = graphStore
+      .getActive()
+      .edges.filter((e) => ids.has(e.source) && ids.has(e.target))
       .map((e) => ({
         ...e,
         id: `e_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
@@ -239,9 +262,9 @@ function InnerEditor() {
     const selected = rf?.getNodes().filter((n) => n.selected);
     if (!selected || selected.length === 0) return;
     const ids = new Set(selected.map((n) => n.id));
-    const copiedEdges = graphStore.getActive().edges.filter(
-      (ed) => ids.has(ed.source) && ids.has(ed.target),
-    );
+    const copiedEdges = graphStore
+      .getActive()
+      .edges.filter((ed) => ids.has(ed.source) && ids.has(ed.target));
     clipboardRef.current = {
       nodes: JSON.parse(JSON.stringify(selected)) as GraphNode[],
       edges: JSON.parse(JSON.stringify(copiedEdges)) as GraphEdge[],
@@ -400,7 +423,8 @@ function InnerEditor() {
       const mod = e.metaKey || e.ctrlKey;
       if (!mod) return;
       const tag = (e.target as HTMLElement).tagName;
-      const isInput = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable;
+      const isInput =
+        tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable;
       if (e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         graphStore.undo();
@@ -449,7 +473,10 @@ function InnerEditor() {
           const getLabel = (key: string) => {
             if (key === "publicKey") return "PUBLIC KEY";
             if (key === "privateKey") return "PRIVATE KEY";
-            return key.replace(/([A-Z])/g, " $1").toUpperCase().trim();
+            return key
+              .replace(/([A-Z])/g, " $1")
+              .toUpperCase()
+              .trim();
           };
 
           if (entries.length === 1 && (entries[0][0] === "default" || entries[0][0] === "data")) {
@@ -564,13 +591,16 @@ function InnerEditor() {
     const targets = workflows.filter((w) => ids.includes(w.id));
     const encoded = encodeWorkflows(targets);
     const url = generateShareUrl(encoded);
-    navigator.clipboard.writeText(url).then(() => {
-      toast.success("Share link copied to clipboard!", {
-        description: `Includes ${targets.length} workflow${targets.length > 1 ? "s" : ""}. Anyone with this link can import ${targets.length > 1 ? "them" : "it"}.`,
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        toast.success("Share link copied to clipboard!", {
+          description: `Includes ${targets.length} workflow${targets.length > 1 ? "s" : ""}. Anyone with this link can import ${targets.length > 1 ? "them" : "it"}.`,
+        });
+      })
+      .catch(() => {
+        toast.error("Failed to copy link");
       });
-    }).catch(() => {
-      toast.error("Failed to copy link");
-    });
     setShareDialogOpen(false);
   }, [shareSelectedIds, workflows]);
 
@@ -645,12 +675,16 @@ function InnerEditor() {
         className={`bg-card border-r border-border flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${leftPanelOpen ? "w-60" : "w-8"}`}
       >
         {/* Header — always visible */}
-        <div className={`flex items-center h-8 shrink-0 border-b border-border ${leftPanelOpen ? "gap-2 px-3 min-w-60" : "px-1 justify-center"}`}>
+        <div
+          className={`flex items-center h-8 shrink-0 border-b border-border ${leftPanelOpen ? "gap-2 px-3 min-w-60" : "px-1 justify-center"}`}
+        >
           <button
             onClick={() => setLeftPanelOpen(!leftPanelOpen)}
             className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors shrink-0"
           >
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${leftPanelOpen ? "" : "-rotate-90"}`} />
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform ${leftPanelOpen ? "" : "-rotate-90"}`}
+            />
           </button>
           {leftPanelOpen && (
             <>
@@ -674,7 +708,9 @@ function InnerEditor() {
         {/* Body — collapsible */}
         {leftPanelOpen && (
           <>
-            <p className="px-3 pt-2 text-[10px] text-muted-foreground shrink-0">Crypto pipeline editor</p>
+            <p className="px-3 pt-2 text-[10px] text-muted-foreground shrink-0">
+              Crypto pipeline editor
+            </p>
             <div className="px-3 pt-1 shrink-0">
               <input
                 type="text"
@@ -767,37 +803,7 @@ function InnerEditor() {
                       <Copy className="w-3 h-3" /> DEMO
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-40">
-                    <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider opacity-50">Demo Workflows</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getAESStandardSeed())} className="text-[11px] cursor-pointer">
-                      AES (Standard)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getRSAFullSuiteSeed())} className="text-[11px] cursor-pointer">
-                      RSA (Full Suite)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getHMACSeed())} className="text-[11px] cursor-pointer">
-                      HMAC (SHA-256)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getKDFSeed())} className="text-[11px] cursor-pointer">
-                      KDF (PBKDF2 + AES)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getECCSuiteSeed())} className="text-[11px] cursor-pointer">
-                      ECC (ECDSA Suite)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getJWTSeed())} className="text-[11px] cursor-pointer">
-                      JWT (Sign & Verify)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getOTPSeed())} className="text-[11px] cursor-pointer">
-                      TOTP (Authenticator)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getArgon2Seed())} className="text-[11px] cursor-pointer">
-                      Argon2 (Password Hash)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => graphStore.setActiveGraph(getRNCryptorV3Seed())} className="text-[11px] cursor-pointer">
-                      RNCryptor v3 (Standard)
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                  <DemoMenuContent />
                 </DropdownMenu>
                 <button
                   onClick={() => graphStore.setActiveGraph({ nodes: [], edges: [] })}
@@ -904,7 +910,9 @@ function InnerEditor() {
               <div className="absolute inset-0 z-[100] flex items-center justify-center bg-background/20 backdrop-blur-[1px] pointer-events-none">
                 <div className="flex flex-col items-center gap-2 px-4 py-3 rounded-xl bg-background/80 border border-border shadow-2xl animate-in fade-in zoom-in duration-200">
                   <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-foreground/70">Executing pipeline...</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-foreground/70">
+                    Executing pipeline...
+                  </span>
                 </div>
               </div>
             )}
@@ -1047,12 +1055,16 @@ function InnerEditor() {
         className={`bg-card border-l border-border flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${rightPanelOpen ? "w-80" : "w-8"}`}
       >
         {/* Header — always visible */}
-        <div className={`flex items-center h-8 shrink-0 border-b border-border ${rightPanelOpen ? "gap-2 px-3 min-w-80" : "px-1 justify-center"}`}>
+        <div
+          className={`flex items-center h-8 shrink-0 border-b border-border ${rightPanelOpen ? "gap-2 px-3 min-w-80" : "px-1 justify-center"}`}
+        >
           <button
             onClick={() => setRightPanelOpen(!rightPanelOpen)}
             className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors shrink-0"
           >
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${rightPanelOpen ? "" : "-rotate-90"}`} />
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform ${rightPanelOpen ? "" : "-rotate-90"}`}
+            />
           </button>
           {rightPanelOpen && (
             <span className="text-xs font-semibold text-foreground">Inspector</span>
@@ -1060,9 +1072,7 @@ function InnerEditor() {
         </div>
 
         {/* Body — collapsible */}
-        {rightPanelOpen && (
-          <NodeInspector key={selectedNode?.id} node={selectedNode} />
-        )}
+        {rightPanelOpen && <NodeInspector key={selectedNode?.id} node={selectedNode} />}
       </aside>
 
       {/* Export selection dialog */}
@@ -1070,9 +1080,7 @@ function InnerEditor() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Export Workflows</DialogTitle>
-            <DialogDescription>
-              Select workflows to export
-            </DialogDescription>
+            <DialogDescription>Select workflows to export</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
             {workflows.map((w) => (
@@ -1120,9 +1128,7 @@ function InnerEditor() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Import Workflows</DialogTitle>
-            <DialogDescription>
-              Select workflows to import
-            </DialogDescription>
+            <DialogDescription>Select workflows to import</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
             {importCandidates.map((w) => (
@@ -1170,9 +1176,7 @@ function InnerEditor() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Share Workflows</DialogTitle>
-            <DialogDescription>
-              Select workflows to include in the share link
-            </DialogDescription>
+            <DialogDescription>Select workflows to include in the share link</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
             {workflows.map((w) => (
@@ -1221,7 +1225,9 @@ function InnerEditor() {
           <DialogHeader>
             <DialogTitle>Import Shared Workflow{sharedWorkflows.length > 1 ? "s" : ""}</DialogTitle>
             <DialogDescription>
-              Someone shared {sharedWorkflows.length > 1 ? `${sharedWorkflows.length} workflows` : "a workflow"} with you. Import {sharedWorkflows.length > 1 ? "them" : "it"} into your workspace?
+              Someone shared{" "}
+              {sharedWorkflows.length > 1 ? `${sharedWorkflows.length} workflows` : "a workflow"}{" "}
+              with you. Import {sharedWorkflows.length > 1 ? "them" : "it"} into your workspace?
             </DialogDescription>
           </DialogHeader>
           {sharedWorkflows.length > 0 && (
@@ -1232,9 +1238,7 @@ function InnerEditor() {
                   className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50 text-sm"
                 >
                   <span className="font-medium">{sw.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {sw.nodes.length} nodes
-                  </span>
+                  <span className="text-xs text-muted-foreground">{sw.nodes.length} nodes</span>
                 </div>
               ))}
             </div>
@@ -1331,6 +1335,66 @@ function WorkflowTab({
         </button>
       )}
     </div>
+  );
+}
+
+function DemoMenuContent() {
+  const [query, setQuery] = useState("");
+  const demos = useMemo(
+    () => [
+      { label: "AES (Standard)", seed: getAESStandardSeed() },
+      { label: "RSA (Full Suite)", seed: getRSAFullSuiteSeed() },
+      { label: "HMAC (SHA-256)", seed: getHMACSeed() },
+      { label: "KDF (PBKDF2 + AES)", seed: getKDFSeed() },
+      { label: "ECC (ECDSA Suite)", seed: getECCSuiteSeed() },
+      { label: "JWT (Sign & Verify)", seed: getJWTSeed() },
+      { label: "TOTP (Authenticator)", seed: getOTPSeed() },
+      { label: "Argon2 (Password Hash)", seed: getArgon2Seed() },
+      { label: "RNCryptor v3 (Standard)", seed: getRNCryptorV3Seed() },
+      { label: "Ed25519/X25519 Suite", seed: getEd25519X25519SuiteSeed() },
+      { label: "XChaCha20-Poly1305", seed: getXChaCha20Seed() },
+      { label: "AES-GCM-SIV", seed: getAesGcmSivSeed() },
+      { label: "bcrypt (Hash & Verify)", seed: getBcryptSeed() },
+      { label: "Modern Hash Suite", seed: getModernHashSeed() },
+      { label: "Modern MAC (Poly1305 + CMAC)", seed: getModernMacSeed() },
+      { label: "SM3 (Hash)", seed: getSM3Seed() },
+      { label: "SM4 (ECB)", seed: getSM4Seed() },
+      { label: "SM2 (Full Suite)", seed: getSM2SuiteSeed() },
+    ],
+    [],
+  );
+
+  const filtered = useMemo(
+    () => demos.filter((d) => d.label.toLowerCase().includes(query.toLowerCase())),
+    [query, demos],
+  );
+
+  return (
+    <DropdownMenuContent align="center" className="w-48">
+      <div className="px-2 pt-2 pb-1">
+        <Input
+          placeholder="Search demos..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="h-7 text-[11px]"
+        />
+      </div>
+      <div className="max-h-64 overflow-y-auto">
+        {filtered.length === 0 ? (
+          <div className="px-2 py-4 text-center text-[10px] opacity-40">No demos found</div>
+        ) : (
+          filtered.map((d) => (
+            <DropdownMenuItem
+              key={d.label}
+              onClick={() => graphStore.setActiveGraph(d.seed)}
+              className="text-[11px] cursor-pointer"
+            >
+              {d.label}
+            </DropdownMenuItem>
+          ))
+        )}
+      </div>
+    </DropdownMenuContent>
   );
 }
 

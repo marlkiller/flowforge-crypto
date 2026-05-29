@@ -1,8 +1,9 @@
 import type { NodeDef, GraphNode } from "../types";
-import { CryptoService, utf8ToBytes, getProvider, type KdfProvider } from "../service";
+import { CryptoService, utf8ToBytes, bytesToUtf8, getProvider, type KdfProvider } from "../service";
 import { getParamBytes } from "../utils";
 import { argon2id, argon2i, argon2d } from "@noble/hashes/argon2.js";
 import { scrypt } from "@noble/hashes/scrypt.js";
+import bcrypt from "bcryptjs";
 
 export const kdfNodes: Record<string, NodeDef> = {
   pbkdf2: {
@@ -153,6 +154,62 @@ export const kdfNodes: Record<string, NodeDef> = {
 
       const provider = getProvider("Scrypt") as KdfProvider;
       return provider.derive(pwd, salt, len * 8, { N, r, p });
+    },
+  },
+  bcrypt: {
+    meta: {
+      kind: "bcrypt",
+      label: "bcrypt",
+      category: "kdf",
+      description: "Password hashing function (bcrypt). Output is $2b$ encoded hash string.",
+      defaultOutput: "utf8",
+      inputs: [
+        { id: "password", label: "Password" },
+        { id: "salt", label: "Salt" },
+        { id: "hash", label: "Hash", visible: (d) => (d["action"] as string) === "verify" },
+      ],
+      fields: [
+        { id: "rounds", label: "Cost (rounds)", type: "number", defaultValue: 10 },
+        {
+          id: "action",
+          label: "Action",
+          type: "select",
+          defaultValue: "hash",
+          options: [
+            { label: "Hash", value: "hash" },
+            { label: "Verify", value: "verify" },
+          ],
+        },
+        {
+          id: "hash",
+          label: "Hash to Verify",
+          type: "text",
+          placeholder: "$2b$10$...",
+          visible: (d) => (d["action"] as string) === "verify",
+        },
+      ],
+    },
+    runner: async (node, inputs) => {
+      const d = node.data;
+      const action = (d["action"] as string) ?? "hash";
+      const password = bytesToUtf8(
+        getParamBytes(node as GraphNode, inputs, "password") || new Uint8Array(0),
+      );
+      const saltInput = getParamBytes(node as GraphNode, inputs, "salt", false);
+
+      if (action === "verify") {
+        const hashWired = inputs["hash"];
+        const hashStr = hashWired ? bytesToUtf8(hashWired) : ((d["hash"] as string) ?? "");
+        if (!hashStr) throw new Error("Hash is required for verification");
+        const match = bcrypt.compareSync(password, hashStr);
+        return utf8ToBytes(match ? "Valid" : "Invalid");
+      }
+
+      const rounds = parseInt((d["rounds"] as string) || "10", 10);
+      const rawSalt = saltInput && saltInput.length > 0 ? bytesToUtf8(saltInput) : "";
+      const saltStr = rawSalt.match(/^\$2[abzy]\$\d+\$/) ? rawSalt : bcrypt.genSaltSync(rounds);
+      const result = bcrypt.hashSync(password, saltStr);
+      return utf8ToBytes(result);
     },
   },
 };

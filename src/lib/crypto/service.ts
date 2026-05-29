@@ -5,9 +5,16 @@ import base58_lib from "base-x";
 import { md5 } from "@noble/hashes/legacy.js";
 import { sha3_256, sha3_384, sha3_512 } from "@noble/hashes/sha3.js";
 import { keccak_256 } from "@noble/hashes/sha3.js";
-import { chacha20poly1305 } from "@noble/ciphers/chacha.js";
+import { chacha20poly1305, xchacha20poly1305 } from "@noble/ciphers/chacha.js";
+import { gcmsiv, cmac } from "@noble/ciphers/aes.js";
+import { poly1305 } from "@noble/ciphers/_poly1305.js";
 import { argon2id, argon2i, argon2d } from "@noble/hashes/argon2.js";
 import { scrypt } from "@noble/hashes/scrypt.js";
+import { blake2b, blake2s } from "@noble/hashes/blake2.js";
+import { blake3 } from "@noble/hashes/blake3.js";
+import { ripemd160 } from "@noble/hashes/legacy.js";
+import { shake128_32, shake256_64 } from "@noble/hashes/sha3.js";
+import { sm3 as sm3Hash, sm4 as sm4Cipher } from "sm-crypto";
 
 const base58 = base58_lib("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
 
@@ -115,7 +122,9 @@ export function parseBytes(text: string, fmt: DataFormat): Uint8Array {
       // But b64ToBytes already ignores whitespace, and atob might handle some extra chars.
       // Let's be a bit more robust for PEM.
       if (fmt === "pem") {
-        const cleaned = text.replace(/-----BEGIN [^-]+-----/, "").replace(/-----END [^-]+-----/, "");
+        const cleaned = text
+          .replace(/-----BEGIN [^-]+-----/, "")
+          .replace(/-----END [^-]+-----/, "");
         return b64ToBytes(cleaned);
       }
       return b64ToBytes(text);
@@ -160,16 +169,31 @@ export interface MacProvider {
   type: "mac";
   name: string;
   sign(key: Uint8Array, data: Uint8Array, params?: Record<string, unknown>): Promise<Uint8Array>;
-  verify(key: Uint8Array, signature: Uint8Array, data: Uint8Array, params?: Record<string, unknown>): Promise<boolean>;
+  verify(
+    key: Uint8Array,
+    signature: Uint8Array,
+    data: Uint8Array,
+    params?: Record<string, unknown>,
+  ): Promise<boolean>;
 }
 
 export interface KdfProvider {
   type: "kdf";
   name: string;
-  derive(password: Uint8Array, salt: Uint8Array, length: number, params?: Record<string, unknown>): Promise<Uint8Array>;
+  derive(
+    password: Uint8Array,
+    salt: Uint8Array,
+    length: number,
+    params?: Record<string, unknown>,
+  ): Promise<Uint8Array>;
 }
 
-export type AlgorithmProvider = HashProvider | CipherProvider | RsaProvider | MacProvider | KdfProvider;
+export type AlgorithmProvider =
+  | HashProvider
+  | CipherProvider
+  | RsaProvider
+  | MacProvider
+  | KdfProvider;
 
 const providerRegistry = new Map<string, AlgorithmProvider>();
 
@@ -275,11 +299,15 @@ function makeHmacProvider(hash: string): MacProvider {
     type: "mac",
     name: `HMAC-${hash}`,
     async sign(keyRaw, data) {
-      const key = await CryptoService.importKey("raw", keyRaw, { name: "HMAC", hash }, false, ["sign"]);
+      const key = await CryptoService.importKey("raw", keyRaw, { name: "HMAC", hash }, false, [
+        "sign",
+      ]);
       return CryptoService.sign({ name: "HMAC" }, key, data);
     },
     async verify(keyRaw, signature, data) {
-      const key = await CryptoService.importKey("raw", keyRaw, { name: "HMAC", hash }, false, ["verify"]);
+      const key = await CryptoService.importKey("raw", keyRaw, { name: "HMAC", hash }, false, [
+        "verify",
+      ]);
       return CryptoService.verify({ name: "HMAC" }, key, signature, data);
     },
   };
@@ -299,24 +327,28 @@ function makeAesProvider(mode: "CBC" | "GCM" | "CTR"): CipherProvider {
     keySizes: [16, 24, 32],
     defaultIvSize: mode === "GCM" ? 12 : 16,
     async encrypt(keyRaw, iv, data) {
-      const key = await CryptoService.importKey("raw", keyRaw, { name: `AES-${mode}` }, false, ["encrypt"]);
+      const key = await CryptoService.importKey("raw", keyRaw, { name: `AES-${mode}` }, false, [
+        "encrypt",
+      ]);
       const params: any = { name: `AES-${mode}` };
       if (mode === "CBC") params.iv = iv;
       if (mode === "GCM") params.iv = iv;
       if (mode === "CTR") {
-          params.counter = iv;
-          params.length = 64;
+        params.counter = iv;
+        params.length = 64;
       }
       return CryptoService.encrypt(params, key, data);
     },
     async decrypt(keyRaw, iv, data) {
-      const key = await CryptoService.importKey("raw", keyRaw, { name: `AES-${mode}` }, false, ["decrypt"]);
+      const key = await CryptoService.importKey("raw", keyRaw, { name: `AES-${mode}` }, false, [
+        "decrypt",
+      ]);
       const params: any = { name: `AES-${mode}` };
       if (mode === "CBC") params.iv = iv;
       if (mode === "GCM") params.iv = iv;
       if (mode === "CTR") {
-          params.counter = iv;
-          params.length = 64;
+        params.counter = iv;
+        params.length = 64;
       }
       return CryptoService.decrypt(params, key, data);
     },
@@ -345,34 +377,38 @@ registerProvider({
 });
 
 function makeSignatureProvider(name: "RSASSA-PKCS1-v1_5" | "RSA-PSS" | "ECDSA"): MacProvider {
-    return {
-        type: "mac",
-        name,
-        async sign(keyRaw, data, params) {
-            const hash = (params?.hash as string) || "SHA-256";
-            const isRSA = name.startsWith("RSA");
-            const key = isRSA 
-                ? await CryptoService.importRSAKey("pkcs8", keyRaw, name, hash, ["sign"])
-                : await CryptoService.importECKey("pkcs8", keyRaw, "ECDSA", params?.namedCurve as string, ["sign"]);
-            
-            const signParams: any = { name, hash };
-            if (name === "RSA-PSS") signParams.saltLength = 32;
-            
-            return CryptoService.sign(signParams, key, data);
-        },
-        async verify(keyRaw, signature, data, params) {
-            const hash = (params?.hash as string) || "SHA-256";
-            const isRSA = name.startsWith("RSA");
-            const key = isRSA 
-                ? await CryptoService.importRSAKey("spki", keyRaw, name, hash, ["verify"])
-                : await CryptoService.importECKey("spki", keyRaw, "ECDSA", params?.namedCurve as string, ["verify"]);
-            
-            const signParams: any = { name, hash };
-            if (name === "RSA-PSS") signParams.saltLength = 32;
-            
-            return CryptoService.verify(signParams, key, signature, data);
-        }
-    };
+  return {
+    type: "mac",
+    name,
+    async sign(keyRaw, data, params) {
+      const hash = (params?.hash as string) || "SHA-256";
+      const isRSA = name.startsWith("RSA");
+      const key = isRSA
+        ? await CryptoService.importRSAKey("pkcs8", keyRaw, name, hash, ["sign"])
+        : await CryptoService.importECKey("pkcs8", keyRaw, "ECDSA", params?.namedCurve as string, [
+            "sign",
+          ]);
+
+      const signParams: any = { name, hash };
+      if (name === "RSA-PSS") signParams.saltLength = 32;
+
+      return CryptoService.sign(signParams, key, data);
+    },
+    async verify(keyRaw, signature, data, params) {
+      const hash = (params?.hash as string) || "SHA-256";
+      const isRSA = name.startsWith("RSA");
+      const key = isRSA
+        ? await CryptoService.importRSAKey("spki", keyRaw, name, hash, ["verify"])
+        : await CryptoService.importECKey("spki", keyRaw, "ECDSA", params?.namedCurve as string, [
+            "verify",
+          ]);
+
+      const signParams: any = { name, hash };
+      if (name === "RSA-PSS") signParams.saltLength = 32;
+
+      return CryptoService.verify(signParams, key, signature, data);
+    },
+  };
 }
 
 registerProvider(makeSignatureProvider("RSASSA-PKCS1-v1_5"));
@@ -382,69 +418,260 @@ registerProvider(makeSignatureProvider("ECDSA"));
 // ─── KDF Providers ────────────────────────────────────────────────
 
 registerProvider({
-    type: "kdf",
-    name: "PBKDF2",
-    async derive(password, salt, length, params) {
-        const baseKey = await CryptoService.importKey("raw", password, "PBKDF2", false, ["deriveBits"]);
-        return CryptoService.deriveBits(
-            { 
-                name: "PBKDF2", 
-                salt, 
-                iterations: (params?.iterations as number) || 100000, 
-                hash: (params?.hash as string) || "SHA-256" 
-            },
-            baseKey,
-            length,
-        );
-    }
+  type: "kdf",
+  name: "PBKDF2",
+  async derive(password, salt, length, params) {
+    const baseKey = await CryptoService.importKey("raw", password, "PBKDF2", false, ["deriveBits"]);
+    return CryptoService.deriveBits(
+      {
+        name: "PBKDF2",
+        salt,
+        iterations: (params?.iterations as number) || 100000,
+        hash: (params?.hash as string) || "SHA-256",
+      },
+      baseKey,
+      length,
+    );
+  },
 });
 
 registerProvider({
-    type: "kdf",
-    name: "HKDF",
-    async derive(ikm, salt, length, params) {
-        const baseKey = await CryptoService.importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
-        return CryptoService.deriveBits(
-            { 
-                name: "HKDF", 
-                salt, 
-                info: (params?.info as Uint8Array) || new Uint8Array(0), 
-                hash: (params?.hash as string) || "SHA-256" 
-            },
-            baseKey,
-            length,
-        );
-    }
+  type: "kdf",
+  name: "HKDF",
+  async derive(ikm, salt, length, params) {
+    const baseKey = await CryptoService.importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
+    return CryptoService.deriveBits(
+      {
+        name: "HKDF",
+        salt,
+        info: (params?.info as Uint8Array) || new Uint8Array(0),
+        hash: (params?.hash as string) || "SHA-256",
+      },
+      baseKey,
+      length,
+    );
+  },
 });
 
 registerProvider({
-    type: "kdf",
-    name: "Argon2",
-    async derive(password, salt, length, params) {
-        const type = (params?.type as string) || "id";
-        const opts = {
-            t: (params?.t as number) || 3,
-            m: (params?.m as number) || 65536,
-            p: (params?.p as number) || 1,
-            dkLen: length / 8, // length is in bits, argon2 expects bytes
-        };
-        if (type === "id") return argon2id(password, salt, opts);
-        if (type === "i") return argon2i(password, salt, opts);
-        return argon2d(password, salt, opts);
-    }
+  type: "kdf",
+  name: "Argon2",
+  async derive(password, salt, length, params) {
+    const type = (params?.type as string) || "id";
+    const opts = {
+      t: (params?.t as number) || 3,
+      m: (params?.m as number) || 65536,
+      p: (params?.p as number) || 1,
+      dkLen: length / 8, // length is in bits, argon2 expects bytes
+    };
+    if (type === "id") return argon2id(password, salt, opts);
+    if (type === "i") return argon2i(password, salt, opts);
+    return argon2d(password, salt, opts);
+  },
 });
 
 registerProvider({
-    type: "kdf",
-    name: "Scrypt",
-    async derive(password, salt, length, params) {
-        return scrypt(password, salt, {
-            N: (params?.N as number) || 16384,
-            r: (params?.r as number) || 8,
-            p: (params?.p as number) || 1,
-            dkLen: length / 8,
-        });
+  type: "kdf",
+  name: "Scrypt",
+  async derive(password, salt, length, params) {
+    return scrypt(password, salt, {
+      N: (params?.N as number) || 16384,
+      r: (params?.r as number) || 8,
+      p: (params?.p as number) || 1,
+      dkLen: length / 8,
+    });
+  },
+});
+
+// ─── SM3 Provider ─────────────────────────────────────────────────
+
+registerProvider({
+  type: "hash",
+  name: "SM3",
+  async digest(data) {
+    const result = sm3Hash(data);
+    return hexToBytes(result);
+  },
+});
+
+// ─── SM4 Cipher Providers ────────────────────────────────────────
+
+registerProvider({
+  type: "cipher",
+  name: "SM4-ECB",
+  keySizes: [16],
+  defaultIvSize: 0,
+  async encrypt(key, _iv, data) {
+    if (key.length !== 16) throw new Error("SM4 requires a 16-byte key");
+    const keyHex = bytesToHex(key);
+    const result = sm4Cipher.encrypt(data, keyHex, { mode: "ecb" });
+    return hexToBytes(result);
+  },
+  async decrypt(key, _iv, data) {
+    if (key.length !== 16) throw new Error("SM4 requires a 16-byte key");
+    const keyHex = bytesToHex(key);
+    const dataHex = bytesToHex(data);
+    const result = sm4Cipher.decrypt(dataHex, keyHex, {
+      mode: "ecb",
+      output: "array",
+    }) as number[];
+    return new Uint8Array(result);
+  },
+});
+
+registerProvider({
+  type: "cipher",
+  name: "SM4-CBC",
+  keySizes: [16],
+  defaultIvSize: 16,
+  async encrypt(key, iv, data) {
+    if (key.length !== 16) throw new Error("SM4 requires a 16-byte key");
+    if (!iv || iv.length !== 16) throw new Error("SM4-CBC requires a 16-byte IV");
+    const keyHex = bytesToHex(key);
+    const ivHex = bytesToHex(iv);
+    const result = sm4Cipher.encrypt(data, keyHex, {
+      mode: "cbc",
+      iv: ivHex,
+    });
+    return hexToBytes(result);
+  },
+  async decrypt(key, iv, data) {
+    if (key.length !== 16) throw new Error("SM4 requires a 16-byte key");
+    if (!iv || iv.length !== 16) throw new Error("SM4-CBC requires a 16-byte IV");
+    const keyHex = bytesToHex(key);
+    const ivHex = bytesToHex(iv);
+    const dataHex = bytesToHex(data);
+    const result = sm4Cipher.decrypt(dataHex, keyHex, {
+      mode: "cbc",
+      iv: ivHex,
+      output: "array",
+    }) as number[];
+    return new Uint8Array(result);
+  },
+});
+
+// ─── BLAKE2 / BLAKE3 / RIPEMD-160 / SHAKE Providers ──────────────
+
+registerProvider({
+  type: "hash",
+  name: "BLAKE2b",
+  async digest(data) {
+    return blake2b(data);
+  },
+});
+
+registerProvider({
+  type: "hash",
+  name: "BLAKE2s",
+  async digest(data) {
+    return blake2s(data);
+  },
+});
+
+registerProvider({
+  type: "hash",
+  name: "BLAKE3",
+  async digest(data) {
+    return blake3(data);
+  },
+});
+
+registerProvider({
+  type: "hash",
+  name: "RIPEMD-160",
+  async digest(data) {
+    return ripemd160(data);
+  },
+});
+
+registerProvider({
+  type: "hash",
+  name: "SHAKE128",
+  async digest(data) {
+    return shake128_32(data);
+  },
+});
+
+registerProvider({
+  type: "hash",
+  name: "SHAKE256",
+  async digest(data) {
+    return shake256_64(data);
+  },
+});
+
+// ─── XChaCha20-Poly1305 Provider ─────────────────────────────────
+
+registerProvider({
+  type: "cipher",
+  name: "XChaCha20-Poly1305",
+  keySizes: [32],
+  defaultIvSize: 24,
+  async encrypt(key, iv, data) {
+    if (!iv) throw new Error("IV is required for XChaCha20-Poly1305");
+    return xchacha20poly1305(key, iv).encrypt(data);
+  },
+  async decrypt(key, iv, data) {
+    if (!iv) throw new Error("IV is required for XChaCha20-Poly1305");
+    return xchacha20poly1305(key, iv).decrypt(data);
+  },
+});
+
+// ─── AES-GCM-SIV Provider ────────────────────────────────────────
+
+registerProvider({
+  type: "cipher",
+  name: "AES-GCM-SIV",
+  keySizes: [16, 32],
+  defaultIvSize: 12,
+  async encrypt(key, iv, data, params) {
+    if (!iv) throw new Error("IV is required for AES-GCM-SIV");
+    const aad = (params?.aad as Uint8Array) || new Uint8Array(0);
+    return gcmsiv(key, iv, aad).encrypt(data);
+  },
+  async decrypt(key, iv, data, params) {
+    if (!iv) throw new Error("IV is required for AES-GCM-SIV");
+    const aad = (params?.aad as Uint8Array) || new Uint8Array(0);
+    return gcmsiv(key, iv, aad).decrypt(data);
+  },
+});
+
+// ─── Poly1305 MAC Provider ──────────────────────────────────────
+
+registerProvider({
+  type: "mac",
+  name: "Poly1305",
+  async sign(key, data) {
+    if (key.length !== 32) throw new Error("Poly1305 requires a 32-byte key");
+    return poly1305(data, key);
+  },
+  async verify(key, signature, data) {
+    const expected = await this.sign(key, data);
+    if (signature.length !== expected.length) return false;
+    let result = 0;
+    for (let i = 0; i < signature.length; i++) result |= signature[i] ^ expected[i];
+    return result === 0;
+  },
+});
+
+// ─── CMAC Provider ──────────────────────────────────────────────
+
+registerProvider({
+  type: "mac",
+  name: "CMAC",
+  async sign(key, data) {
+    if (key.length !== 16 && key.length !== 24 && key.length !== 32) {
+      throw new Error("CMAC requires a 16/24/32-byte AES key");
     }
+    return cmac(data, key);
+  },
+  async verify(key, signature, data) {
+    const expected = await this.sign(key, data);
+    if (signature.length !== expected.length) return false;
+    let result = 0;
+    for (let i = 0; i < signature.length; i++) result |= signature[i] ^ expected[i];
+    return result === 0;
+  },
 });
 
 // ─── CryptoService — WebCrypto wrapper ────────────────────────────
@@ -461,23 +688,37 @@ export const CryptoService = {
     extractable: boolean,
     keyUsages: KeyUsage[],
   ): Promise<CryptoKey> {
-    return crypto.subtle.importKey(format as any, ensureBufferSource(keyData), algorithm as any, extractable, keyUsages);
+    return crypto.subtle.importKey(
+      format as any,
+      ensureBufferSource(keyData),
+      algorithm as any,
+      extractable,
+      keyUsages,
+    );
   },
   async encrypt(
     params: Algorithm & { iv?: Uint8Array; counter?: Uint8Array; length?: number },
     key: CryptoKey,
     data: Uint8Array,
   ): Promise<Uint8Array> {
-    return new Uint8Array(await crypto.subtle.encrypt(params as Algorithm, key, data as BufferSource));
+    return new Uint8Array(
+      await crypto.subtle.encrypt(params as Algorithm, key, data as BufferSource),
+    );
   },
   async decrypt(
     params: Algorithm & { iv?: Uint8Array; counter?: Uint8Array; length?: number },
     key: CryptoKey,
     data: Uint8Array,
   ): Promise<Uint8Array> {
-    return new Uint8Array(await crypto.subtle.decrypt(params as Algorithm, key, data as BufferSource));
+    return new Uint8Array(
+      await crypto.subtle.decrypt(params as Algorithm, key, data as BufferSource),
+    );
   },
-  async sign(algorithm: string | RsaPssParams | EcdsaParams | HmacSignParams, key: CryptoKey, data: Uint8Array): Promise<Uint8Array> {
+  async sign(
+    algorithm: string | RsaPssParams | EcdsaParams | HmacSignParams,
+    key: CryptoKey,
+    data: Uint8Array,
+  ): Promise<Uint8Array> {
     const sig = await crypto.subtle.sign(algorithm as any, key, data as BufferSource);
     return new Uint8Array(sig);
   },
@@ -487,7 +728,12 @@ export const CryptoService = {
     signature: Uint8Array,
     data: Uint8Array,
   ): Promise<boolean> {
-    return crypto.subtle.verify(algorithm as any, key, signature as BufferSource, data as BufferSource);
+    return crypto.subtle.verify(
+      algorithm as any,
+      key,
+      signature as BufferSource,
+      data as BufferSource,
+    );
   },
   async generateRSAKeyPair(
     name: "RSASSA-PKCS1-v1_5" | "RSA-PSS" | "RSA-OAEP",
