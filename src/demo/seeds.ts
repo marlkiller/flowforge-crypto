@@ -210,3 +210,106 @@ export function getArgon2Seed(): WorkflowSeed {
         ]
     };
 }
+
+export function getRNCryptorV3Seed(): WorkflowSeed {
+  // Spec: version(1) || options(1) || encryption_salt(8) || hmac_salt(8) || iv(16) || ciphertext(...) || hmac(32)
+  const input = makeNode("input", { x: 0, y: -250 }, { 
+    label: "Plaintext", 
+    text: "RNCryptor v3 spec implementation in FlowForge Crypto",
+  });
+  const password = makeNode("input", { x: 0, y: 0 }, { 
+    label: "Password", 
+    text: "rncryptor-password" 
+  });
+  
+  // 1. Setup Randoms
+  const encSalt = makeNode("random", { x: 300, y: -150 }, { label: "Enc Salt (8B)", length: 8, outputFormat: "hex" });
+  const hmacSalt = makeNode("random", { x: 300, y: -50 }, { label: "HMAC Salt (8B)", length: 8, outputFormat: "hex" });
+  const iv = makeNode("random", { x: 300, y: 50 }, { label: "IV (16B)", length: 16, outputFormat: "hex" });
+
+  // 2. KDFs (PBKDF2-SHA1, 10000 iterations per spec)
+  const kdfEnc = makeNode("pbkdf2", { x: 600, y: -150 }, { label: "Encryption Key KDF", hash: "SHA-1", iterations: 10000, outputFormat: "hex" });
+  const kdfHmac = makeNode("pbkdf2", { x: 600, y: -50 }, { label: "HMAC Key KDF", hash: "SHA-1", iterations: 10000, outputFormat: "hex" });
+
+  // 3. Encrypt
+  const aesEnc = makeNode("aes", { x: 950, y: -250 }, { action: "encrypt", label: "AES-256-CBC", outputFormat: "hex" });
+  
+  // 4. Header
+  const version = makeNode("input", { x: 650, y: 150 }, { label: "Version (0x03)", text: "03", inputFormat: "hex", outputFormat: "hex" });
+  const options = makeNode("input", { x: 650, y: 250 }, { label: "Options (0x01)", text: "01", inputFormat: "hex", outputFormat: "hex" });
+  const joinHeader = makeNode("join", { x: 950, y: 100 }, { label: "Header", count: 5, separator: "none", outputFormat: "hex" });
+
+  // 5. Signature and Final Assembly
+  const joinHmacMsg = makeNode("join", { x: 1250, y: -100 }, { label: "HMAC Message", count: 2, separator: "none", outputFormat: "hex" });
+  const hmacSign = makeNode("hmacsha256", { x: 1250, y: 100 }, { action: "sign", label: "HMAC Sign", outputFormat: "hex" });
+  
+  const joinFinal = makeNode("join", { x: 1550, y: 0 }, { label: "Final Package", count: 2, separator: "none", outputFormat: "hex" });
+  const output = makeNode("output", { x: 1850, y: 0 }, { label: "RNCryptor v3 Result", outputFormat: "hex" });
+
+  // 6. Validation Path (Disassemble & Decrypt)
+  const sliceHeader = makeNode("slice", { x: 1850, y: 250 }, { label: "Header (34B)", start: 0, end: 34, outputFormat: "hex" });
+  const sliceCt = makeNode("slice", { x: 1850, y: 350 }, { label: "Ciphertext", start: 34, end: -32, outputFormat: "hex" });
+  const sliceHmac = makeNode("slice", { x: 1850, y: 450 }, { label: "HMAC (32B)", start: -32, outputFormat: "hex" });
+
+  const valEncSalt = makeNode("slice", { x: 2150, y: 150 }, { label: "Extracted Enc Salt", start: 2, end: 10, outputFormat: "hex" });
+  const valIv = makeNode("slice", { x: 2150, y: 250 }, { label: "Extracted IV", start: 18, end: 34, outputFormat: "hex" });
+
+  const kdfEncVal = makeNode("pbkdf2", { x: 2450, y: 150 }, { label: "Re-derive Enc Key", hash: "SHA-1", iterations: 10000, outputFormat: "hex" });
+  const aesDec = makeNode("aes", { x: 2750, y: 200 }, { action: "decrypt", label: "AES Decrypt (Verify)", outputFormat: "utf8" });
+  const outFinal = makeNode("output", { x: 3050, y: 200 }, { label: "Recovered Plaintext" });
+
+  return {
+    name: "RNCryptor v3 (Standard)",
+    nodes: [
+      input, password, encSalt, hmacSalt, iv, kdfEnc, kdfHmac, aesEnc,
+      version, options, joinHeader, joinHmacMsg, hmacSign, joinFinal, output,
+      sliceHeader, sliceCt, sliceHmac, valEncSalt, valIv, kdfEncVal, aesDec, outFinal
+    ],
+    edges: [
+      // Encryption Path
+      { id: "r1", source: input.id, target: aesEnc.id, targetHandle: "data", animated: true },
+      { id: "r2", source: password.id, target: kdfEnc.id, targetHandle: "password", animated: true },
+      { id: "r3", source: encSalt.id, target: kdfEnc.id, targetHandle: "salt", animated: true },
+      { id: "r4", source: kdfEnc.id, target: aesEnc.id, targetHandle: "key", animated: true },
+      { id: "r5", source: iv.id, target: aesEnc.id, targetHandle: "iv", animated: true },
+      
+      // HMAC Path
+      { id: "r6", source: password.id, target: kdfHmac.id, targetHandle: "password", animated: true },
+      { id: "r7", source: hmacSalt.id, target: kdfHmac.id, targetHandle: "salt", animated: true },
+      
+      // Header Assembly
+      { id: "r8", source: version.id, target: joinHeader.id, targetHandle: "in_1", animated: true },
+      { id: "r9", source: options.id, target: joinHeader.id, targetHandle: "in_2", animated: true },
+      { id: "r10", source: encSalt.id, target: joinHeader.id, targetHandle: "in_3", animated: true },
+      { id: "r11", source: hmacSalt.id, target: joinHeader.id, targetHandle: "in_4", animated: true },
+      { id: "r12", source: iv.id, target: joinHeader.id, targetHandle: "in_5", animated: true },
+      
+      // Signing
+      { id: "r13", source: joinHeader.id, target: joinHmacMsg.id, targetHandle: "in_1", animated: true },
+      { id: "r14", source: aesEnc.id, target: joinHmacMsg.id, targetHandle: "in_2", animated: true },
+      { id: "r15", source: kdfHmac.id, target: hmacSign.id, targetHandle: "key", animated: true },
+      { id: "r16", source: joinHmacMsg.id, target: hmacSign.id, targetHandle: "data", animated: true },
+      
+      // Final Assembly
+      { id: "r17", source: joinHmacMsg.id, target: joinFinal.id, targetHandle: "in_1", animated: true },
+      { id: "r18", source: hmacSign.id, target: joinFinal.id, targetHandle: "in_2", animated: true },
+      { id: "r19", source: joinFinal.id, target: output.id, animated: true },
+
+      // Validation Path
+      { id: "v1", source: joinFinal.id, target: sliceHeader.id, targetHandle: "data", animated: true },
+      { id: "v2", source: joinFinal.id, target: sliceCt.id, targetHandle: "data", animated: true },
+      { id: "v3", source: joinFinal.id, target: sliceHmac.id, targetHandle: "data", animated: true },
+      
+      { id: "v4", source: sliceHeader.id, target: valEncSalt.id, targetHandle: "data", animated: true },
+      { id: "v5", source: sliceHeader.id, target: valIv.id, targetHandle: "data", animated: true },
+      
+      { id: "v6", source: password.id, target: kdfEncVal.id, targetHandle: "password", animated: true },
+      { id: "v7", source: valEncSalt.id, target: kdfEncVal.id, targetHandle: "salt", animated: true },
+      
+      { id: "v8", source: sliceCt.id, target: aesDec.id, targetHandle: "data", animated: true },
+      { id: "v9", source: kdfEncVal.id, target: aesDec.id, targetHandle: "key", animated: true },
+      { id: "v10", source: valIv.id, target: aesDec.id, targetHandle: "iv", animated: true },
+      { id: "v11", source: aesDec.id, target: outFinal.id, animated: true },
+    ],
+  };
+}

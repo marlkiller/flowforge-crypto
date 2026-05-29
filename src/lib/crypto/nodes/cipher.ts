@@ -317,8 +317,12 @@ export const cipherNodes: Record<string, NodeDef> = {
         if (action === "decrypt") {
           const actualIv = iv || mainInput.slice(0, provider.defaultIvSize);
           const ct = iv ? mainInput : mainInput.slice(provider.defaultIvSize);
-          if (provider.defaultIvSize > 0 && actualIv.byteLength !== provider.defaultIvSize)
-            throw new Error("Ciphertext too short to contain IV");
+          
+          if (provider.defaultIvSize > 0) {
+             if (!actualIv || actualIv.byteLength !== provider.defaultIvSize) {
+                throw new Error(`Insufficient data for IV (expected ${provider.defaultIvSize} bytes)`);
+             }
+          }
           return provider.decrypt(keyBytes, actualIv, ct, { aad });
         } else {
           const actualIv = iv || crypto.getRandomValues(new Uint8Array(provider.defaultIvSize));

@@ -30,7 +30,12 @@ export function getParamBytes(
   required = true,
 ): Uint8Array | undefined {
   // 1. Priority: Wired input
-  if (inputs[id]) return inputs[id];
+  if (inputs[id]) {
+    // If input is wired but empty, treat as undefined if not required
+    // to allow fallback to node data or internal defaults.
+    if (inputs[id].length > 0) return inputs[id];
+    if (required) return inputs[id]; // Still return empty if required to let it fail later with better context
+  }
 
   // 2. Secondary: Node data field (Hex string)
   const hex = node.data[id] as string | undefined;
