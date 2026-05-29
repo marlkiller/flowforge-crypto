@@ -22,14 +22,12 @@ import { CryptoNode } from "./CryptoNode";
 import { NodeInspector } from "./NodeInspector";
 import { OutputConsole } from "./OutputConsole";
 import { graphStore, useGraphStore, type Workflow } from "./store";
-import { executeGraph } from "@/lib/crypto/executor";
 import {
   NODE_KIND_META,
   CATEGORY_META,
-  defaultOutputFormat,
   getActiveCategories,
 } from "@/lib/crypto/registry";
-import type { GraphEdge, GraphNode, NodeExecutionLog } from "@/lib/crypto/types";
+import type { GraphEdge, GraphNode, NodeExecutionLog, ExecutionResult } from "@/lib/crypto/types";
 import { formatBytes } from "@/lib/crypto/service";
 import { toast } from "sonner";
 import {
@@ -147,6 +145,9 @@ function InnerEditor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const clipboardRef = useRef<{ nodes: GraphNode[]; edges: GraphEdge[] } | null>(null);
+  const executeWorkerRef = useRef<Worker | null>(null);
+  const executeIdRef = useRef(0);
+  const executePendingRef = useRef<Map<number, { resolve: (r: ExecutionResult) => void; reject: (e: Error) => void }>>(new Map());
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -446,14 +447,40 @@ function InnerEditor() {
     return () => window.removeEventListener("keydown", onKey);
   }, [copySelected, pasteClipboard]);
 
+  // Worker lifecycle
+  useEffect(() => {
+    const w = new Worker(new URL("../../lib/crypto/executor.worker.ts", import.meta.url), { type: "module" });
+    w.onmessage = (e: MessageEvent) => {
+      const { id, outputs, errors, order, logs, error } = e.data;
+      const p = executePendingRef.current.get(id);
+      if (!p) return;
+      executePendingRef.current.delete(id);
+      if (error) p.reject(new Error(error));
+      else p.resolve({ outputs: new Map(outputs), errors: new Map(errors), order, logs });
+    };
+    executeWorkerRef.current = w;
+    return () => w.terminate();
+  }, []);
+
+  const workerExecute = useCallback((nodes: GraphNode[], edges: GraphEdge[]): Promise<ExecutionResult> => {
+    return new Promise((resolve, reject) => {
+      const id = ++executeIdRef.current;
+      executePendingRef.current.set(id, { resolve, reject });
+      executeWorkerRef.current!.postMessage({ id, nodes, edges });
+    });
+  }, []);
+
   // Execution
+  const EXECUTION_MIN_MS = 400;
   const execute = useCallback(async () => {
+    const startedAt = Date.now();
     setExecRunning(true);
     setExecLogs([]);
+
     const wf = graphStore.getActive();
 
     try {
-      const result = await executeGraph(wf.nodes, wf.edges);
+      const result = await workerExecute(wf.nodes, wf.edges);
 
       setExecLogs(result.logs);
       const errors = Array.from(result.errors.values());
@@ -506,6 +533,9 @@ function InnerEditor() {
         description: error instanceof Error ? error.message : "Unknown error",
       });
     } finally {
+      const elapsed = Date.now() - startedAt;
+      const remaining = EXECUTION_MIN_MS - elapsed;
+      if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
       setExecRunning(false);
     }
   }, []);
@@ -909,7 +939,7 @@ function InnerEditor() {
             {execRunning && (
               <div className="absolute inset-0 z-[100] flex items-center justify-center bg-background/20 backdrop-blur-[1px] pointer-events-none">
                 <div className="flex flex-col items-center gap-2 px-4 py-3 rounded-xl bg-background/80 border border-border shadow-2xl animate-in fade-in zoom-in duration-200">
-                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                  <Loader2 className="w-6 h-6 text-primary animate-spin will-change-transform" />
                   <span className="text-xs font-bold uppercase tracking-widest text-foreground/70">
                     Executing pipeline...
                   </span>
