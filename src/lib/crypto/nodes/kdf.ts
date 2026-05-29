@@ -18,6 +18,8 @@ export const kdfNodes: Record<string, NodeDef> = {
         { id: "salt", label: "Salt" },
       ],
       fields: [
+        { id: "password", label: "Password", type: "password", placeholder: "Enter password..." },
+        { id: "salt", label: "Salt (Hex)", type: "text", placeholder: "Hex string..." },
         { id: "iterations", label: "Iterations", type: "number", defaultValue: 100000 },
         {
           id: "hash",

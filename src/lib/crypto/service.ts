@@ -2,19 +2,22 @@
 
 import base32 from "hi-base32";
 import base58_lib from "base-x";
-import { md5 } from "@noble/hashes/legacy.js";
-import { sha3_256, sha3_384, sha3_512 } from "@noble/hashes/sha3.js";
-import { keccak_256 } from "@noble/hashes/sha3.js";
+// noble hashes
+import { md5, ripemd160 } from "@noble/hashes/legacy.js";
+import { sha3_256, sha3_384, sha3_512, keccak_256, shake128_32, shake256_64 } from "@noble/hashes/sha3.js";
+import { blake2b, blake2s } from "@noble/hashes/blake2.js";
+import { blake3 } from "@noble/hashes/blake3.js";
+import { argon2id, argon2i, argon2d } from "@noble/hashes/argon2.js";
+import { scrypt } from "@noble/hashes/scrypt.js";
+// noble ciphers
 import { chacha20poly1305, xchacha20poly1305 } from "@noble/ciphers/chacha.js";
 import { gcmsiv, cmac } from "@noble/ciphers/aes.js";
 import { poly1305 } from "@noble/ciphers/_poly1305.js";
-import { argon2id, argon2i, argon2d } from "@noble/hashes/argon2.js";
-import { scrypt } from "@noble/hashes/scrypt.js";
-import { blake2b, blake2s } from "@noble/hashes/blake2.js";
-import { blake3 } from "@noble/hashes/blake3.js";
-import { ripemd160 } from "@noble/hashes/legacy.js";
-import { shake128_32, shake256_64 } from "@noble/hashes/sha3.js";
+// third-party
 import { sm3 as sm3Hash, sm4 as sm4Cipher } from "sm-crypto";
+import forge from "node-forge";
+// local
+import { HMAC_ALGOS, makeNobleHmacProvider } from "./hmac";
 
 const base58 = base58_lib("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
 
@@ -318,6 +321,10 @@ registerProvider(makeHmacProvider("SHA-256"));
 registerProvider(makeHmacProvider("SHA-384"));
 registerProvider(makeHmacProvider("SHA-512"));
 
+for (const [name, { fn, block }] of Object.entries(HMAC_ALGOS)) {
+  registerProvider(makeNobleHmacProvider(name, fn, block));
+}
+
 // ─── AES Providers ────────────────────────────────────────────────
 
 function makeAesProvider(mode: "CBC" | "GCM" | "CTR"): CipherProvider {
@@ -373,6 +380,61 @@ registerProvider({
     const hash = (params?.hash as string) || "SHA-256";
     const key = await CryptoService.importRSAKey("pkcs8", keyRaw, "RSA-OAEP", hash, ["decrypt"]);
     return CryptoService.decrypt({ name: "RSA-OAEP" }, key, data);
+  },
+});
+
+registerProvider({
+  type: "rsa",
+  name: "RSAES-PKCS1-V1_5",
+  async encrypt(keyRaw, data) {
+    const pem = toPEM(keyRaw, "PUBLIC KEY");
+    const key = forge.pki.publicKeyFromPem(pem);
+    const input = String.fromCharCode(...data);
+    const output = key.encrypt(input, "RSAES-PKCS1-V1_5");
+    return Uint8Array.from(output, (c) => c.charCodeAt(0));
+  },
+  async decrypt(keyRaw, data) {
+    const pem = toPEM(keyRaw, "PRIVATE KEY");
+    const key = forge.pki.privateKeyFromPem(pem);
+    const input = String.fromCharCode(...data);
+    const output = key.decrypt(input, "RSAES-PKCS1-V1_5");
+    return Uint8Array.from(output, (c) => c.charCodeAt(0));
+  },
+});
+
+registerProvider({
+  type: "rsa",
+  name: "RAW",
+  async encrypt(keyRaw, data) {
+    const pem = toPEM(keyRaw, "PUBLIC KEY");
+    const key = forge.pki.publicKeyFromPem(pem);
+    const n = (key as any).n as forge.jsbn.BigInteger;
+    const e = (key as any).e as forge.jsbn.BigInteger;
+    const m = new forge.jsbn.BigInteger(
+      Array.from(data).map((b) => b.toString(16).padStart(2, "0")).join(""),
+      16,
+    );
+    if (m.compareTo(n) >= 0) throw new Error("Data too large for key modulus");
+    const c = m.modPow(e, n);
+    const nBytes = Math.ceil(n.bitLength() / 8);
+    const hex = c.toString(16).padStart(nBytes * 2, "0");
+    return new Uint8Array(hex.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
+  },
+  async decrypt(keyRaw, data) {
+    const pem = toPEM(keyRaw, "PRIVATE KEY");
+    const key = forge.pki.privateKeyFromPem(pem);
+    const n = (key as any).n as forge.jsbn.BigInteger;
+    const d = (key as any).d as forge.jsbn.BigInteger;
+    const c = new forge.jsbn.BigInteger(
+      Array.from(data).map((b) => b.toString(16).padStart(2, "0")).join(""),
+      16,
+    );
+    const m = c.modPow(d, n);
+    const nBytes = Math.ceil(n.bitLength() / 8);
+    const hex = m.toString(16).padStart(nBytes * 2, "0");
+    const trimmed = hex.replace(/^0+/, "") || "0";
+    const even = trimmed.length % 2 === 0 ? trimmed : "0" + trimmed;
+    return new Uint8Array(even.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
   },
 });
 
@@ -772,7 +834,7 @@ export const CryptoService = {
     );
   },
   async deriveBits(
-    algorithm: Algorithm | Pbkdf2Params | HkdfParams | EcKeyGenParams,
+    algorithm: Algorithm | Pbkdf2Params | HkdfParams | EcdhKeyDeriveParams,
     baseKey: CryptoKey,
     length: number,
   ): Promise<Uint8Array> {

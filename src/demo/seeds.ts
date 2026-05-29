@@ -122,14 +122,14 @@ export function getHMACSeed(): WorkflowSeed {
   const key = makeNode("input", { x: 50, y: 200 }, { text: "secret-key", label: "Secret Key" });
 
   const hmacSign = makeNode(
-    "hmacsha256",
+    "hmac",
     { x: 400, y: 50 },
-    { action: "sign", label: "HMAC Sign" },
+    { action: "sign", hash: "SHA-256", label: "HMAC Sign" },
   );
   const hmacVerify = makeNode(
-    "hmacsha256",
+    "hmac",
     { x: 750, y: 50 },
-    { action: "verify", label: "HMAC Verify" },
+    { action: "verify", hash: "SHA-256", label: "HMAC Verify" },
   );
   const out = makeNode("output", { x: 1100, y: 50 }, { label: "Verify Result" });
 
@@ -1055,9 +1055,9 @@ export function getRNCryptorV3Seed(): WorkflowSeed {
     { label: "HMAC Message", count: 2, separator: "none", outputFormat: "hex" },
   );
   const hmacSign = makeNode(
-    "hmacsha256",
+    "hmac",
     { x: 1250, y: 100 },
-    { action: "sign", label: "HMAC Sign", outputFormat: "hex" },
+    { action: "sign", hash: "SHA-256", label: "HMAC Sign", outputFormat: "hex" },
   );
 
   const joinFinal = makeNode(

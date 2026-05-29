@@ -127,10 +127,6 @@ export async function executeGraph(
     }
 
     const start = performance.now();
-    
-    // YIELD to main thread to allow UI/Spinner to render
-    // Using 50ms to give browser enough time for layer composition
-    await new Promise((resolve) => setTimeout(resolve, 50));
 
     const log: NodeExecutionLog = {
       nodeId: node.id,

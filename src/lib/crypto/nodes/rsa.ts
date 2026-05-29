@@ -75,7 +75,7 @@ export const rsaNodes: Record<string, NodeDef> = {
       kind: "rsa",
       label: "RSA",
       category: "asymmetric",
-      description: "RSA-OAEP encrypt/decrypt. Requires wired public/private key.",
+      description: "RSA encrypt/decrypt. Supports RSA-OAEP, RSAES-PKCS1-V1_5, RAW.",
       defaultOutput: "base64",
       inputs: [
         { id: "data", label: "Data" },
@@ -91,6 +91,17 @@ export const rsaNodes: Record<string, NodeDef> = {
           options: [
             { label: "Encrypt", value: "encrypt" },
             { label: "Decrypt", value: "decrypt" },
+          ],
+        },
+        {
+          id: "scheme",
+          label: "Scheme",
+          type: "select",
+          defaultValue: "RSA-OAEP",
+          options: [
+            { label: "RSA-OAEP", value: "RSA-OAEP" },
+            { label: "RSAES-PKCS1-V1_5", value: "RSAES-PKCS1-V1_5" },
+            { label: "RAW", value: "RAW" },
           ],
         },
         {
@@ -112,6 +123,7 @@ export const rsaNodes: Record<string, NodeDef> = {
           label: "Hash",
           type: "select",
           defaultValue: "SHA-256",
+          visible: (d) => d["scheme"] === "RSA-OAEP",
           options: [
             { label: "SHA-1", value: "SHA-1" },
             { label: "SHA-256", value: "SHA-256" },
@@ -123,19 +135,21 @@ export const rsaNodes: Record<string, NodeDef> = {
     },
     runner: async (node, inputs) => {
       const action = (node.data["action"] as string) || "encrypt";
+      const scheme = (node.data["scheme"] as string) || "RSA-OAEP";
       const hash = (node.data["hash"] as string) || "SHA-256";
       const data = inputs["data"] ?? new Uint8Array(0);
 
-      const provider = getProvider("RSA-OAEP") as RsaProvider;
-      if (!provider) throw new Error("RSA-OAEP provider not found");
+      const provider = getProvider(scheme) as RsaProvider;
+      if (!provider) throw new Error(`RSA provider "${scheme}" not found`);
 
       try {
+        const params = scheme === "RSA-OAEP" ? { hash } : undefined;
         if (action === "decrypt") {
           const privateKeyBytes = getParamBytes(node as GraphNode, inputs, "privateKey")!;
-          return provider.decrypt(privateKeyBytes, data, { hash });
+          return provider.decrypt(privateKeyBytes, data, params);
         } else {
           const publicKeyBytes = getParamBytes(node as GraphNode, inputs, "publicKey")!;
-          return provider.encrypt(publicKeyBytes, data, { hash });
+          return provider.encrypt(publicKeyBytes, data, params);
         }
       } catch (e) {
         throw new Error(`RSA ${action} failed: ${(e as Error).message}`);
