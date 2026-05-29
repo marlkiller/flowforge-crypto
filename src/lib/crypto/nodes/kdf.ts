@@ -14,8 +14,9 @@ export const kdfNodes: Record<string, NodeDef> = {
       description: "Password-Based Key Derivation Function 2.",
       defaultOutput: "hex",
       inputs: [
-        { id: "password", label: "Password" },
-        { id: "salt", label: "Salt" },
+        { id: "password", label: "Password (utf8)" },
+        { id: "salt", label: "Salt (hex)" },
+        { id: "hash", label: "Hash" },
       ],
       fields: [
         { id: "password", label: "Password (Raw)", type: "text", placeholder: "Enter password..." },
@@ -56,8 +57,8 @@ export const kdfNodes: Record<string, NodeDef> = {
       defaultOutput: "hex",
       inputs: [
         { id: "ikm", label: "IKM (Input Keying Material)" },
-        { id: "salt", label: "Salt" },
-        { id: "info", label: "Info" },
+        { id: "salt", label: "Salt (hex)" },
+        { id: "info", label: "Info (hex)" },
       ],
       fields: [
         {
@@ -94,8 +95,8 @@ export const kdfNodes: Record<string, NodeDef> = {
       description: "Memory-hard password hashing (PHC winner).",
       defaultOutput: "hex",
       inputs: [
-        { id: "password", label: "Password" },
-        { id: "salt", label: "Salt" },
+        { id: "password", label: "Password (utf8)" },
+        { id: "salt", label: "Salt (hex)" },
       ],
       fields: [
         {
@@ -136,8 +137,8 @@ export const kdfNodes: Record<string, NodeDef> = {
       description: "Memory-hard key derivation function.",
       defaultOutput: "hex",
       inputs: [
-        { id: "password", label: "Password" },
-        { id: "salt", label: "Salt" },
+        { id: "password", label: "Password (utf8)" },
+        { id: "salt", label: "Salt (hex)" },
       ],
       fields: [
         { id: "N", label: "Cost (N)", type: "number", defaultValue: 16384 },

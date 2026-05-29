@@ -53,7 +53,7 @@ function makeMacNode(
       inputs: [
         { id: "data", label: "Data" },
         { id: "key", label: keyLabel },
-        { id: "signature", label: "Signature" },
+        { id: "signature", label: "Signature (hex)" },
       ],
       fields: [
         {
@@ -116,7 +116,7 @@ export const macNodes: Record<string, NodeDef> = {
       inputs: [
         { id: "data", label: "Data" },
         { id: "key", label: "Key" },
-        { id: "signature", label: "Signature" },
+        { id: "signature", label: "Signature (hex)" },
       ],
       fields: [
         {
