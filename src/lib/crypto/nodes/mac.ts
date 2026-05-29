@@ -2,11 +2,11 @@ import type { NodeDef, GraphNode } from "../types";
 import { getProvider, type MacProvider, utf8ToBytes } from "../service";
 import { getParamBytes } from "../utils";
 
-function makeHmacNode(hash: string): NodeDef {
+function makeHmacNode(hash: string, kind: string): NodeDef {
   const algo = `HMAC-${hash}`;
   return {
     meta: {
-      kind: algo.toLowerCase().replace("-", ""),
+      kind,
       label: algo,
       category: "mac",
       description: `HMAC using ${hash} for message authentication.`,
@@ -61,8 +61,8 @@ function makeHmacNode(hash: string): NodeDef {
 }
 
 export const macNodes: Record<string, NodeDef> = {
-  hmacsha1: makeHmacNode("SHA-1"),
-  hmacsha256: makeHmacNode("SHA-256"),
-  hmacsha384: makeHmacNode("SHA-384"),
-  hmacsha512: makeHmacNode("SHA-512"),
+  hmacsha1: makeHmacNode("SHA-1", "hmacsha1"),
+  hmacsha256: makeHmacNode("SHA-256", "hmacsha256"),
+  hmacsha384: makeHmacNode("SHA-384", "hmacsha384"),
+  hmacsha512: makeHmacNode("SHA-512", "hmacsha512"),
 };
