@@ -1,51 +1,25 @@
 import type { NodeDef, NodeKindMeta } from "./types";
-import { ioNodes } from "./nodes/io";
-import { stringNodes } from "./nodes/string";
-import { encodingNodes } from "./nodes/encoding";
-import { hashNodes } from "./nodes/hash";
-import { cipherNodes } from "./nodes/cipher";
-import { rsaNodes } from "./nodes/rsa";
-import { macNodes } from "./nodes/mac";
-import { kdfNodes } from "./nodes/kdf";
-import { eccNodes } from "./nodes/ecc";
-import { otpNodes } from "./nodes/otp";
-import { jwtNodes } from "./nodes/jwt";
-import { entropyNodes } from "./nodes/entropy";
-import { legacyNodes } from "./nodes/legacy";
-import { eddsaNodes } from "./nodes/eddsa";
-import { bitwiseNodes } from "./nodes/bitwise";
-import { smNodes } from "./nodes/sm";
 import type { DataFormat } from "./service";
 
-const ALL_NODE_DEFS: Record<string, NodeDef>[] = [
-  ioNodes,
-  stringNodes,
-  encodingNodes,
-  hashNodes,
-  cipherNodes,
-  rsaNodes,
-  macNodes,
-  kdfNodes,
-  eccNodes,
-  eddsaNodes,
-  smNodes,
-  otpNodes,
-  jwtNodes,
-  entropyNodes,
-  legacyNodes,
-  bitwiseNodes,
-];
+// ─── Live Registry ─────────────────────────────────────────────
 
-export const NODE_REGISTRY: Record<string, NodeDef> = ALL_NODE_DEFS.reduce(
-  (acc, defs) => ({ ...acc, ...defs }),
-  {},
-);
+const _registry: Record<string, NodeDef> = {};
+const _kindMeta: Record<string, NodeKindMeta> = {};
 
-export type KnownNodeKind = keyof typeof NODE_REGISTRY;
+export const NODE_REGISTRY: Record<string, NodeDef> = _registry;
+export const NODE_KIND_META: Record<string, NodeKindMeta> = _kindMeta;
 
-export const NODE_KIND_META: Record<string, NodeKindMeta> = Object.fromEntries(
-  Object.entries(NODE_REGISTRY).map(([k, v]) => [k, v.meta]),
-);
+export function registerNodeDef(kind: string, def: NodeDef) {
+  if (_registry[kind]) {
+    console.warn(`[registry] Node kind "${kind}" is already registered — overwriting.`);
+  }
+  _registry[kind] = def;
+  _kindMeta[kind] = def.meta;
+}
+
+// ─── Convenience ───────────────────────────────────────────────
+
+export type KnownNodeKind = string;
 
 export type CategoryMeta = {
   label: string;

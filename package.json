@@ -1,7 +1,10 @@
 {
   "name": "flowforge-crypto",
   "private": true,
-  "sideEffects": false,
+  "sideEffects": [
+    "src/lib/crypto/setup.ts",
+    "src/lib/crypto/nodes/*.ts"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite dev",

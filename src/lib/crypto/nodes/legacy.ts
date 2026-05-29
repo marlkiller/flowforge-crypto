@@ -1,6 +1,7 @@
-import type { NodeDef, GraphNode } from "../types";
-import { utf8ToBytes, bytesToHex, hexToBytes, bytesToUtf8 } from "../service";
-import { getParamBytes } from "../utils";
+import { registerNodeDef } from "../registry";
+import type { GraphNode, NodeDef } from "../types";
+import { bytesToHex, hexToBytes, type DataFormat } from "../service";
+import { getField, getParamBytes } from "../utils";
 import CryptoJS from "crypto-js";
 
 function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef {
@@ -10,7 +11,7 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
       label,
       category: "legacy",
       description: `${label} legacy encryption (INSECURE).`,
-      defaultOutput: "hex",
+      defaultOutput: "hex" as DataFormat,
       inputs: [
         { id: "data", label: "Data" },
         { id: "key", label: "Key" },
@@ -40,12 +41,12 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
         { id: "iv", label: "IV (Hex)", type: "text" },
       ],
     },
-    runner: async (node, inputs) => {
+    runner: async (node: GraphNode, inputs: Record<string, Uint8Array>) => {
       const data = inputs["data"] ?? new Uint8Array(0);
-      const keyBytes = getParamBytes(node as GraphNode, inputs, "key");
-      const ivBytes = getParamBytes(node as GraphNode, inputs, "iv", false);
-      const action = (node.data["action"] as string) ?? "encrypt";
-      const modeStr = (node.data["mode"] as string) || "CBC";
+      const keyBytes = getParamBytes(node, inputs, "key");
+      const ivBytes = getParamBytes(node, inputs, "iv", false);
+      const action = getField(node, "action", "encrypt");
+      const modeStr = getField(node, "mode", "CBC");
 
       if (!keyBytes) throw new Error("Key is required");
 
@@ -59,10 +60,7 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
         return hexToBytes(encrypted.ciphertext.toString());
       } else {
         const wa = CryptoJS.enc.Hex.parse(bytesToHex(data));
-        // CryptoJS decrypt expects a CipherParams object or a string.
-        const cp = CryptoJS.lib.CipherParams.create({
-            ciphertext: wa
-        });
+        const cp = CryptoJS.lib.CipherParams.create({ ciphertext: wa });
         const decrypted = CryptoJS[algo].decrypt(cp, key, { iv, mode });
         return hexToBytes(decrypted.toString());
       }
@@ -70,7 +68,5 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
   };
 }
 
-export const legacyNodes: Record<string, NodeDef> = {
-  des: makeLegacyCipherNode("DES", "DES"),
-  tripledes: makeLegacyCipherNode("TripleDES", "3DES"),
-};
+registerNodeDef("des", makeLegacyCipherNode("DES", "DES"));
+registerNodeDef("tripledes", makeLegacyCipherNode("TripleDES", "3DES"));

@@ -22,6 +22,7 @@ import { CryptoNode } from "./CryptoNode";
 import { NodeInspector } from "./NodeInspector";
 import { OutputConsole } from "./OutputConsole";
 import { graphStore, useGraphStore, type Workflow } from "./store";
+import "@/lib/crypto/setup";
 import {
   NODE_KIND_META,
   CATEGORY_META,
@@ -238,7 +239,7 @@ function InnerEditor() {
         id: newId,
         position: { x: n.position.x + 60, y: n.position.y + 60 },
         selected: false,
-      };
+      } as GraphNode;
     });
     const dupEdges: GraphEdge[] = graphStore
       .getActive()

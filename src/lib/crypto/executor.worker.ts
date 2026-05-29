@@ -1,4 +1,5 @@
 import type { GraphNode, GraphEdge } from "./types";
+import "./setup";
 import { executeGraph } from "./executor";
 
 onmessage = async (e: MessageEvent<{ id: number; nodes: GraphNode[]; edges: GraphEdge[] }>) => {
