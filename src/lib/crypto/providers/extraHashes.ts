@@ -3,10 +3,15 @@ import { registerProvider } from "../service";
 
 function whirlpoolCore(type?: string): (data: Uint8Array) => Uint8Array {
   return (data) => {
-    const w = type ? new wp.Whirlpool({ type } as any) : new wp.Whirlpool();
-    const input = Array.from(data).map((b) => String.fromCharCode(b)).join("");
-    const bin = w.getHash(input);
-    return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const w = type ? new (wp.Whirlpool as any)({ type }) : new (wp.Whirlpool as any)();
+    let input = "";
+    for (let i = 0; i < data.length; i++) {
+      input += String.fromCharCode(data[i]);
+    }
+    const bin = w.getHash(input) as string;
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
   };
 }
 
@@ -32,19 +37,32 @@ export function sha0(data: Uint8Array): Uint8Array {
     for (let t = 0; t < 16; t++) W[t] = dv.getUint32(off + t * 4, false);
     for (let t = 16; t < 80; t++) W[t] = W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16];
 
-    let a = h[0], b = h[1], c = h[2], d = h[3], e = h[4];
+    let a = h[0],
+      b = h[1],
+      c = h[2],
+      d = h[3],
+      e = h[4];
     for (let t = 0; t < 80; t++) {
-      const f = t < 20
-        ? (b & c) | (~b & d)
-        : t < 40
-          ? b ^ c ^ d
-          : t < 60
-            ? (b & c) | (b & d) | (c & d)
-            : b ^ c ^ d;
+      const f =
+        t < 20
+          ? (b & c) | (~b & d)
+          : t < 40
+            ? b ^ c ^ d
+            : t < 60
+              ? (b & c) | (b & d) | (c & d)
+              : b ^ c ^ d;
       const temp = ((((a << 5) | (a >>> 27)) + e + K[(t / 20) | 0] + W[t]) | 0) + f;
-      e = d; d = c; c = (b << 30) | (b >>> 2); b = a; a = temp | 0;
+      e = d;
+      d = c;
+      c = (b << 30) | (b >>> 2);
+      b = a;
+      a = temp | 0;
     }
-    h[0] += a; h[1] += b; h[2] += c; h[3] += d; h[4] += e;
+    h[0] += a;
+    h[1] += b;
+    h[2] += c;
+    h[3] += d;
+    h[4] += e;
   }
 
   const out = new Uint8Array(20);

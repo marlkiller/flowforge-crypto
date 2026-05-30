@@ -60,13 +60,11 @@ registerNodeDef("ecdh", {
 
     if (!privateKeyBytes || !publicKeyBytes) throw new Error("Both Keys are required for ECDH");
 
-    const privateKey = await CryptoService.importECKey("pkcs8", privateKeyBytes, "ECDH", curve, ["deriveBits"]);
+    const privateKey = await CryptoService.importECKey("pkcs8", privateKeyBytes, "ECDH", curve, [
+      "deriveBits",
+    ]);
     const publicKey = await CryptoService.importECKey("spki", publicKeyBytes, "ECDH", curve, []);
 
-    return CryptoService.deriveBits(
-      { name: "ECDH", public: publicKey },
-      privateKey,
-      length,
-    );
+    return CryptoService.deriveBits({ name: "ECDH", public: publicKey }, privateKey, length);
   },
 });

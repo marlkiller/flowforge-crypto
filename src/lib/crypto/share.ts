@@ -1,6 +1,6 @@
 import type { Workflow } from "@/components/graph/store";
 import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
-import { NODE_REGISTRY } from "@/lib/crypto/registry";
+import { NODE_KIND_META } from "@/lib/crypto/registry";
 import LZString from "lz-string";
 
 const PREFIX = "share=";
@@ -91,7 +91,7 @@ function expandEdge(m: any): GraphEdge {
 export function encodeWorkflows(workflows: Workflow[]): string {
   const minified = workflows.map((w) => ({
     n: w.name,
-    ns: w.nodes.filter((n) => n.data && NODE_REGISTRY[n.data.kind]).map(minifyNode),
+    ns: w.nodes.filter((n) => n.data && NODE_KIND_META[n.data.kind]).map(minifyNode),
     es: w.edges.map(minifyEdge),
   }));
 
@@ -132,7 +132,7 @@ export function decodeWorkflows(encoded: string): SharedWorkflow[] {
     const results: SharedWorkflow[] = [];
     for (const item of list) {
       if (!item.nodes || !item.edges) continue;
-      const nodes = item.nodes.filter((n: any) => n.data && NODE_REGISTRY[n.data.kind]);
+      const nodes = item.nodes.filter((n: any) => n.data && NODE_KIND_META[n.data.kind]);
       if (nodes.length > 0) {
         results.push({ name: item.name || "Shared Workflow", nodes, edges: item.edges || [] });
       }

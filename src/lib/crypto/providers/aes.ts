@@ -1,4 +1,9 @@
-import { registerProvider, CryptoService, ensureBufferSource, type CipherProvider } from "../service";
+import {
+  registerProvider,
+  CryptoService,
+  ensureBufferSource,
+  type CipherProvider,
+} from "../service";
 
 function makeAesProvider(mode: "CBC" | "GCM" | "CTR"): CipherProvider {
   return {
@@ -7,9 +12,13 @@ function makeAesProvider(mode: "CBC" | "GCM" | "CTR"): CipherProvider {
     keySizes: [16, 24, 32],
     defaultIvSize: mode === "GCM" ? 12 : 16,
     async encrypt(keyRaw, iv, data) {
-      const key = await CryptoService.importKey("raw", keyRaw, { name: `AES-${mode}` }, false, [
-        "encrypt",
-      ]);
+      const key = await CryptoService.importKey(
+        "raw",
+        keyRaw,
+        { name: `AES-${mode}` } as any,
+        false,
+        ["encrypt"],
+      );
       const params: any = { name: `AES-${mode}` };
       if (mode === "CBC") params.iv = iv;
       if (mode === "GCM") params.iv = iv;
@@ -20,9 +29,13 @@ function makeAesProvider(mode: "CBC" | "GCM" | "CTR"): CipherProvider {
       return CryptoService.encrypt(params, key, data);
     },
     async decrypt(keyRaw, iv, data) {
-      const key = await CryptoService.importKey("raw", keyRaw, { name: `AES-${mode}` }, false, [
-        "decrypt",
-      ]);
+      const key = await CryptoService.importKey(
+        "raw",
+        keyRaw,
+        { name: `AES-${mode}` } as any,
+        false,
+        ["decrypt"],
+      );
       const params: any = { name: `AES-${mode}` };
       if (mode === "CBC") params.iv = iv;
       if (mode === "GCM") params.iv = iv;

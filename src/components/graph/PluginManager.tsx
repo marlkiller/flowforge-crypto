@@ -36,7 +36,13 @@ export const nodeDef = {
   }
 };`;
 
-export function PluginManager({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function PluginManager({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const pluginUrls = useGraphStore((s) => s.pluginUrls) || [];
   const [newUrl, setNewUrl] = useState("");
   const [code, setCode] = useState(PLUGIN_TEMPLATE);
@@ -70,7 +76,7 @@ export function PluginManager({ open, onOpenChange }: { open: boolean; onOpenCha
 
   const handleLoadCode = async () => {
     if (!code.trim()) return;
-    
+
     // Cleanup previous editor session
     if (lastEditorUrlRef.current) {
       graphStore.removePluginUrl(lastEditorUrlRef.current);
@@ -82,7 +88,7 @@ export function PluginManager({ open, onOpenChange }: { open: boolean; onOpenCha
       const blob = new Blob([code], { type: "application/javascript" });
       const url = URL.createObjectURL(blob);
       const successUrl = await handleAdd(url, false);
-      
+
       if (successUrl) {
         lastEditorUrlRef.current = successUrl;
         toast.success("Code injected successfully");
@@ -162,7 +168,11 @@ export function PluginManager({ open, onOpenChange }: { open: boolean; onOpenCha
                 disabled={loading || !newUrl.trim()}
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold transition-colors disabled:opacity-50 shrink-0"
               >
-                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                {loading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5" />
+                )}
                 Add URL
               </button>
             </div>
@@ -205,8 +215,8 @@ export function PluginManager({ open, onOpenChange }: { open: boolean; onOpenCha
           <div className="flex items-start gap-2 mr-auto">
             <AlertCircle className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
             <p className="text-[9px] text-muted-foreground leading-tight">
-              Notice: Nodes defined in the editor are ephemeral and will be lost on reload. 
-              For permanent extensions, use the Remote URL tab.
+              Notice: Nodes defined in the editor are ephemeral and will be lost on reload. For
+              permanent extensions, use the Remote URL tab.
             </p>
           </div>
           <DialogClose asChild>

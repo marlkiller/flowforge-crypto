@@ -3,7 +3,9 @@ import "./setup";
 import { executeGraph } from "./executor";
 import { loadExternalNode } from "./registry";
 
-onmessage = async (e: MessageEvent<{ id: number; nodes: GraphNode[]; edges: GraphEdge[]; pluginUrls?: string[] }>) => {
+onmessage = async (
+  e: MessageEvent<{ id: number; nodes: GraphNode[]; edges: GraphEdge[]; pluginUrls?: string[] }>,
+) => {
   const { id, nodes, edges, pluginUrls } = e.data;
   try {
     // Pre-load all plugins in the worker

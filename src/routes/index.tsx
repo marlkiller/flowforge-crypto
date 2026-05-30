@@ -6,7 +6,7 @@ const CryptoGraphEditor = lazy(() => import("@/components/graph/CryptoGraphEdito
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CryptoFlow — Visual Crypto Pipeline Editor" },
+      { title: "FlowForge Crypto — Visual Crypto Pipeline Editor" },
       {
         name: "description",
         content: "Drag-and-drop node graph editor for crypto pipelines: Base64, AES, SHA-256.",

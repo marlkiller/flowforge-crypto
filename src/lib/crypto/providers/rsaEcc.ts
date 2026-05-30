@@ -44,7 +44,9 @@ registerProvider({
     const n = (key as any).n as forge.jsbn.BigInteger;
     const e = (key as any).e as forge.jsbn.BigInteger;
     const m = new forge.jsbn.BigInteger(
-      Array.from(data).map((b) => b.toString(16).padStart(2, "0")).join(""),
+      Array.from(data)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join(""),
       16,
     );
     if (m.compareTo(n) >= 0) throw new Error("Data too large for key modulus");
@@ -59,7 +61,9 @@ registerProvider({
     const n = (key as any).n as forge.jsbn.BigInteger;
     const d = (key as any).d as forge.jsbn.BigInteger;
     const c = new forge.jsbn.BigInteger(
-      Array.from(data).map((b) => b.toString(16).padStart(2, "0")).join(""),
+      Array.from(data)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join(""),
       16,
     );
     const m = c.modPow(d, n);

@@ -8,26 +8,20 @@ import { useEffect } from "react";
 export function CryptoNode({ id, data, selected }: NodeProps) {
   const d = data as NodeData;
   const meta = NODE_KIND_META[d.kind];
-  if (!meta) {
-    return (
-      <div
-        className={`group min-w-[200px] max-w-[260px] rounded-xl border border-destructive/50 bg-card/90 shadow-lg ${selected ? "ring-4 ring-destructive/20" : ""}`}
-      >
-        <div className="px-3 py-2 text-xs text-destructive font-bold">Unknown node: "{d.kind}"</div>
-      </div>
-    );
-  }
-  const cat = CATEGORY_META[meta.category] ?? {
-    label: meta.category,
-    accent: "text-muted-foreground",
-    chip: "bg-muted/50 text-muted-foreground border-border/50",
-    dot: "bg-muted-foreground",
-  };
 
-  // Dynamic inputs support
-  let dynamicInputs = meta.inputs || [];
-  let dynamicFields = meta.fields || [];
-  let dynamicOutputs = meta.outputs || [];
+  // Compute derived values before any hooks (needed for both early return and normal flow)
+  const cat = meta
+    ? (CATEGORY_META[meta.category] ?? {
+        label: meta.category,
+        accent: "text-muted-foreground",
+        chip: "bg-muted/50 text-muted-foreground border-border/50",
+        dot: "bg-muted-foreground",
+      })
+    : null;
+
+  let dynamicInputs = meta?.inputs || [];
+  const dynamicFields = meta?.fields || [];
+  const dynamicOutputs = meta?.outputs || [];
 
   if (d.kind === "join") {
     const count = parseInt((d["count"] as string) || "2", 10);
@@ -51,7 +45,7 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
   const allInputs =
     dynamicInputs.length > 0
       ? dynamicInputs
-      : meta.inputs
+      : meta?.inputs
         ? meta.inputs
         : !isSourceNode
           ? [{ id: "data", label: "Data" }]
@@ -60,7 +54,7 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
   const allOutputs =
     dynamicOutputs.length > 0
       ? dynamicOutputs
-      : meta.outputs
+      : meta?.outputs
         ? meta.outputs
         : d.kind !== "output"
           ? [{ id: "default", label: "Output" }]
@@ -69,15 +63,14 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
   const visibleOutputs = allOutputs.filter((output) => output.visible?.(d) ?? true);
   const visibleInputs = allInputs.filter((input) => input.visible?.(d) ?? true);
 
-  // Separate inputs into those that map to fields and those that don't (like 'data')
   const fieldInputIds = new Set(dynamicFields.map((f) => f.id));
   const orphanInputs = visibleInputs.filter((i) => !fieldInputIds.has(i.id));
 
-  // Filter fields based on metadata `visible` predicate
   const visibleFields = dynamicFields.filter((field) => field.visible?.(d) ?? true);
 
-  // Disconnect edges attached to handles that are no longer visible
+  // Disconnect edges attached to handles that are no longer visible (must be before any return)
   useEffect(() => {
+    if (!meta) return;
     const wf = graphStore.getActive();
     const visibleIds = new Set(visibleInputs.map((i) => i.id));
     const keep = wf.edges.filter((e) => {
@@ -87,7 +80,17 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
     if (keep.length !== wf.edges.length) {
       graphStore.setEdges(keep);
     }
-  }, [d.cipherMode, d.kind, d.count, id]);
+  }, [d.cipherMode, d.kind, d.count, id, meta, visibleInputs]);
+
+  if (!meta) {
+    return (
+      <div
+        className={`group min-w-[200px] max-w-[260px] rounded-xl border border-destructive/50 bg-card/90 shadow-lg ${selected ? "ring-4 ring-destructive/20" : ""}`}
+      >
+        <div className="px-3 py-2 text-xs text-destructive font-bold">Unknown node: "{d.kind}"</div>
+      </div>
+    );
+  }
 
   const update = (patch: Record<string, unknown>) => graphStore.updateNodeData(id, patch);
 
@@ -115,11 +118,11 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
       }`}
     >
       <div
-        className={`flex items-center justify-between px-3 py-2 rounded-t-xl border-b border-border/50 bg-muted/30 ${cat.chip}`}
+        className={`flex items-center justify-between px-3 py-2 rounded-t-xl border-b border-border/50 bg-muted/30 ${cat!.chip}`}
       >
         <span className="text-sm font-bold text-foreground truncate">{d.label}</span>
         <span className="text-[10px] font-bold uppercase tracking-wider opacity-80 px-2 py-0.5 rounded-full bg-background/50 border border-border/50">
-          {cat.label}
+          {cat!.label}
         </span>
       </div>
 

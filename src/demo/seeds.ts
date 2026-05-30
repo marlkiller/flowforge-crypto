@@ -12,12 +12,22 @@ export function getAESStandardSeed(): WorkflowSeed {
   const srcKey = makeNode(
     "input",
     { x: 50, y: 200 },
-    { text: "12345678901234567890123456789012", inputFormat: "hex", outputFormat: "hex", label: "Shared Key (Hex)" },
+    {
+      text: "12345678901234567890123456789012",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Shared Key (Hex)",
+    },
   );
   const srcIv = makeNode(
     "input",
     { x: 50, y: 350 },
-    { text: "12345678901234567890123456789012", inputFormat: "hex", outputFormat: "hex", label: "Shared IV (Hex)" },
+    {
+      text: "12345678901234567890123456789012",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Shared IV (Hex)",
+    },
   );
 
   const aesEnc = makeNode(
@@ -873,11 +883,7 @@ export function getSM4Seed(): WorkflowSeed {
     { x: 750, y: 50 },
     { action: "decrypt", cipherMode: "ECB", label: "SM4 Decrypt" },
   );
-  const out = makeNode(
-    "output",
-    { x: 1100, y: 50 },
-    { label: "Decrypted", outputFormat: "utf8" },
-  );
+  const out = makeNode("output", { x: 1100, y: 50 }, { label: "Decrypted", outputFormat: "utf8" });
 
   return {
     name: "SM4 (ECB)",

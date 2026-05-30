@@ -54,7 +54,10 @@ export const validateHex =
 
 // ─── Param Helper with Caching ───────────────────────────────────
 
-const paramCache = new WeakMap<Record<string, any>, Map<string, { raw: string; bytes: Uint8Array }>>();
+const paramCache = new WeakMap<
+  Record<string, any>,
+  Map<string, { raw: string; bytes: Uint8Array }>
+>();
 
 /**
  * Gets a Uint8Array parameter from either inputs (wires) or node data (fields).

@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { graphStore } from "../store";
 import { NODE_KIND_META } from "@/lib/crypto/registry";
@@ -15,13 +14,17 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
 
   const executeWorkerRef = useRef<Worker | null>(null);
   const executeIdRef = useRef(0);
-  const executePendingRef = useRef<Map<number, { resolve: (r: ExecutionResult) => void; reject: (e: Error) => void }>>(new Map());
+  const executePendingRef = useRef<
+    Map<number, { resolve: (r: ExecutionResult) => void; reject: (e: Error) => void }>
+  >(new Map());
   const isExecutingRef = useRef(false);
 
   // Worker lifecycle
   useEffect(() => {
     try {
-      const w = new Worker(new URL("../../../lib/crypto/executor.worker.ts", import.meta.url), { type: "module" });
+      const w = new Worker(new URL("../../../lib/crypto/executor.worker.ts", import.meta.url), {
+        type: "module",
+      });
       w.onmessage = (e: MessageEvent) => {
         const { id, outputs, errors, order, logs, error } = e.data;
         const p = executePendingRef.current.get(id);
@@ -45,40 +48,43 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
     }
   }, []);
 
-  const workerExecute = useCallback((nodes: GraphNode[], edges: GraphEdge[]): Promise<ExecutionResult> => {
-    return new Promise((resolve, reject) => {
-      const worker = executeWorkerRef.current;
-      if (!worker) {
-        return reject(new Error("Worker not initialized"));
-      }
-
-      const id = ++executeIdRef.current;
-      const pluginUrls = graphStore.getAllPluginUrls();
-      
-      const timeout = setTimeout(() => {
-        if (executePendingRef.current.has(id)) {
-          executePendingRef.current.delete(id);
-          reject(new Error("Execution timed out (15s)"));
+  const workerExecute = useCallback(
+    (nodes: GraphNode[], edges: GraphEdge[]): Promise<ExecutionResult> => {
+      return new Promise((resolve, reject) => {
+        const worker = executeWorkerRef.current;
+        if (!worker) {
+          return reject(new Error("Worker not initialized"));
         }
-      }, 15000);
 
-      executePendingRef.current.set(id, { 
-        resolve: (r) => {
-          clearTimeout(timeout);
-          resolve(r);
-        }, 
-        reject: (e) => {
-          clearTimeout(timeout);
-          reject(e);
-        } 
+        const id = ++executeIdRef.current;
+        const pluginUrls = graphStore.getAllPluginUrls();
+
+        const timeout = setTimeout(() => {
+          if (executePendingRef.current.has(id)) {
+            executePendingRef.current.delete(id);
+            reject(new Error("Execution timed out (15s)"));
+          }
+        }, 15000);
+
+        executePendingRef.current.set(id, {
+          resolve: (r) => {
+            clearTimeout(timeout);
+            resolve(r);
+          },
+          reject: (e) => {
+            clearTimeout(timeout);
+            reject(e);
+          },
+        });
+        worker.postMessage({ id, nodes, edges, pluginUrls });
       });
-      worker.postMessage({ id, nodes, edges, pluginUrls });
-    });
-  }, []);
+    },
+    [],
+  );
 
   const execute = useCallback(async () => {
     if (isExecutingRef.current) return;
-    
+
     isExecutingRef.current = true;
     setExecRunning(true);
     setExecLogs([]);

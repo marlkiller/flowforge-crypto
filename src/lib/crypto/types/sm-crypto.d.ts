@@ -3,11 +3,7 @@ declare module "sm-crypto" {
     generateKeyPairHex(): { privateKey: string; publicKey: string };
     compressPublicKeyHex(publicKey: string): string;
     comparePublicKeyHex(publicKey1: string, publicKey2: string): boolean;
-    doEncrypt(
-      data: string,
-      publicKey: string,
-      options?: { cipherMode?: number },
-    ): string;
+    doEncrypt(data: string, publicKey: string, options?: { cipherMode?: number }): string;
     doDecrypt(data: string, privateKey: string): string;
     doSignature(
       data: string,

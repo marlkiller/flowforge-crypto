@@ -1,4 +1,9 @@
-import { registerProvider, CryptoService, ensureBufferSource, type CipherProvider } from "../service";
+import {
+  registerProvider,
+  CryptoService,
+  ensureBufferSource,
+  type CipherProvider,
+} from "../service";
 
 const ZERO_IV = new Uint8Array(16);
 

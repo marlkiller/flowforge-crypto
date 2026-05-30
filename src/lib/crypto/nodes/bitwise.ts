@@ -91,9 +91,7 @@ registerNodeDef("keyGen", {
       hmac512: 64,
     };
     const len =
-      algo === "custom"
-        ? getNumberField(node, "customLength", 32)
-        : (lengths[algo] ?? 16);
+      algo === "custom" ? getNumberField(node, "customLength", 32) : (lengths[algo] ?? 16);
     if (len < 1) throw new Error("Key length must be positive");
     return crypto.getRandomValues(new Uint8Array(len));
   },
