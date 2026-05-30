@@ -22,7 +22,12 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { CategoryIcon } from "./CategoryIcon";
 import { graphStore } from "../store";
 import { ALL_PRESETS } from "@/presets/presets";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 
 const PRESET_ICONS: Record<string, typeof Fingerprint> = {
@@ -43,7 +48,11 @@ const PRESET_ICONS: Record<string, typeof Fingerprint> = {
 function TemplateMenuButton() {
   const [query, setQuery] = useState("");
   const filtered = query
-    ? ALL_PRESETS.filter((p) => p.label.toLowerCase().includes(query.toLowerCase()) || p.keywords.toLowerCase().includes(query.toLowerCase()))
+    ? ALL_PRESETS.filter(
+        (p) =>
+          p.label.toLowerCase().includes(query.toLowerCase()) ||
+          p.keywords.toLowerCase().includes(query.toLowerCase()),
+      )
     : ALL_PRESETS;
 
   return (

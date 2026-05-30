@@ -105,16 +105,19 @@ function InnerEditor() {
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
     graphStore.setEdges(applyEdgeChanges(changes, graphStore.getActive().edges));
   }, []);
-  const onConnect = useCallback((conn: Connection) => {
-    graphStore.snapshot();
-    const cur = graphStore.getActive().edges;
-    const filtered = cur.filter(
-      (e) => e.target !== conn.target || e.targetHandle !== conn.targetHandle,
-    );
-    graphStore.setEdges(
-      addEdge({ ...conn, type: edgeType, animated: true }, filtered) as GraphEdge[],
-    );
-  }, [edgeType]);
+  const onConnect = useCallback(
+    (conn: Connection) => {
+      graphStore.snapshot();
+      const cur = graphStore.getActive().edges;
+      const filtered = cur.filter(
+        (e) => e.target !== conn.target || e.targetHandle !== conn.targetHandle,
+      );
+      graphStore.setEdges(
+        addEdge({ ...conn, type: edgeType, animated: true }, filtered) as GraphEdge[],
+      );
+    },
+    [edgeType],
+  );
   const onSelectionChange = useCallback(({ nodes: sel }: { nodes: RFNode[] }) => {
     graphStore.setSelected(sel[0]?.id ?? null);
   }, []);
@@ -308,7 +311,11 @@ function InnerEditor() {
               elementsSelectable={true}
               selectionOnDrag={interaction.selectionMode}
               panOnDrag={!interaction.selectionMode}
-              connectionLineType={edgeType === "smoothstep" ? ConnectionLineType.SmoothStep : ConnectionLineType.Bezier}
+              connectionLineType={
+                edgeType === "smoothstep"
+                  ? ConnectionLineType.SmoothStep
+                  : ConnectionLineType.Bezier
+              }
               defaultEdgeOptions={{
                 type: edgeType,
                 animated: true,
