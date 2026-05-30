@@ -2,7 +2,7 @@ import { registerNodeDef } from "../registry";
 import type { NodeDef, GraphNode } from "../types";
 import type { CipherProvider } from "../service";
 import { getProvider } from "../service";
-import { getField, getParamBytes, validateHex } from "../utils";
+import { getField, getParamBytes, validateHex, cipherEncrypt, cipherDecrypt } from "../utils";
 
 function validateKeyLength(key: Uint8Array) {
   const kl = key.byteLength;
@@ -87,32 +87,14 @@ const sm4NodeDef: NodeDef = {
     const provider = getProvider(providerName) as CipherProvider;
     if (!provider) throw new Error(`No provider for ${providerName}`);
 
-    const iv =
-      cipherMode === "CBC" ? getParamBytes(node as GraphNode, inputs, "iv", false) : undefined;
-
-    if (cipherMode === "CBC" && iv && iv.length !== 16) {
-      throw new Error("SM4-CBC requires a 16-byte IV");
-    }
+    const ivSize = cipherMode === "CBC" ? 16 : 0;
+    const iv = ivSize > 0 ? getParamBytes(node as GraphNode, inputs, "iv", false) : undefined;
 
     try {
       if (action === "decrypt") {
-        const actualIv = iv || mainInput.slice(0, 16);
-        const ct = iv ? mainInput : mainInput.slice(16);
-        if (cipherMode === "CBC") {
-          return provider.decrypt(keyBytes, actualIv, ct);
-        }
-        return provider.decrypt(keyBytes, null, ct);
+        return cipherDecrypt(provider, keyBytes, mainInput, iv, ivSize);
       } else {
-        if (cipherMode === "CBC") {
-          const actualIv = iv || crypto.getRandomValues(new Uint8Array(16));
-          const ct = await provider.encrypt(keyBytes, actualIv, mainInput);
-          if (iv) return ct;
-          const out = new Uint8Array(actualIv.length + ct.length);
-          out.set(actualIv, 0);
-          out.set(ct, actualIv.length);
-          return out;
-        }
-        return provider.encrypt(keyBytes, null, mainInput);
+        return await cipherEncrypt(provider, keyBytes, mainInput, iv, ivSize);
       }
     } catch (e) {
       throw new Error(`SM4 ${action} failed: ${(e as Error).message}`);
@@ -226,28 +208,23 @@ registerNodeDef("aes", {
     const iv = getParamBytes(node as GraphNode, inputs, "iv", false);
     validateIvLength(iv, provider.defaultIvSize);
 
-    const aad =
-      cipherMode === "GCM" ? getParamBytes(node as GraphNode, inputs, "aad", false) : undefined;
+    const params: Record<string, unknown> | undefined =
+      cipherMode === "GCM"
+        ? { aad: getParamBytes(node as GraphNode, inputs, "aad", false) }
+        : undefined;
 
     try {
       if (action === "decrypt") {
-        const actualIv = iv || mainInput.slice(0, provider.defaultIvSize);
-        const ct = iv ? mainInput : mainInput.slice(provider.defaultIvSize);
-
-        if (provider.defaultIvSize > 0) {
-          if (!actualIv || actualIv.byteLength !== provider.defaultIvSize) {
-            throw new Error(`Insufficient data for IV (expected ${provider.defaultIvSize} bytes)`);
-          }
-        }
-        return provider.decrypt(keyBytes, actualIv, ct, { aad });
+        return cipherDecrypt(provider, keyBytes, mainInput, iv, provider.defaultIvSize, params);
       } else {
-        const actualIv = iv || crypto.getRandomValues(new Uint8Array(provider.defaultIvSize));
-        const ct = await provider.encrypt(keyBytes, actualIv, mainInput, { aad });
-        if (iv) return ct;
-        const out = new Uint8Array(actualIv.length + ct.length);
-        out.set(actualIv, 0);
-        out.set(ct, actualIv.length);
-        return out;
+        return await cipherEncrypt(
+          provider,
+          keyBytes,
+          mainInput,
+          iv,
+          provider.defaultIvSize,
+          params,
+        );
       }
     } catch (e) {
       throw new Error(`AES ${action} failed: ${(e as Error).message}`);
@@ -304,17 +281,9 @@ registerNodeDef("chacha20poly1305", {
     if (!provider) throw new Error("ChaCha20-Poly1305 provider not found");
 
     if (action === "decrypt") {
-      const actualIv = iv || mainInput.slice(0, 12);
-      const ct = iv ? mainInput : mainInput.slice(12);
-      return provider.decrypt(keyBytes, actualIv, ct);
+      return cipherDecrypt(provider, keyBytes, mainInput, iv, 12);
     } else {
-      const actualIv = iv || crypto.getRandomValues(new Uint8Array(12));
-      const ct = await provider.encrypt(keyBytes, actualIv, mainInput);
-      if (iv) return ct;
-      const out = new Uint8Array(actualIv.length + ct.length);
-      out.set(actualIv, 0);
-      out.set(ct, actualIv.length);
-      return out;
+      return await cipherEncrypt(provider, keyBytes, mainInput, iv, 12);
     }
   },
 });
@@ -368,17 +337,9 @@ registerNodeDef("xchacha20poly1305", {
     if (!provider) throw new Error("XChaCha20-Poly1305 provider not found");
 
     if (action === "decrypt") {
-      const actualIv = iv || mainInput.slice(0, 24);
-      const ct = iv ? mainInput : mainInput.slice(24);
-      return provider.decrypt(keyBytes, actualIv, ct);
+      return cipherDecrypt(provider, keyBytes, mainInput, iv, 24);
     } else {
-      const actualIv = iv || crypto.getRandomValues(new Uint8Array(24));
-      const ct = await provider.encrypt(keyBytes, actualIv, mainInput);
-      if (iv) return ct;
-      const out = new Uint8Array(actualIv.length + ct.length);
-      out.set(actualIv, 0);
-      out.set(ct, actualIv.length);
-      return out;
+      return await cipherEncrypt(provider, keyBytes, mainInput, iv, 24);
     }
   },
 });
@@ -433,7 +394,7 @@ registerNodeDef("aesGcmSiv", {
     const action = getField(node, "action", "encrypt");
     const keyBytes = getParamBytes(node as GraphNode, inputs, "key");
     const iv = getParamBytes(node as GraphNode, inputs, "iv", false);
-    const aad = getParamBytes(node as GraphNode, inputs, "aad", false) ?? new Uint8Array(0);
+    const aad = getParamBytes(node as GraphNode, inputs, "aad", false);
 
     if (!keyBytes || (keyBytes.length !== 16 && keyBytes.length !== 32)) {
       throw new Error("AES-GCM-SIV requires a 16 or 32-byte key");
@@ -442,18 +403,12 @@ registerNodeDef("aesGcmSiv", {
     const provider = getProvider("AES-GCM-SIV") as CipherProvider;
     if (!provider) throw new Error("AES-GCM-SIV provider not found");
 
+    const params = aad ? { aad } : undefined;
+
     if (action === "decrypt") {
-      const actualIv = iv || mainInput.slice(0, 12);
-      const ct = iv ? mainInput : mainInput.slice(12);
-      return provider.decrypt(keyBytes, actualIv, ct, { aad });
+      return cipherDecrypt(provider, keyBytes, mainInput, iv, 12, params);
     } else {
-      const actualIv = iv || crypto.getRandomValues(new Uint8Array(12));
-      const ct = await provider.encrypt(keyBytes, actualIv, mainInput, { aad });
-      if (iv) return ct;
-      const out = new Uint8Array(actualIv.length + ct.length);
-      out.set(actualIv, 0);
-      out.set(ct, actualIv.length);
-      return out;
+      return await cipherEncrypt(provider, keyBytes, mainInput, iv, 12, params);
     }
   },
 });
