@@ -16,6 +16,10 @@ import {
   KeyRound,
   ScanFace,
   Telescope,
+  Atom,
+  Search,
+  Network,
+  Split,
 } from "lucide-react";
 import { getActiveCategories, CATEGORY_META, NODE_KIND_META } from "@/lib/crypto/registry";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -43,6 +47,21 @@ const PRESET_ICONS: Record<string, typeof Fingerprint> = {
   "KDF (PBKDF2) + AES": KeyRound,
   "Argon2 (Password Hash)": KeyRound,
   "TOTP Authenticator": ScanFace,
+  "ML-KEM Encapsulation": Atom,
+  "ML-DSA Sign & Verify": Atom,
+  "SLH-DSA Sign & Verify": Atom,
+  "secp256k1 Sign & Verify": Telescope,
+  "secp256k1 ECDH Key Exchange": KeyRound,
+  "Ed448 Sign & Verify": Telescope,
+  "X448 Key Exchange": KeyRound,
+  "BLS12-381 Sign & Verify": Network,
+  "Diffie-Hellman Key Exchange": KeyRound,
+  "Frequency Analysis": Search,
+  "ECB Block Detection": Search,
+  "Shamir Split & Join": Split,
+  "X.509 Certificate Parse": FileKey,
+  "PEM to JWK Conversion": FileKey,
+  "SSH Key Parse": FileKey,
 };
 
 function TemplateMenuButton() {
