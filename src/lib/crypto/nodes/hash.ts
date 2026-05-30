@@ -2,6 +2,8 @@ import { registerNodeDef } from "../registry";
 import { getProvider, type HashProvider } from "../service";
 import type { GraphNode, NodeDef, NodeKindMeta } from "../types";
 import {
+  SHA224_META,
+  SHA3224_META,
   SHA1_META,
   SHA256_META,
   SHA384_META,
@@ -34,6 +36,8 @@ function makeHashNode(algo: string, meta: NodeKindMeta): NodeDef {
 }
 
 registerNodeDef("sha1", makeHashNode("SHA-1", SHA1_META));
+registerNodeDef("sha224", makeHashNode("SHA-224", SHA224_META));
+registerNodeDef("sha3224", makeHashNode("SHA3-224", SHA3224_META));
 registerNodeDef("sha256", makeHashNode("SHA-256", SHA256_META));
 registerNodeDef("sha384", makeHashNode("SHA-384", SHA384_META));
 registerNodeDef("sha512", makeHashNode("SHA-512", SHA512_META));

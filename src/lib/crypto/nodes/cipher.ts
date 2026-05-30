@@ -344,6 +344,180 @@ registerNodeDef("xchacha20poly1305", {
   },
 });
 
+registerNodeDef("xsalsa20poly1305", {
+  meta: {
+    kind: "xsalsa20poly1305",
+    label: "XSalsa20-Poly1305",
+    category: "cipher",
+    description: "Xsalsa20-Poly1305 AEAD (libsodium secretbox, 256-bit key, 192-bit nonce).",
+    defaultOutput: "hex",
+    inputs: [
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      {
+        id: "key",
+        label: "Key",
+        connectable: true,
+        acceptTypes: ["HEX", "B64"],
+        type: "password",
+        placeholder: "64-char hex (256-bit)...",
+      },
+      {
+        id: "iv",
+        label: "Nonce",
+        connectable: true,
+        acceptTypes: ["HEX", "B64"],
+        type: "text",
+        placeholder: "48-char hex (192-bit)...",
+      },
+      {
+        id: "action",
+        label: "Action",
+        type: "select",
+        connectable: false,
+        options: [
+          { label: "Encrypt", value: "encrypt" },
+          { label: "Decrypt", value: "decrypt" },
+        ],
+      },
+    ],
+  },
+  runner: async (node, inputs) => {
+    const mainInput = inputs["data"] ?? new Uint8Array(0);
+    const action = getField(node, "action", "encrypt");
+    const keyBytes = getParamBytes(node as GraphNode, inputs, "key");
+    const iv = getParamBytes(node as GraphNode, inputs, "iv", false);
+
+    if (!keyBytes || keyBytes.length !== 32) throw new Error("XSalsa20 requires a 32-byte key");
+
+    const provider = getProvider("XSalsa20-Poly1305") as CipherProvider;
+    if (!provider) throw new Error("XSalsa20-Poly1305 provider not found");
+
+    if (action === "decrypt") {
+      return cipherDecrypt(provider, keyBytes, mainInput, iv, 24);
+    } else {
+      return await cipherEncrypt(provider, keyBytes, mainInput, iv, 24);
+    }
+  },
+});
+
+registerNodeDef("twofish", {
+  meta: {
+    kind: "twofish",
+    label: "Twofish",
+    category: "cipher",
+    description: "Twofish block cipher (AES finalist, 128-bit block, 128/192/256-bit key).",
+    defaultOutput: "hex",
+    inputs: [
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      {
+        id: "key",
+        label: "Key",
+        connectable: true,
+        acceptTypes: ["HEX", "B64"],
+        type: "password",
+        placeholder: "32/48/64-char hex...",
+      },
+      {
+        id: "iv",
+        label: "IV",
+        connectable: true,
+        acceptTypes: ["HEX", "B64"],
+        type: "text",
+        placeholder: "32-char hex for CBC...",
+        visible: (d) => (d["cipherMode"] as string) !== "ECB",
+      },
+      {
+        id: "action",
+        label: "Action",
+        type: "select",
+        connectable: false,
+        options: [
+          { label: "Encrypt", value: "encrypt" },
+          { label: "Decrypt", value: "decrypt" },
+        ],
+      },
+      {
+        id: "cipherMode",
+        label: "Mode",
+        type: "select",
+        connectable: false,
+        defaultValue: "CBC",
+        options: [
+          { label: "CBC", value: "CBC" },
+          { label: "ECB", value: "ECB" },
+        ],
+      },
+    ],
+  },
+  runner: async (node, inputs) => {
+    const mainInput = inputs["data"] ?? new Uint8Array(0);
+    const action = getField(node, "action", "encrypt");
+    const cipherMode = getField(node, "cipherMode", "CBC");
+    const keyBytes = getParamBytes(node as GraphNode, inputs, "key");
+
+    if (!keyBytes) throw new Error("Key is required");
+
+    const providerName = `Twofish-${cipherMode}`;
+    const provider = getProvider(providerName) as CipherProvider;
+    if (!provider) throw new Error(`No provider for ${providerName}`);
+
+    const ivSize = cipherMode === "CBC" ? 16 : 0;
+    const iv = ivSize > 0 ? getParamBytes(node as GraphNode, inputs, "iv", false) : undefined;
+
+    try {
+      if (action === "decrypt") {
+        return cipherDecrypt(provider, keyBytes, mainInput, iv, ivSize);
+      } else {
+        return await cipherEncrypt(provider, keyBytes, mainInput, iv, ivSize);
+      }
+    } catch (e) {
+      throw new Error(`Twofish ${action} failed: ${(e as Error).message}`);
+    }
+  },
+});
+
+registerNodeDef("salsa20", {
+  meta: {
+    kind: "salsa20",
+    label: "Salsa20",
+    category: "cipher",
+    description: "Salsa20 stream cipher (eSTREAM winner, 256-bit key, 64-bit nonce).",
+    defaultOutput: "hex",
+    inputs: [
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      {
+        id: "key",
+        label: "Key",
+        connectable: true,
+        acceptTypes: ["HEX", "B64"],
+        type: "password",
+        placeholder: "64-char hex (256-bit)...",
+      },
+      {
+        id: "iv",
+        label: "Nonce",
+        connectable: true,
+        acceptTypes: ["HEX", "B64"],
+        type: "text",
+        placeholder: "16-char hex (64-bit)...",
+      },
+    ],
+  },
+  runner: async (node, inputs) => {
+    const mainInput = inputs["data"] ?? new Uint8Array(0);
+    const keyBytes = getParamBytes(node as GraphNode, inputs, "key");
+    const iv = getParamBytes(node as GraphNode, inputs, "iv", false);
+
+    if (!keyBytes || keyBytes.length !== 32) throw new Error("Salsa20 requires a 32-byte key");
+    if (!iv || iv.length !== 8) throw new Error("Salsa20 requires an 8-byte nonce");
+
+    const provider = getProvider("Salsa20") as CipherProvider;
+    if (!provider) throw new Error("Salsa20 provider not found");
+
+    return provider.encrypt(keyBytes, iv, mainInput);
+  },
+});
+
 registerNodeDef("aesGcmSiv", {
   meta: {
     kind: "aesGcmSiv",

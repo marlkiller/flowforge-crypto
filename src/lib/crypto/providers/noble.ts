@@ -1,7 +1,9 @@
 import { registerProvider } from "../service";
 import { HMAC_ALGOS, makeNobleHmacProvider } from "./hmacLogic";
+import { sha224 } from "@noble/hashes/sha2.js";
 import { md5, ripemd160 } from "@noble/hashes/legacy.js";
 import {
+  sha3_224,
   sha3_256,
   sha3_384,
   sha3_512,
@@ -14,12 +16,29 @@ import { blake3 } from "@noble/hashes/blake3.js";
 import { chacha20poly1305, xchacha20poly1305 } from "@noble/ciphers/chacha.js";
 import { gcmsiv, cmac } from "@noble/ciphers/aes.js";
 import { poly1305 } from "@noble/ciphers/_poly1305.js";
+import { salsa20, xsalsa20poly1305 } from "@noble/ciphers/salsa.js";
 
 registerProvider({
   type: "hash",
   name: "MD5",
   async digest(data) {
     return md5(data);
+  },
+});
+
+registerProvider({
+  type: "hash",
+  name: "SHA-224",
+  async digest(data) {
+    return sha224(data);
+  },
+});
+
+registerProvider({
+  type: "hash",
+  name: "SHA3-224",
+  async digest(data) {
+    return sha3_224(data);
   },
 });
 
@@ -134,6 +153,36 @@ registerProvider({
   async decrypt(key, iv, data) {
     if (!iv) throw new Error("IV is required for XChaCha20-Poly1305");
     return xchacha20poly1305(key, iv).decrypt(data);
+  },
+});
+
+registerProvider({
+  type: "cipher",
+  name: "Salsa20",
+  keySizes: [32],
+  defaultIvSize: 8,
+  async encrypt(key, iv, data) {
+    if (!iv) throw new Error("Nonce is required for Salsa20");
+    return salsa20(key, iv, data);
+  },
+  async decrypt(key, iv, data) {
+    if (!iv) throw new Error("Nonce is required for Salsa20");
+    return salsa20(key, iv, data);
+  },
+});
+
+registerProvider({
+  type: "cipher",
+  name: "XSalsa20-Poly1305",
+  keySizes: [32],
+  defaultIvSize: 24,
+  async encrypt(key, iv, data) {
+    if (!iv) throw new Error("Nonce is required for XSalsa20-Poly1305");
+    return xsalsa20poly1305(key, iv).encrypt(data);
+  },
+  async decrypt(key, iv, data) {
+    if (!iv) throw new Error("Nonce is required for XSalsa20-Poly1305");
+    return xsalsa20poly1305(key, iv).decrypt(data);
   },
 });
 

@@ -21,6 +21,7 @@ import "./nodes/analysis";
 import "./nodes/shamir";
 import "./nodes/dh";
 import "./nodes/cert";
+import "./nodes/merkle";
 
 // ─── Lazy Loading Nodes (Heavyweight or Bundled) ─────────────────
 import { registerLazyNode } from "./registry";
@@ -39,6 +40,8 @@ import {
   ARGON2_META,
   SCRYPT_META,
   BCRYPT_META,
+  SHA224_META,
+  SHA3224_META,
   SHA1_META,
   SHA256_META,
   SHA384_META,
@@ -91,6 +94,8 @@ registerLazyNode("ecdh", ECDH_META, () => import("./nodes/ecc"));
 
 // Hashes
 const hashMetas = [
+  SHA224_META,
+  SHA3224_META,
   SHA1_META,
   SHA256_META,
   SHA384_META,

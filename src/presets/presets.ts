@@ -143,27 +143,49 @@ export function getJwtPreset(): WorkflowSeed {
 
 export function getHashSuitePreset(): WorkflowSeed {
   const input = makeNode("input", { x: 50, y: 200 }, { text: "hello world", label: "Input Data" });
-  const sha256 = makeNode("sha256", { x: 350, y: 50 }, { label: "SHA-256" });
-  const sha3256 = makeNode("sha3256", { x: 350, y: 140 }, { label: "SHA3-256" });
-  const blake3 = makeNode("blake3", { x: 350, y: 230 }, { label: "BLAKE3" });
-  const sm3 = makeNode("sm3", { x: 350, y: 320 }, { label: "SM3" });
-  const out1 = makeNode("output", { x: 650, y: 50 }, { label: "SHA-256", outputFormat: "hex" });
-  const out2 = makeNode("output", { x: 650, y: 140 }, { label: "SHA3-256", outputFormat: "hex" });
-  const out3 = makeNode("output", { x: 650, y: 230 }, { label: "BLAKE3", outputFormat: "hex" });
-  const out4 = makeNode("output", { x: 650, y: 320 }, { label: "SM3", outputFormat: "hex" });
+  const sha224 = makeNode("sha224", { x: 350, y: 30 }, { label: "SHA-224" });
+  const sha256 = makeNode("sha256", { x: 350, y: 100 }, { label: "SHA-256" });
+  const sha3224 = makeNode("sha3224", { x: 350, y: 170 }, { label: "SHA3-224" });
+  const sha3256 = makeNode("sha3256", { x: 350, y: 240 }, { label: "SHA3-256" });
+  const blake3 = makeNode("blake3", { x: 350, y: 310 }, { label: "BLAKE3" });
+  const sm3 = makeNode("sm3", { x: 350, y: 380 }, { label: "SM3" });
+  const out1 = makeNode("output", { x: 650, y: 30 }, { label: "SHA-224", outputFormat: "hex" });
+  const out2 = makeNode("output", { x: 650, y: 100 }, { label: "SHA-256", outputFormat: "hex" });
+  const out3 = makeNode("output", { x: 650, y: 170 }, { label: "SHA3-224", outputFormat: "hex" });
+  const out4 = makeNode("output", { x: 650, y: 240 }, { label: "SHA3-256", outputFormat: "hex" });
+  const out5 = makeNode("output", { x: 650, y: 310 }, { label: "BLAKE3", outputFormat: "hex" });
+  const out6 = makeNode("output", { x: 650, y: 380 }, { label: "SM3", outputFormat: "hex" });
 
   return {
-    name: "Hash Suite (SHA-256 / SHA3-256 / BLAKE3 / SM3)",
-    nodes: [input, sha256, sha3256, blake3, sm3, out1, out2, out3, out4],
+    name: "Hash Suite (SHA-224 / SHA-256 / SHA3-224 / SHA3-256 / BLAKE3 / SM3)",
+    nodes: [
+      input,
+      sha224,
+      sha256,
+      sha3224,
+      sha3256,
+      blake3,
+      sm3,
+      out1,
+      out2,
+      out3,
+      out4,
+      out5,
+      out6,
+    ],
     edges: [
       { id: "h1", source: input.id, target: sha256.id, targetHandle: "data", animated: true },
       { id: "h2", source: input.id, target: sha3256.id, targetHandle: "data", animated: true },
       { id: "h3", source: input.id, target: blake3.id, targetHandle: "data", animated: true },
       { id: "h4", source: input.id, target: sm3.id, targetHandle: "data", animated: true },
-      { id: "h5", source: sha256.id, target: out1.id, animated: true },
-      { id: "h6", source: sha3256.id, target: out2.id, animated: true },
-      { id: "h7", source: blake3.id, target: out3.id, animated: true },
-      { id: "h8", source: sm3.id, target: out4.id, animated: true },
+      { id: "h5", source: input.id, target: sha224.id, targetHandle: "data", animated: true },
+      { id: "h6", source: input.id, target: sha3224.id, targetHandle: "data", animated: true },
+      { id: "h7", source: sha224.id, target: out1.id, animated: true },
+      { id: "h8", source: sha256.id, target: out2.id, animated: true },
+      { id: "h9", source: sha3224.id, target: out3.id, animated: true },
+      { id: "h10", source: sha3256.id, target: out4.id, animated: true },
+      { id: "h11", source: blake3.id, target: out5.id, animated: true },
+      { id: "h12", source: sm3.id, target: out6.id, animated: true },
     ],
   };
 }
@@ -1223,6 +1245,292 @@ twIDAQAB
   };
 }
 
+export function getTwofishPreset(): WorkflowSeed {
+  const srcData = makeNode("input", { x: 50, y: 50 }, { text: "hello world", label: "Plaintext" });
+  const srcKey = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    {
+      text: "00112233445566778899aabbccddeeff",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Key (Hex)",
+    },
+  );
+  const srcIv = makeNode(
+    "input",
+    { x: 50, y: 350 },
+    {
+      text: "1234567890abcdef1234567890abcdef",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "IV (Hex)",
+    },
+  );
+  const enc = makeNode(
+    "twofish",
+    { x: 400, y: 50 },
+    { action: "encrypt", cipherMode: "CBC", label: "Twofish Encrypt" },
+  );
+  const dec = makeNode(
+    "twofish",
+    { x: 750, y: 50 },
+    { action: "decrypt", cipherMode: "CBC", label: "Twofish Decrypt" },
+  );
+  const out = makeNode("output", { x: 1100, y: 150 }, { label: "Decrypted" });
+
+  return {
+    name: "Twofish-CBC Encrypt/Decrypt",
+    nodes: [srcData, srcKey, srcIv, enc, dec, out],
+    edges: [
+      { id: "t1", source: srcData.id, target: enc.id, targetHandle: "data", animated: true },
+      { id: "t2", source: srcKey.id, target: enc.id, targetHandle: "key", animated: true },
+      { id: "t3", source: srcIv.id, target: enc.id, targetHandle: "iv", animated: true },
+      { id: "t4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
+      { id: "t5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
+      { id: "t6", source: srcIv.id, target: dec.id, targetHandle: "iv", animated: true },
+      { id: "t7", source: dec.id, target: out.id, animated: true },
+    ],
+  };
+}
+
+export function getBlowfishPreset(): WorkflowSeed {
+  const srcData = makeNode("input", { x: 50, y: 50 }, { text: "hello world", label: "Plaintext" });
+  const srcKey = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    {
+      text: "00112233445566778899aabbccddeeff",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Key (Hex)",
+    },
+  );
+  const srcIv = makeNode(
+    "input",
+    { x: 50, y: 350 },
+    {
+      text: "1234567890abcdef",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "IV (Hex)",
+    },
+  );
+  const enc = makeNode(
+    "blowfish",
+    { x: 400, y: 50 },
+    { action: "encrypt", mode: "CBC", label: "Blowfish Encrypt" },
+  );
+  const dec = makeNode(
+    "blowfish",
+    { x: 750, y: 50 },
+    { action: "decrypt", mode: "CBC", label: "Blowfish Decrypt" },
+  );
+  const out = makeNode("output", { x: 1100, y: 150 }, { label: "Decrypted" });
+
+  return {
+    name: "Blowfish-CBC Encrypt/Decrypt",
+    nodes: [srcData, srcKey, srcIv, enc, dec, out],
+    edges: [
+      { id: "b1", source: srcData.id, target: enc.id, targetHandle: "data", animated: true },
+      { id: "b2", source: srcKey.id, target: enc.id, targetHandle: "key", animated: true },
+      { id: "b3", source: srcIv.id, target: enc.id, targetHandle: "iv", animated: true },
+      { id: "b4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
+      { id: "b5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
+      { id: "b6", source: srcIv.id, target: dec.id, targetHandle: "iv", animated: true },
+      { id: "b7", source: dec.id, target: out.id, animated: true },
+    ],
+  };
+}
+
+export function getRc4Preset(): WorkflowSeed {
+  const srcData = makeNode("input", { x: 50, y: 50 }, { text: "hello world", label: "Plaintext" });
+  const srcKey = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    {
+      text: "00112233445566778899aabbccddeeff",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Key (Hex)",
+    },
+  );
+  const enc = makeNode("rc4", { x: 400, y: 50 }, { action: "encrypt", label: "RC4 Encrypt" });
+  const dec = makeNode("rc4", { x: 700, y: 50 }, { action: "decrypt", label: "RC4 Decrypt" });
+  const out = makeNode("output", { x: 1000, y: 150 }, { label: "Decrypted" });
+
+  return {
+    name: "RC4 Stream Cipher",
+    nodes: [srcData, srcKey, enc, dec, out],
+    edges: [
+      { id: "r1", source: srcData.id, target: enc.id, targetHandle: "data", animated: true },
+      { id: "r2", source: srcKey.id, target: enc.id, targetHandle: "key", animated: true },
+      { id: "r3", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
+      { id: "r4", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
+      { id: "r5", source: dec.id, target: out.id, animated: true },
+    ],
+  };
+}
+
+export function getRabbitPreset(): WorkflowSeed {
+  const srcData = makeNode("input", { x: 50, y: 50 }, { text: "hello world", label: "Plaintext" });
+  const srcKey = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    {
+      text: "00112233445566778899aabbccddeeff",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Key (Hex)",
+    },
+  );
+  const srcIv = makeNode(
+    "input",
+    { x: 50, y: 350 },
+    {
+      text: "1234567890abcdef",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "IV (Hex)",
+    },
+  );
+  const enc = makeNode("rabbit", { x: 400, y: 50 }, { action: "encrypt", label: "Rabbit Encrypt" });
+  const dec = makeNode("rabbit", { x: 750, y: 50 }, { action: "decrypt", label: "Rabbit Decrypt" });
+  const out = makeNode("output", { x: 1100, y: 150 }, { label: "Decrypted" });
+
+  return {
+    name: "Rabbit Stream Cipher",
+    nodes: [srcData, srcKey, srcIv, enc, dec, out],
+    edges: [
+      { id: "r1", source: srcData.id, target: enc.id, targetHandle: "data", animated: true },
+      { id: "r2", source: srcKey.id, target: enc.id, targetHandle: "key", animated: true },
+      { id: "r3", source: srcIv.id, target: enc.id, targetHandle: "iv", animated: true },
+      { id: "r4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
+      { id: "r5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
+      { id: "r6", source: srcIv.id, target: dec.id, targetHandle: "iv", animated: true },
+      { id: "r7", source: dec.id, target: out.id, animated: true },
+    ],
+  };
+}
+
+export function getXSalsa20Preset(): WorkflowSeed {
+  const srcData = makeNode("input", { x: 50, y: 50 }, { text: "hello world", label: "Plaintext" });
+  const srcKey = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    {
+      text: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Key (Hex)",
+    },
+  );
+  const srcNonce = makeNode(
+    "input",
+    { x: 50, y: 350 },
+    {
+      text: "0123456789abcdef0123456789abcdef0123456789abcdef",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Nonce (Hex)",
+    },
+  );
+  const enc = makeNode(
+    "xsalsa20poly1305",
+    { x: 400, y: 50 },
+    { action: "encrypt", label: "XSalsa20 Encrypt" },
+  );
+  const dec = makeNode(
+    "xsalsa20poly1305",
+    { x: 750, y: 50 },
+    { action: "decrypt", label: "XSalsa20 Decrypt" },
+  );
+  const out = makeNode("output", { x: 1100, y: 150 }, { label: "Decrypted" });
+
+  return {
+    name: "XSalsa20-Poly1305 Encrypt/Decrypt",
+    nodes: [srcData, srcKey, srcNonce, enc, dec, out],
+    edges: [
+      { id: "x1", source: srcData.id, target: enc.id, targetHandle: "data", animated: true },
+      { id: "x2", source: srcKey.id, target: enc.id, targetHandle: "key", animated: true },
+      { id: "x3", source: srcNonce.id, target: enc.id, targetHandle: "iv", animated: true },
+      { id: "x4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
+      { id: "x5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
+      { id: "x6", source: srcNonce.id, target: dec.id, targetHandle: "iv", animated: true },
+      { id: "x7", source: dec.id, target: out.id, animated: true },
+    ],
+  };
+}
+
+export function getSalsa20Preset(): WorkflowSeed {
+  const srcData = makeNode("input", { x: 50, y: 50 }, { text: "hello world", label: "Plaintext" });
+  const srcKey = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    {
+      text: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Key (Hex)",
+    },
+  );
+  const srcNonce = makeNode(
+    "input",
+    { x: 50, y: 350 },
+    {
+      text: "0123456789abcdef",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Nonce (Hex)",
+    },
+  );
+  const enc = makeNode("salsa20", { x: 400, y: 50 }, { label: "Salsa20" });
+  const out = makeNode("output", { x: 750, y: 150 }, { label: "Output", outputFormat: "hex" });
+
+  return {
+    name: "Salsa20 Stream Cipher",
+    nodes: [srcData, srcKey, srcNonce, enc, out],
+    edges: [
+      { id: "s1", source: srcData.id, target: enc.id, targetHandle: "data", animated: true },
+      { id: "s2", source: srcKey.id, target: enc.id, targetHandle: "key", animated: true },
+      { id: "s3", source: srcNonce.id, target: enc.id, targetHandle: "iv", animated: true },
+      { id: "s4", source: enc.id, target: out.id, animated: true },
+    ],
+  };
+}
+
+export function getMerklePreset(): WorkflowSeed {
+  const input = makeNode(
+    "input",
+    { x: 50, y: 100 },
+    {
+      text: "leaf1\nleaf2\nleaf3\nleaf4",
+      label: "Leaves (one per line)",
+    },
+  );
+  const tree = makeNode(
+    "merkleTree",
+    { x: 400, y: 100 },
+    { hash: "SHA-256", label: "Merkle Tree" },
+  );
+  const rootOut = makeNode(
+    "output",
+    { x: 750, y: 50 },
+    { label: "Root Hash", outputFormat: "hex" },
+  );
+  const treeOut = makeNode("output", { x: 750, y: 200 }, { label: "Full Tree" });
+
+  return {
+    name: "Merkle Tree",
+    nodes: [input, tree, rootOut, treeOut],
+    edges: [
+      { id: "m1", source: input.id, target: tree.id, targetHandle: "data", animated: true },
+      { id: "m2", source: tree.id, target: rootOut.id, sourceHandle: "root", animated: true },
+      { id: "m3", source: tree.id, target: treeOut.id, sourceHandle: "tree", animated: true },
+    ],
+  };
+}
+
 export function getSshKeyPreset(): WorkflowSeed {
   const sshInput = makeNode(
     "input",
@@ -1271,7 +1579,7 @@ export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string 
   { label: "JWT Sign & Verify", seed: getJwtPreset(), keywords: "jwt token sign verify" },
   { label: "HMAC Sign & Verify", seed: getHmacPreset(), keywords: "hmac mac sign verify" },
   {
-    label: "Hash Suite (4 algorithms)",
+    label: "Hash Suite (6 algorithms)",
     seed: getHashSuitePreset(),
     keywords: "hash sha256 sha3 blake3 sm3",
   },
@@ -1348,6 +1656,41 @@ export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string 
     keywords: "x509 certificate parse pem",
   },
   { label: "PEM to JWK Conversion", seed: getJwkPreset(), keywords: "jwk pem convert key format" },
+  {
+    label: "Twofish-CBC Encrypt/Decrypt",
+    seed: getTwofishPreset(),
+    keywords: "twofish encrypt decrypt cipher aes finalist",
+  },
+  {
+    label: "XSalsa20-Poly1305 Encrypt/Decrypt",
+    seed: getXSalsa20Preset(),
+    keywords: "xsalsa20 poly1305 secretbox encrypt decrypt aead libsodium",
+  },
+  {
+    label: "Blowfish-CBC Encrypt/Decrypt",
+    seed: getBlowfishPreset(),
+    keywords: "blowfish encrypt decrypt cipher legacy",
+  },
+  {
+    label: "Salsa20 Stream Cipher",
+    seed: getSalsa20Preset(),
+    keywords: "salsa20 stream cipher encrypt decrypt estream",
+  },
+  {
+    label: "Merkle Tree",
+    seed: getMerklePreset(),
+    keywords: "merkle tree root hash blockchain proof",
+  },
+  {
+    label: "RC4 Stream Cipher",
+    seed: getRc4Preset(),
+    keywords: "rc4 stream cipher encrypt decrypt legacy",
+  },
+  {
+    label: "Rabbit Stream Cipher",
+    seed: getRabbitPreset(),
+    keywords: "rabbit stream cipher encrypt decrypt",
+  },
   {
     label: "SSH Key Parse",
     seed: getSshKeyPreset(),
