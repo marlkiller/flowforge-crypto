@@ -4,7 +4,6 @@ import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
 import "@/lib/crypto/setup";
 import { NODE_KIND_META } from "@/lib/crypto/registry";
 import { getLayoutedNodes } from "@/lib/crypto/layout";
-import { getAESStandardSeed } from "@/presets/seeds";
 
 export interface Workflow {
   id: string;
@@ -99,15 +98,7 @@ let state: State = (() => {
     return { ...restored, graphKey: restored.graphKey ?? 0 };
   }
   wfIdCounter = 1;
-  const seed = getAESStandardSeed();
-  const w: Workflow = {
-    id: nextWfId(),
-    name: seed.name || "AES Standard",
-    nodes: seed.nodes,
-    edges: seed.edges,
-    selectedNodeId: null,
-    selectedEdgeId: null,
-  };
+  const w = emptyWorkflow("Workflow 1");
   return { workflows: [w], activeId: w.id, pluginUrls: [], sessionPluginUrls: [], graphKey: 0 };
 })();
 
