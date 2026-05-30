@@ -69,6 +69,7 @@ export type KnownNodeKind = string;
 
 export type CategoryMeta = {
   label: string;
+  icon: string;
   accent: string;
   chip: string;
   dot: string;
@@ -77,66 +78,77 @@ export type CategoryMeta = {
 export const CATEGORY_META: Record<string, CategoryMeta> = {
   io: {
     label: "I/O",
+    icon: "Terminal",
     accent: "text-sky-300",
     chip: "bg-sky-500/15 text-sky-300 border-sky-500/40",
     dot: "bg-sky-400",
   },
   string: {
     label: "String",
+    icon: "Type",
     accent: "text-purple-300",
     chip: "bg-purple-500/15 text-purple-300 border-purple-500/40",
     dot: "bg-purple-400",
   },
   encoding: {
     label: "Encoding",
+    icon: "RefreshCw",
     accent: "text-amber-300",
     chip: "bg-amber-500/15 text-amber-300 border-amber-500/40",
     dot: "bg-amber-400",
   },
   hash: {
     label: "Hash",
+    icon: "Hash",
     accent: "text-emerald-300",
     chip: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40",
     dot: "bg-emerald-400",
   },
   cipher: {
     label: "Symmetric",
+    icon: "Lock",
     accent: "text-rose-300",
     chip: "bg-rose-500/15 text-rose-300 border-rose-500/40",
     dot: "bg-rose-400",
   },
   asymmetric: {
     label: "Asymmetric",
+    icon: "Key",
     accent: "text-indigo-300",
     chip: "bg-indigo-500/15 text-indigo-300 border-indigo-500/40",
     dot: "bg-indigo-400",
   },
   mac: {
     label: "MAC",
+    icon: "ShieldCheck",
     accent: "text-cyan-300",
     chip: "bg-cyan-500/15 text-cyan-300 border-cyan-500/40",
     dot: "bg-cyan-400",
   },
   kdf: {
     label: "KDF",
+    icon: "Wand",
     accent: "text-orange-300",
     chip: "bg-orange-500/15 text-orange-300 border-orange-500/40",
     dot: "bg-orange-400",
   },
   entropy: {
     label: "Entropy",
+    icon: "Shuffle",
     accent: "text-lime-300",
     chip: "bg-lime-500/15 text-lime-300 border-lime-500/40",
     dot: "bg-lime-400",
   },
   protocol: {
     label: "Protocol",
+    icon: "Globe",
     accent: "text-blue-300",
     chip: "bg-blue-500/15 text-blue-300 border-blue-500/40",
     dot: "bg-blue-400",
   },
   legacy: {
     label: "Legacy",
+    icon: "Archive",
     accent: "text-zinc-400",
     chip: "bg-zinc-500/15 text-zinc-400 border-zinc-500/40",
     dot: "bg-zinc-400",

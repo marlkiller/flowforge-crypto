@@ -9,6 +9,7 @@ import {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
+  ConnectionLineType,
   type Connection,
   type EdgeChange,
   type NodeChange,
@@ -112,7 +113,7 @@ function InnerEditor() {
     graphStore.setEdges(
       addEdge({ ...conn, type: edgeType, animated: true }, filtered) as GraphEdge[],
     );
-  }, []);
+  }, [edgeType]);
   const onSelectionChange = useCallback(({ nodes: sel }: { nodes: RFNode[] }) => {
     graphStore.setSelected(sel[0]?.id ?? null);
   }, []);
@@ -306,6 +307,7 @@ function InnerEditor() {
               elementsSelectable={true}
               selectionOnDrag={interaction.selectionMode}
               panOnDrag={!interaction.selectionMode}
+              connectionLineType={edgeType === "smoothstep" ? ConnectionLineType.SmoothStep : ConnectionLineType.Bezier}
               defaultEdgeOptions={{
                 type: edgeType,
                 animated: true,

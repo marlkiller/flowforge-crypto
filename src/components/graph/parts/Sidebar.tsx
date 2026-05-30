@@ -3,7 +3,6 @@ import {
   ChevronRight,
   Github,
   GripVertical,
-  Hash,
   Download,
   Upload,
   Share2,
@@ -15,6 +14,7 @@ import { getActiveCategories, CATEGORY_META, NODE_KIND_META } from "@/lib/crypto
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DemoMenu } from "./DemoMenu";
+import { CategoryIcon } from "./CategoryIcon";
 import { graphStore } from "../store";
 
 interface SidebarProps {
@@ -115,6 +115,7 @@ export function Sidebar({
 
               const catMeta = CATEGORY_META[cat] ?? {
                 label: cat.charAt(0).toUpperCase() + cat.slice(1),
+                icon: "Hash",
                 accent: "text-blue-300",
                 chip: "bg-blue-500/15 text-blue-300 border-blue-500/40",
                 dot: "bg-blue-400",
@@ -132,7 +133,7 @@ export function Sidebar({
                     ) : (
                       <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
                     )}
-                    <Hash className={`w-4 h-4 ${catMeta.accent}`} />
+                    <CategoryIcon name={catMeta.icon} className={`w-4 h-4 ${catMeta.accent}`} />
                     <span>{catMeta.label}</span>
                   </button>
                   {!isCatCollapsed && (
