@@ -63,6 +63,7 @@ function InnerEditor() {
 
   const workflows = useGraphStore((s) => s.workflows);
   const activeId = useGraphStore((s) => s.activeId);
+  const graphKey = useGraphStore((s) => s.graphKey);
   const active = useGraphStore(
     (s) => s.workflows.find((w) => w.id === s.activeId) ?? s.workflows[0],
   );
@@ -280,7 +281,7 @@ function InnerEditor() {
             onDragOver={interaction.onDragOver}
           >
             <ReactFlow
-              key={activeId}
+              key={`${activeId}-${graphKey}`}
               nodes={nodes}
               edges={edgesWithState}
               nodeTypes={nodeTypes}
