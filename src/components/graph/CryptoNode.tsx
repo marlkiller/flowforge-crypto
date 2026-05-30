@@ -98,10 +98,10 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
       }`}
     >
       <div
-        className={`flex items-center justify-between px-3 py-2 rounded-t-xl border-b border-border/50 bg-muted/30 ${cat!.chip}`}
+        className={`flex items-center justify-between px-3 py-2 rounded-t-xl border-b border-border/50 bg-muted/30 overflow-hidden ${cat!.chip}`}
       >
-        <span className="text-sm font-bold text-foreground truncate">{d.label}</span>
-        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider opacity-80 px-2 py-0.5 rounded-full bg-background/50 border border-border/50">
+        <span className="text-sm font-bold text-foreground truncate min-w-0 flex-1">{d.label}</span>
+        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider opacity-80 px-2 py-0.5 rounded-full bg-background/50 border border-border/50 flex-shrink-0">
           <CategoryIcon name={cat!.icon} className="w-3 h-3" />
           {cat!.label}
         </span>

@@ -143,11 +143,11 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <aside
-      className={`bg-card border-r border-border flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${leftPanelOpen ? "w-60" : "w-8"}`}
+      className={`bg-card border-r border-border flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${leftPanelOpen ? "w-66" : "w-8"}`}
     >
       {/* Header — always visible */}
       <div
-        className={`flex items-center h-8 shrink-0 border-b border-border ${leftPanelOpen ? "gap-2 px-3 min-w-60" : "px-1 justify-center"}`}
+        className={`flex items-center h-8 shrink-0 border-b border-border ${leftPanelOpen ? "gap-2 px-3 min-w-66" : "px-1 justify-center"}`}
       >
         <button
           onClick={() => setLeftPanelOpen(!leftPanelOpen)}
@@ -160,7 +160,9 @@ export function Sidebar({
         </button>
         {leftPanelOpen && (
           <>
-            <h1 className="text-xs font-semibold text-foreground">FlowForge Crypto</h1>
+            <h1 className="text-xs font-semibold text-foreground truncate min-w-0">
+              FlowForge Crypto
+            </h1>
             <div className="ml-auto flex items-center gap-1">
               <button
                 onClick={() => setPluginDialogOpen(true)}

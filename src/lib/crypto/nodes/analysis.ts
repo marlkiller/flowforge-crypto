@@ -44,7 +44,9 @@ registerNodeDef("frequencyAnalysis", {
     const data = inputs["data"] ?? new Uint8Array(0);
     const topN = (node.data["topN"] as number) ?? 16;
     const freq = byteFrequency(data);
-    const sorted = Object.entries(freq).sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, topN);
+    const sorted = Object.entries(freq)
+      .sort((a, b) => Number(b[1]) - Number(a[1]))
+      .slice(0, topN);
     const lines = sorted.map(([byte, count]) => {
       const b = parseInt(byte);
       const ch = b >= 32 && b <= 126 ? String.fromCharCode(b) : ".";
@@ -63,9 +65,7 @@ registerNodeDef("entropyCalc", {
     category: "analysis",
     description: "Calculate Shannon entropy of input data (0-8 bits/byte).",
     defaultOutput: "utf8",
-    inputs: [
-      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
-    ],
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) => {
     const data = inputs["data"] ?? new Uint8Array(0);
@@ -73,14 +73,17 @@ registerNodeDef("entropyCalc", {
     const maxEntropy = data.length > 0 ? 8 : 0;
     const pct = data.length > 0 ? ((entropy / maxEntropy) * 100).toFixed(1) : "0";
     const assessment =
-      entropy > 7.5 ? "Likely encrypted/compressed" :
-      entropy > 5 ? "High entropy" :
-      entropy > 3 ? "Medium entropy" :
-      "Low entropy (structured data)";
+      entropy > 7.5
+        ? "Likely encrypted/compressed"
+        : entropy > 5
+          ? "High entropy"
+          : entropy > 3
+            ? "Medium entropy"
+            : "Low entropy (structured data)";
     return utf8ToBytes(
       `Shannon Entropy: ${entropy.toFixed(4)} bits/byte\n` +
-      `Max possible: ${maxEntropy} bits/byte\n` +
-      `Ratio: ${pct}%\nAssessment: ${assessment}`,
+        `Max possible: ${maxEntropy} bits/byte\n` +
+        `Ratio: ${pct}%\nAssessment: ${assessment}`,
     );
   },
 });
@@ -122,17 +125,20 @@ registerNodeDef("ecbDetect", {
     if (duplicates.length === 0) {
       return utf8ToBytes(
         `Total blocks: ${totalBlocks}\nUnique blocks: ${uniqueBlocks}\n` +
-        `Repeated blocks: 0\nVerdict: No ECB-like repeating blocks detected`,
+          `Repeated blocks: 0\nVerdict: No ECB-like repeating blocks detected`,
       );
     }
-    const lines = duplicates.slice(0, 20).map(([hex, pos]) =>
-      `Block ${hex.substring(0, 8)}... appears ${pos.length}x at positions [${pos.join(", ")}]`,
-    );
+    const lines = duplicates
+      .slice(0, 20)
+      .map(
+        ([hex, pos]) =>
+          `Block ${hex.substring(0, 8)}... appears ${pos.length}x at positions [${pos.join(", ")}]`,
+      );
     return utf8ToBytes(
       `Total blocks: ${totalBlocks}\nUnique blocks: ${uniqueBlocks}\n` +
-      `Repeated blocks: ${duplicates.length}\n` +
-      `Verdict: ECB mode likely\n\n${lines.join("\n")}` +
-      (duplicates.length > 20 ? `\n... and ${duplicates.length - 20} more` : ""),
+        `Repeated blocks: ${duplicates.length}\n` +
+        `Verdict: ECB mode likely\n\n${lines.join("\n")}` +
+        (duplicates.length > 20 ? `\n... and ${duplicates.length - 20} more` : ""),
     );
   },
 });
@@ -144,9 +150,7 @@ registerNodeDef("encodingGuesser", {
     category: "analysis",
     description: "Try to auto-detect encoding format of input bytes.",
     defaultOutput: "utf8",
-    inputs: [
-      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
-    ],
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) => {
     const data = inputs["data"] ?? new Uint8Array(0);
@@ -159,7 +163,9 @@ registerNodeDef("encodingGuesser", {
     try {
       const decoded = atob(trimmed.replace(/\s/g, ""));
       if (decoded.length > 0) results.push(`Base64: Decodes to ${decoded.length} bytes`);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
     if (/^[A-Z2-7]+=*$/.test(trimmed.toUpperCase()) && trimmed.length % 8 === 0) {
       results.push("Base32: Looks like valid Base32");
     }
@@ -172,7 +178,9 @@ registerNodeDef("encodingGuesser", {
     try {
       JSON.parse(text);
       results.push("JSON: Valid JSON");
-    } catch {}
+    } catch {
+      /* ignore */
+    }
     if (data.length <= 8) {
       const num = parseInt(text);
       if (!isNaN(num)) results.push(`Number: ${num}`);
@@ -212,8 +220,7 @@ registerNodeDef("hashCollision", {
     const hashB = await CryptoService.digest("SHA-256", b);
     const truncA = hashA.slice(0, truncate);
     const truncB = hashB.slice(0, truncate);
-    const match = truncA.length === truncB.length &&
-      truncA.every((v, i) => v === truncB[i]);
+    const match = truncA.length === truncB.length && truncA.every((v, i) => v === truncB[i]);
     let bits = "";
     for (let i = 0; i < truncA.length; i++) {
       for (let b2 = 7; b2 >= 0; b2--) {
@@ -223,11 +230,15 @@ registerNodeDef("hashCollision", {
       }
     }
     return utf8ToBytes(
-      `SHA-256(A): ${Array.from(hashA.slice(0, truncate)).map((b) => b.toString(16).padStart(2, "0")).join("")}\n` +
-      `SHA-256(B): ${Array.from(hashB.slice(0, truncate)).map((b) => b.toString(16).padStart(2, "0")).join("")}\n` +
-      `Truncated to: ${truncate} bytes\n` +
-      `Full match: ${match ? "YES - COLLISION" : "No collision"}\n` +
-      `Bit diff (1=same, X=different): ${bits}`,
+      `SHA-256(A): ${Array.from(hashA.slice(0, truncate))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")}\n` +
+        `SHA-256(B): ${Array.from(hashB.slice(0, truncate))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("")}\n` +
+        `Truncated to: ${truncate} bytes\n` +
+        `Full match: ${match ? "YES - COLLISION" : "No collision"}\n` +
+        `Bit diff (1=same, X=different): ${bits}`,
     );
   },
 });
