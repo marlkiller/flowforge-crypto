@@ -7,6 +7,9 @@ import tsconfigPaths from "vite-tsconfig-paths";
 const isStaticExport = process.env.STATIC_EXPORT === "true";
 
 export default defineConfig({
+  worker: {
+    format: "es",
+  },
   plugins: [
     ...tanstackStart({
       server: {
