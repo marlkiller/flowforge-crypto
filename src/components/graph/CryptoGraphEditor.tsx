@@ -47,7 +47,6 @@ import { ExecutionStatus } from "./parts/ExecutionStatus";
 import { WorkflowTab } from "./parts/WorkflowTab";
 import { GraphDialogs } from "./parts/GraphDialogs";
 import { Sidebar } from "./parts/Sidebar";
-import { TemplatesPicker } from "./parts/TemplatesPicker";
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
@@ -163,7 +162,15 @@ function InnerEditor() {
         },
       };
     });
-  }, [edges, nodes, selectedEdgeIds, edgeType]);
+  }, [edges, nodes, selectedEdgeIds]);
+
+  useEffect(() => {
+    if (rf && nodes.length > 0) {
+      rf.fitView({ padding: 0.3 });
+    }
+    // only run when graphKey bumps (template switch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphKey]);
 
   // Load saved plugins on startup
   useEffect(() => {
@@ -284,7 +291,7 @@ function InnerEditor() {
             onDragOver={interaction.onDragOver}
           >
             <ReactFlow
-              key={`${activeId}-${graphKey}`}
+              key={activeId}
               nodes={nodes}
               edges={edgesWithState}
               nodeTypes={nodeTypes}
@@ -299,13 +306,12 @@ function InnerEditor() {
               onEdgeClick={interaction.onEdgeClick}
               onEdgeContextMenu={interaction.onEdgeContextMenu}
               onMoveEnd={onMoveEnd}
-              onBeforeDelete={() => {
+              onBeforeDelete={async () => {
                 graphStore.snapshot();
-                return true as any;
+                return true;
               }}
               onInit={setRf}
               defaultViewport={active.viewport}
-              fitView={!active.viewport}
               minZoom={0.1}
               maxZoom={2}
               elementsSelectable={true}
@@ -484,19 +490,18 @@ function InnerEditor() {
               >
                 <MousePointer2 className="w-4 h-4" />
               </button>
-              <MiniMap
-                pannable
-                zoomable
-                className="!bg-card !border !border-border shadow-md rounded-lg overflow-hidden !transition-all !duration-300"
-                nodeColor={(_node) => (theme === "dark" ? "#52525b" : "#d4d4d8")}
-                maskColor={theme === "dark" ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.12)"}
-                maskStrokeColor={theme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.2)"}
-                style={{ right: 12, bottom: 12 }}
-              />
+              {nodes.length > 0 && (
+                <MiniMap
+                  pannable
+                  zoomable
+                  bgColor="var(--graph-background)"
+                  nodeColor="var(--muted-foreground)"
+                  maskColor={theme === "dark" ? "rgba(0,0,0,0.82)" : "rgba(0,0,0,0.5)"}
+                  maskStrokeColor={theme === "dark" ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)"}
+                  style={{ right: 12, bottom: 12 }}
+                />
+              )}
             </ReactFlow>
-
-            {/* Demo picker on first visit */}
-            <TemplatesPicker />
 
             {/* Execution Status Bar */}
             <ExecutionStatus errorCount={errorCount} nodeCount={nodes.length} />
