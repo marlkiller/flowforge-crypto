@@ -2,6 +2,7 @@
 import { useSyncExternalStore } from "react";
 import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
 import { NODE_REGISTRY } from "@/lib/crypto/registry";
+import { getLayoutedNodes } from "@/lib/crypto/layout";
 
 export interface Workflow {
   id: string;
@@ -227,6 +228,17 @@ export const graphStore = {
       nodes: [...w.nodes, dup],
       selectedNodeId: newId,
     });
+  },
+
+  reflowLayout: () => {
+    snapshot();
+    const w = active();
+    try {
+      const layouted = getLayoutedNodes(w.nodes, w.edges);
+      patchActive({ nodes: layouted });
+    } catch {
+      // dagre may fail on cyclic graphs — ignore
+    }
   },
 
   // Export/Import
