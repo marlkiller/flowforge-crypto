@@ -26,7 +26,7 @@ import { graphStore, useGraphStore } from "./store";
 import "@/lib/crypto/setup";
 import { loadExternalNode } from "@/lib/crypto/registry";
 import type { GraphEdge, GraphNode } from "@/lib/crypto/types";
-import { Plus, Trash2, Copy, ChevronDown, MousePointer2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Copy, ChevronDown, MousePointer2, Loader2, Wand } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { PluginManager } from "./PluginManager";
 
@@ -236,6 +236,15 @@ function InnerEditor() {
                 className="react-flow-controls-custom"
                 style={{ left: 12, bottom: 12 }}
               />
+              <button
+                onClick={() => graphStore.reflowLayout()}
+                disabled={nodes.length === 0}
+                className="absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none"
+                title="Auto-layout nodes with Dagre"
+                style={{ top: 12, right: 44 }}
+              >
+                <Wand className="w-4 h-4" />
+              </button>
               <button
                 onClick={() => interaction.setSelectionMode((v) => !v)}
                 title={interaction.selectionMode ? "Switch to pan mode" : "Switch to selection mode"}
