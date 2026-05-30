@@ -21,9 +21,9 @@ import {
   getSM3Seed,
   getSM4Seed,
   getSM2SuiteSeed,
-} from "@/demo/seeds";
+} from "@/presets/seeds";
 
-export function DemoMenu() {
+export function TemplatesMenu() {
   const [query, setQuery] = useState("");
   const demos = useMemo(
     () => [

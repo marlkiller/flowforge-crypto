@@ -6,16 +6,85 @@ import {
   Download,
   Upload,
   Share2,
-  Copy,
   Trash2,
   Plug,
+  LayoutTemplate,
+  Fingerprint,
+  ShieldCheck,
+  FileKey,
+  Hash,
+  KeyRound,
+  ScanFace,
+  Telescope,
 } from "lucide-react";
 import { getActiveCategories, CATEGORY_META, NODE_KIND_META } from "@/lib/crypto/registry";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DemoMenu } from "./DemoMenu";
 import { CategoryIcon } from "./CategoryIcon";
 import { graphStore } from "../store";
+import { ALL_PRESETS } from "@/presets/presets";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+
+const PRESET_ICONS: Record<string, typeof Fingerprint> = {
+  "RSA Signing Flow": Fingerprint,
+  "AES-GCM Encrypt/Decrypt": ShieldCheck,
+  "AES-CBC Encrypt/Decrypt": ShieldCheck,
+  "ChaCha20-Poly1305 Encrypt/Decrypt": ShieldCheck,
+  "ECDSA Sign & Verify": Telescope,
+  "Ed25519 Sign & Verify": Telescope,
+  "JWT Sign & Verify": FileKey,
+  "HMAC Sign & Verify": KeyRound,
+  "Hash Suite (4 algorithms)": Hash,
+  "KDF (PBKDF2) + AES": KeyRound,
+  "Argon2 (Password Hash)": KeyRound,
+  "TOTP Authenticator": ScanFace,
+};
+
+function TemplateMenuButton() {
+  const [query, setQuery] = useState("");
+  const filtered = query
+    ? ALL_PRESETS.filter((p) => p.label.toLowerCase().includes(query.toLowerCase()) || p.keywords.toLowerCase().includes(query.toLowerCase()))
+    : ALL_PRESETS;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-accent text-[9px] font-bold uppercase tracking-wider transition-all">
+          <LayoutTemplate className="w-3 h-3" /> Templates
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center" className="w-52">
+        <div className="px-2 pt-2 pb-1">
+          <input
+            placeholder="Search templates..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full bg-background border border-border rounded px-2 py-1 text-[11px] text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+        <div className="max-h-64 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <div className="px-2 py-4 text-center text-[10px] opacity-40">No templates found</div>
+          ) : (
+            filtered.map((p) => {
+              const Icon = PRESET_ICONS[p.label] ?? LayoutTemplate;
+              return (
+                <DropdownMenuItem
+                  key={p.label}
+                  onClick={() => graphStore.setActiveGraph(p.seed)}
+                  className="text-[11px] cursor-pointer gap-2"
+                >
+                  <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  {p.label}
+                </DropdownMenuItem>
+              );
+            })
+          )}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 interface SidebarProps {
   leftPanelOpen: boolean;
@@ -182,14 +251,7 @@ export function Sidebar({
               </button>
             </div>
             <div className="flex gap-1 justify-center">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-accent text-[9px] font-bold uppercase tracking-wider transition-all">
-                    <Copy className="w-3 h-3" /> DEMO
-                  </button>
-                </DropdownMenuTrigger>
-                <DemoMenu />
-              </DropdownMenu>
+              <TemplateMenuButton />
               <button
                 onClick={() => graphStore.setActiveGraph({ nodes: [], edges: [] })}
                 className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-destructive/5 hover:border-destructive/30 text-[9px] font-bold uppercase tracking-wider transition-all"
