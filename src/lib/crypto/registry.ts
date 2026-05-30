@@ -153,6 +153,20 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     chip: "bg-zinc-500/15 text-zinc-400 border-zinc-500/40",
     dot: "bg-zinc-400",
   },
+  pqc: {
+    label: "Post-Quantum",
+    icon: "Atom",
+    accent: "text-fuchsia-300",
+    chip: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/40",
+    dot: "bg-fuchsia-400",
+  },
+  analysis: {
+    label: "Analysis",
+    icon: "Search",
+    accent: "text-teal-300",
+    chip: "bg-teal-500/15 text-teal-300 border-teal-500/40",
+    dot: "bg-teal-400",
+  },
 };
 
 export function getActiveCategories(): string[] {

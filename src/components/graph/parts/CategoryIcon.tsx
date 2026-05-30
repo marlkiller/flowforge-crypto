@@ -10,6 +10,8 @@ import {
   Shuffle,
   Globe,
   Archive,
+  Atom,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 
@@ -25,6 +27,8 @@ const iconMap: Record<string, LucideIcon> = {
   Shuffle,
   Globe,
   Archive,
+  Atom,
+  Search,
 };
 
 interface Props {

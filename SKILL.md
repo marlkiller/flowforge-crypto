@@ -145,20 +145,22 @@ type NodeRunner = (
 ## Adding a New Algorithm Node
 
 1. Create `src/lib/crypto/nodes/<algo>.ts`
-2. Call `registerNodeDef("<kind>", { meta: {...}, runner: async (node, inputs) => {...} })`
-3. If the node is heavy, skip step 2 — instead add `registerLazyNode("<kind>", meta, () => import("./nodes/<algo>"))` in `setup.ts`
-4. In `setup.ts`, either `import "./nodes/<algo>"` (eager) or add the `registerLazyNode(...)` call (lazy)
-5. Add a preset in `src/presets/presets.ts` using `makeNode("<kind>", {x, y}, {field: value})` + edges
-6. Add icon in `Sidebar.tsx` `PRESET_ICONS` map if needed
-7. Add entry to `ALL_PRESETS` with `label`, `seed`, `keywords`
-8. Run `npm run typecheck`
+2. For each operation (encrypt, decrypt, sign, verify, keygen, derive), register a separate node kind
+3. Call `registerNodeDef("<kind>", { meta: {...}, runner: async (node, inputs) => {...} })`
+4. If the node is heavy, skip step 2 — instead add `registerLazyNode("<kind>", meta, () => import("./nodes/<algo>"))` in `setup.ts`
+5. In `setup.ts`, either `import "./nodes/<algo>"` (eager) or add the `registerLazyNode(...)` call (lazy)
+6. Add a preset in `src/presets/presets.ts` — cover the full pipeline (keygen → encrypt + decrypt, or keygen → sign + verify) in one workflow, not just a single node
+7. Add icon in `Sidebar.tsx` `PRESET_ICONS` map if needed
+8. Add entry to `ALL_PRESETS` with `label`, `seed`, `keywords`
+9. Run `npm run typecheck`
 
 ## Adding a Preset Template
 
 1. Add generator in `src/presets/presets.ts` using `makeNode()` + edges
-2. Add icon in `Sidebar.tsx` `PRESET_ICONS` map
-3. Add entry to `ALL_PRESETS` with `label`, `seed`, `keywords`
-4. Run `npm run typecheck`
+2. Cover the full cryptographic lifecycle: keygen → encrypt → decrypt (or keygen → sign → verify), with outputs to inspect each stage
+3. Add icon in `Sidebar.tsx` `PRESET_ICONS` map
+4. Add entry to `ALL_PRESETS` with `label`, `seed`, `keywords`
+5. Run `npm run typecheck`
 
 ## Example: Simple Node (XOR)
 

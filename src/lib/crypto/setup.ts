@@ -15,6 +15,12 @@ import "./nodes/jwt";
 import "./nodes/entropy";
 import "./nodes/legacy";
 import "./nodes/bitwise";
+import "./nodes/pqc";
+import "./nodes/curves";
+import "./nodes/analysis";
+import "./nodes/shamir";
+import "./nodes/dh";
+import "./nodes/cert";
 
 // ─── Lazy Loading Nodes (Heavyweight or Bundled) ─────────────────
 import { registerLazyNode } from "./registry";
