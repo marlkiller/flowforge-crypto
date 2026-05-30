@@ -216,36 +216,40 @@ registerNodeDef("jwkConvert", {
     }
 
     if (direction === "pemToJwk") {
-      let pem: string;
+      let text: string;
       const wireBytes = inputs["keyData"];
       if (wireBytes && wireBytes.length > 0) {
-        const head = String.fromCharCode(
-          wireBytes[0],
-          wireBytes[1],
-          wireBytes[2],
-          wireBytes[3],
-          wireBytes[4],
-          wireBytes[5],
-          wireBytes[6],
-          wireBytes[7],
-          wireBytes[8],
-          wireBytes[9],
-          wireBytes[10],
-        );
-        pem = head.startsWith("-----BEGIN ") ? bytesToUtf8(wireBytes).trim() : rawDerToPem();
+        text = bytesToUtf8(wireBytes).trim();
       } else {
         const fieldStr = getField(node, "keyData", "");
         if (!fieldStr?.trim()) throw new Error("Key data is required");
-        pem = fieldStr.trim();
+        text = fieldStr.trim();
       }
-      let lastError = "";
+
+      const beginIdx = text.indexOf("-----BEGIN ");
+      let pem: string;
+      if (beginIdx !== -1) {
+        pem = text.slice(beginIdx);
+      } else if (wireBytes && wireBytes.length > 0) {
+        pem = rawDerToPem();
+      } else {
+        throw new Error("No valid PEM block found in input");
+      }
+
+      const errors: string[] = [];
       const isPrivate = pem.includes("PRIVATE KEY");
+      const baseAlgs = [
+        "RS256",
+        "PS256",
+        "ES256",
+        "RS384",
+        "PS384",
+        "ES384",
+        "RS512",
+        "PS512",
+        "ES512",
+      ];
       const algsToTry: Array<{ alg: string; private: boolean }> = [];
-      const baseAlgs = /RSA/.test(pem)
-        ? ["RS256", "RS384", "RS512"]
-        : /EC|ECDSA/.test(pem)
-          ? ["ES256", "ES384", "ES512"]
-          : ["RS256", "ES256", "RS384", "ES384"];
       for (const a of baseAlgs) {
         algsToTry.push({ alg: a, private: isPrivate });
         if (!isPrivate) algsToTry.push({ alg: a, private: true });
@@ -256,14 +260,11 @@ registerNodeDef("jwkConvert", {
           cryptoKey = usePkcs8 ? await jose.importPKCS8(pem, alg) : await jose.importSPKI(pem, alg);
           break;
         } catch (e: any) {
-          lastError = e.message || e.code || String(e);
+          errors.push(`  ${usePkcs8 ? "PKCS8" : "SPKI"} ${alg}: ${e.message || e.code || e}`);
         }
       }
       if (!cryptoKey) {
-        throw new Error(
-          `PEM to JWK failed — could not determine key algorithm. Last error: ${lastError}. ` +
-            `Ensure the PEM/key data is a valid SPKI/PKCS8 key (RSA or EC).`,
-        );
+        throw new Error(`PEM to JWK failed — all attempts failed:\n${errors.join("\n")}`);
       }
       const jwk = await jose.exportJWK(cryptoKey);
       return utf8ToBytes(JSON.stringify(jwk, null, 2));
