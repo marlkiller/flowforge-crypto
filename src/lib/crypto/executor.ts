@@ -6,7 +6,8 @@ async function nodeParams(node: GraphNode): Promise<string | undefined> {
   const def = await loadNodeDef(node.data.kind);
   const meta = def.meta;
   const parts: string[] = [];
-  for (const field of meta?.fields ?? []) {
+  const formFields = meta.inputs?.filter((i) => i.type) ?? [];
+  for (const field of formFields) {
     if (field.type === "select") {
       const val = node.data[field.id] as string | undefined;
       if (val) parts.push(`${field.id}:${val}`);

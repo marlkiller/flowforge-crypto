@@ -158,9 +158,11 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
       nodes: nodes.map((n) => {
         const meta = NODE_KIND_META[n.data.kind];
         const config: Record<string, any> = { k: n.data.kind, f: n.data.outputFormat };
-        if (meta?.fields) {
-          for (const field of meta.fields) {
-            config[field.id] = n.data[field.id];
+        if (meta?.inputs) {
+          for (const input of meta.inputs) {
+            if (input.type != null) {
+              config[input.id] = n.data[input.id];
+            }
           }
         }
         return { id: n.id, c: config };

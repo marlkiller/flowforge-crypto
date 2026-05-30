@@ -8,7 +8,15 @@ registerNodeDef("random", {
     category: "entropy",
     description: "Generate cryptographically strong random bytes.",
     defaultOutput: "hex",
-    fields: [{ id: "length", label: "Length (Bytes)", type: "number", defaultValue: 16 }],
+    inputs: [
+      {
+        id: "length",
+        label: "Length (Bytes)",
+        type: "number",
+        defaultValue: 16,
+        connectable: false,
+      },
+    ],
   },
   runner: (node) => {
     const len = getNumberField(node, "length", 16);

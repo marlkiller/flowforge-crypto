@@ -8,7 +8,7 @@ registerNodeDef("input", {
     label: "Input",
     category: "io",
     description: "Source — parses text as UTF-8 / HEX / Base64.",
-    fields: [
+    inputs: [
       {
         id: "inputFormat",
         label: "Interpret as",
@@ -18,8 +18,15 @@ registerNodeDef("input", {
           { label: "Hex", value: "hex" },
           { label: "Base64", value: "base64" },
         ],
+        connectable: false,
       },
-      { id: "text", label: "Value", type: "textarea", placeholder: "Enter input..." },
+      {
+        id: "text",
+        label: "Value",
+        type: "textarea",
+        placeholder: "Enter input...",
+        connectable: false,
+      },
     ],
   },
   runner: (node) => {
@@ -53,8 +60,15 @@ registerNodeDef("join", {
     category: "io",
     description: "Concatenate multiple inputs with a separator.",
     defaultOutput: "hex",
-    fields: [
-      { id: "count", label: "Inputs", type: "number", placeholder: "2", defaultValue: "2" },
+    inputs: [
+      {
+        id: "count",
+        label: "Inputs",
+        type: "number",
+        placeholder: "2",
+        defaultValue: "2",
+        connectable: false,
+      },
       {
         id: "separator",
         label: "Separator",
@@ -65,9 +79,9 @@ registerNodeDef("join", {
           { label: "Comma (,)", value: "comma" },
           { label: "None", value: "none" },
         ],
+        connectable: false,
       },
     ],
-    inputs: [], // To be populated dynamically
   },
   runner: (node, inputs) => {
     const count = getNumberField(node, "count", 2);
@@ -108,6 +122,7 @@ registerNodeDef("output", {
     label: "Output",
     category: "io",
     description: "Sink — displays bytes in chosen format.",
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) => inputs["data"] ?? inputs["default"] ?? new Uint8Array(0),
 });
@@ -119,10 +134,16 @@ registerNodeDef("slice", {
     category: "io",
     description: "Extract a range of bytes (supports negative indices).",
     defaultOutput: "hex",
-    inputs: [{ id: "data", label: "Data" }],
-    fields: [
-      { id: "start", label: "Start Offset", type: "number", defaultValue: 0 },
-      { id: "end", label: "End Offset", type: "number", placeholder: "Optional (e.g. -32)" },
+    inputs: [
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      { id: "start", label: "Start Offset", type: "number", defaultValue: 0, connectable: false },
+      {
+        id: "end",
+        label: "End Offset",
+        type: "number",
+        placeholder: "Optional (e.g. -32)",
+        connectable: false,
+      },
     ],
   },
   runner: (node, inputs) => {

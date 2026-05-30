@@ -13,14 +13,25 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
       description: `${label} legacy encryption (INSECURE).`,
       defaultOutput: "hex" as DataFormat,
       inputs: [
-        { id: "data", label: "Data" },
-        { id: "key", label: "Key" },
-        { id: "iv", label: "IV" },
-      ],
-      fields: [
+        { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+        {
+          id: "key",
+          label: "Key",
+          connectable: true,
+          acceptTypes: ["hex", "base64"],
+          type: "password",
+        },
+        {
+          id: "iv",
+          label: "IV",
+          connectable: true,
+          acceptTypes: ["hex", "base64"],
+          type: "text",
+        },
         {
           id: "action",
           label: "Action",
+          connectable: false,
           type: "select",
           options: [
             { label: "Encrypt", value: "encrypt" },
@@ -30,6 +41,7 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
         {
           id: "mode",
           label: "Mode",
+          connectable: false,
           type: "select",
           defaultValue: "CBC",
           options: [
@@ -37,8 +49,6 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
             { label: "ECB", value: "ECB" },
           ],
         },
-        { id: "key", label: "Key (Hex)", type: "password" },
-        { id: "iv", label: "IV (Hex)", type: "text" },
       ],
     },
     runner: async (node: GraphNode, inputs: Record<string, Uint8Array>) => {

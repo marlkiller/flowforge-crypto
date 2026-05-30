@@ -12,7 +12,7 @@ export const RSA_KEYGEN_META: NodeKindMeta = {
     { id: "publicKey", label: "Public Key" },
     { id: "privateKey", label: "Private Key" },
   ],
-  fields: [
+  inputs: [
     {
       id: "algorithm",
       label: "Algorithm",
@@ -23,6 +23,7 @@ export const RSA_KEYGEN_META: NodeKindMeta = {
         { label: "RSASSA-PKCS1-v1_5", value: "RSASSA-PKCS1-v1_5" },
         { label: "RSA-PSS", value: "RSA-PSS" },
       ],
+      connectable: false,
     },
     {
       id: "modulusLength",
@@ -34,6 +35,7 @@ export const RSA_KEYGEN_META: NodeKindMeta = {
         { label: "2048", value: "2048" },
         { label: "4096", value: "4096" },
       ],
+      connectable: false,
     },
     {
       id: "hash",
@@ -46,6 +48,7 @@ export const RSA_KEYGEN_META: NodeKindMeta = {
         { label: "SHA-384", value: "SHA-384" },
         { label: "SHA-512", value: "SHA-512" },
       ],
+      connectable: false,
     },
   ],
 };
@@ -57,11 +60,25 @@ export const RSA_META: NodeKindMeta = {
   description: "RSA encrypt/decrypt. Supports RSA-OAEP, RSAES-PKCS1-V1_5, RAW.",
   defaultOutput: "base64",
   inputs: [
-    { id: "data", label: "Data" },
-    { id: "publicKey", label: "Public Key (PEM)", visible: (d) => d["action"] !== "decrypt" },
-    { id: "privateKey", label: "Private Key (PEM)", visible: (d) => d["action"] === "decrypt" },
-  ],
-  fields: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    {
+      id: "publicKey",
+      label: "Public Key",
+      connectable: true,
+      acceptTypes: ["pem", "base64"],
+      visible: (d) => d["action"] !== "decrypt",
+      type: "textarea",
+      placeholder: "Paste SPKI public key...",
+    },
+    {
+      id: "privateKey",
+      label: "Private Key",
+      connectable: true,
+      acceptTypes: ["pem", "base64"],
+      visible: (d) => d["action"] === "decrypt",
+      type: "password",
+      placeholder: "Paste PKCS8 private key...",
+    },
     {
       id: "action",
       label: "Action",
@@ -71,6 +88,7 @@ export const RSA_META: NodeKindMeta = {
         { label: "Encrypt", value: "encrypt" },
         { label: "Decrypt", value: "decrypt" },
       ],
+      connectable: false,
     },
     {
       id: "scheme",
@@ -82,20 +100,7 @@ export const RSA_META: NodeKindMeta = {
         { label: "RSAES-PKCS1-V1_5", value: "RSAES-PKCS1-V1_5" },
         { label: "RAW", value: "RAW" },
       ],
-    },
-    {
-      id: "publicKey",
-      label: "Public Key (B64/PEM)",
-      type: "textarea",
-      placeholder: "Paste SPKI public key...",
-      visible: (d) => d["action"] !== "decrypt",
-    },
-    {
-      id: "privateKey",
-      label: "Private Key (B64/PEM)",
-      type: "password",
-      placeholder: "Paste PKCS8 private key...",
-      visible: (d) => d["action"] === "decrypt",
+      connectable: false,
     },
     {
       id: "hash",
@@ -109,6 +114,7 @@ export const RSA_META: NodeKindMeta = {
         { label: "SHA-384", value: "SHA-384" },
         { label: "SHA-512", value: "SHA-512" },
       ],
+      connectable: false,
     },
   ],
 };
@@ -120,10 +126,15 @@ export const RSA_SIGN_META: NodeKindMeta = {
   description: "Digital signature generation using a private key.",
   defaultOutput: "base64",
   inputs: [
-    { id: "data", label: "Data" },
-    { id: "privateKey", label: "Private Key (PEM)" },
-  ],
-  fields: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    {
+      id: "privateKey",
+      label: "Private Key",
+      connectable: true,
+      acceptTypes: ["pem", "base64"],
+      type: "password",
+      placeholder: "Paste PKCS8 private key...",
+    },
     {
       id: "algorithm",
       label: "Algorithm",
@@ -133,6 +144,7 @@ export const RSA_SIGN_META: NodeKindMeta = {
         { label: "RSASSA-PKCS1-v1_5", value: "RSASSA-PKCS1-v1_5" },
         { label: "RSA-PSS", value: "RSA-PSS" },
       ],
+      connectable: false,
     },
     {
       id: "hash",
@@ -145,12 +157,7 @@ export const RSA_SIGN_META: NodeKindMeta = {
         { label: "SHA-384", value: "SHA-384" },
         { label: "SHA-512", value: "SHA-512" },
       ],
-    },
-    {
-      id: "privateKey",
-      label: "Private Key (B64/PEM)",
-      type: "password",
-      placeholder: "Paste PKCS8 private key...",
+      connectable: false,
     },
   ],
 };
@@ -162,11 +169,21 @@ export const RSA_VERIFY_META: NodeKindMeta = {
   description: "Digital signature verification using a public key.",
   defaultOutput: "utf8",
   inputs: [
-    { id: "data", label: "Data" },
-    { id: "signature", label: "Signature (base64)" },
-    { id: "publicKey", label: "Public Key (PEM)" },
-  ],
-  fields: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    {
+      id: "signature",
+      label: "Signature",
+      connectable: true,
+      acceptTypes: ["base64", "hex"],
+    },
+    {
+      id: "publicKey",
+      label: "Public Key",
+      connectable: true,
+      acceptTypes: ["pem", "base64"],
+      type: "textarea",
+      placeholder: "Paste SPKI public key...",
+    },
     {
       id: "algorithm",
       label: "Algorithm",
@@ -176,6 +193,7 @@ export const RSA_VERIFY_META: NodeKindMeta = {
         { label: "RSASSA-PKCS1-v1_5", value: "RSASSA-PKCS1-v1_5" },
         { label: "RSA-PSS", value: "RSA-PSS" },
       ],
+      connectable: false,
     },
     {
       id: "hash",
@@ -188,12 +206,7 @@ export const RSA_VERIFY_META: NodeKindMeta = {
         { label: "SHA-384", value: "SHA-384" },
         { label: "SHA-512", value: "SHA-512" },
       ],
-    },
-    {
-      id: "publicKey",
-      label: "Public Key (B64/PEM)",
-      type: "textarea",
-      placeholder: "Paste SPKI public key...",
+      connectable: false,
     },
   ],
 };
@@ -218,13 +231,12 @@ export const SM2_SIGN_META: NodeKindMeta = {
   description: "Sign data using an SM2 private key (SM2 signature with SM3 hash).",
   defaultOutput: "hex",
   inputs: [
-    { id: "data", label: "Data" },
-    { id: "privateKey", label: "Private Key (hex)" },
-  ],
-  fields: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
     {
       id: "privateKey",
-      label: "Private Key (Hex)",
+      label: "Private Key",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
       type: "password",
       placeholder: "64-char hex SM2 private key...",
     },
@@ -238,9 +250,19 @@ export const SM2_VERIFY_META: NodeKindMeta = {
   description: "Verify an SM2 signature using an SM2 public key.",
   defaultOutput: "utf8",
   inputs: [
-    { id: "data", label: "Data" },
-    { id: "signature", label: "Signature (hex)" },
-    { id: "publicKey", label: "Public Key (hex)" },
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    {
+      id: "signature",
+      label: "Signature",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+    },
+    {
+      id: "publicKey",
+      label: "Public Key",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+    },
   ],
 };
 
@@ -251,8 +273,8 @@ export const SM2_ENCRYPT_META: NodeKindMeta = {
   description: "Encrypt data using an SM2 public key.",
   defaultOutput: "hex",
   inputs: [
-    { id: "data", label: "Data" },
-    { id: "publicKey", label: "Public Key" },
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    { id: "publicKey", label: "Public Key", connectable: true, acceptTypes: ["hex", "base64"] },
   ],
 };
 
@@ -263,13 +285,12 @@ export const SM2_DECRYPT_META: NodeKindMeta = {
   description: "Decrypt data using an SM2 private key.",
   defaultOutput: "utf8",
   inputs: [
-    { id: "data", label: "Data" },
-    { id: "privateKey", label: "Private Key" },
-  ],
-  fields: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
     {
       id: "privateKey",
-      label: "Private Key (Hex)",
+      label: "Private Key",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
       type: "password",
       placeholder: "64-char hex SM2 private key...",
     },
@@ -283,13 +304,29 @@ export const PBKDF2_META: NodeKindMeta = {
   description: "Password-Based Key Derivation Function 2.",
   defaultOutput: "hex",
   inputs: [
-    { id: "password", label: "Password (utf8)" },
-    { id: "salt", label: "Salt (hex)" },
-  ],
-  fields: [
-    { id: "password", label: "Password (Raw)", type: "text", placeholder: "Enter password..." },
-    { id: "salt", label: "Salt (Hex)", type: "text", placeholder: "Hex string..." },
-    { id: "iterations", label: "Iterations", type: "number", defaultValue: 100000 },
+    {
+      id: "password",
+      label: "Password",
+      connectable: true,
+      acceptTypes: ["utf8"],
+      type: "text",
+      placeholder: "Enter password...",
+    },
+    {
+      id: "salt",
+      label: "Salt",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+      type: "text",
+      placeholder: "Hex string...",
+    },
+    {
+      id: "iterations",
+      label: "Iterations",
+      type: "number",
+      defaultValue: 100000,
+      connectable: false,
+    },
     {
       id: "hash",
       label: "Hash",
@@ -301,8 +338,15 @@ export const PBKDF2_META: NodeKindMeta = {
         { label: "SHA-384", value: "SHA-384" },
         { label: "SHA-512", value: "SHA-512" },
       ],
+      connectable: false,
     },
-    { id: "length", label: "Derived Length (bits)", type: "number", defaultValue: 256 },
+    {
+      id: "length",
+      label: "Derived Length (bits)",
+      type: "number",
+      defaultValue: 256,
+      connectable: false,
+    },
   ],
 };
 
@@ -313,11 +357,14 @@ export const HKDF_META: NodeKindMeta = {
   description: "HMAC-based Extract-and-Expand Key Derivation Function.",
   defaultOutput: "hex",
   inputs: [
-    { id: "ikm", label: "IKM (Input Keying Material)" },
-    { id: "salt", label: "Salt (hex)" },
-    { id: "info", label: "Info (hex)" },
-  ],
-  fields: [
+    {
+      id: "ikm",
+      label: "IKM (Input Keying Material)",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+    },
+    { id: "salt", label: "Salt", connectable: true, acceptTypes: ["hex", "base64"] },
+    { id: "info", label: "Info", connectable: true, acceptTypes: ["hex", "base64"] },
     {
       id: "hash",
       label: "Hash",
@@ -329,8 +376,15 @@ export const HKDF_META: NodeKindMeta = {
         { label: "SHA-384", value: "SHA-384" },
         { label: "SHA-512", value: "SHA-512" },
       ],
+      connectable: false,
     },
-    { id: "length", label: "Derived Length (bits)", type: "number", defaultValue: 256 },
+    {
+      id: "length",
+      label: "Derived Length (bits)",
+      type: "number",
+      defaultValue: 256,
+      connectable: false,
+    },
   ],
 };
 
@@ -341,10 +395,8 @@ export const ARGON2_META: NodeKindMeta = {
   description: "Memory-hard password hashing (PHC winner).",
   defaultOutput: "hex",
   inputs: [
-    { id: "password", label: "Password (utf8)" },
-    { id: "salt", label: "Salt (hex)" },
-  ],
-  fields: [
+    { id: "password", label: "Password", connectable: true, acceptTypes: ["utf8"] },
+    { id: "salt", label: "Salt", connectable: true, acceptTypes: ["hex", "base64"] },
     {
       id: "type",
       label: "Type",
@@ -355,11 +407,18 @@ export const ARGON2_META: NodeKindMeta = {
         { label: "Argon2i", value: "i" },
         { label: "Argon2d", value: "d" },
       ],
+      connectable: false,
     },
-    { id: "t", label: "Iterations (t)", type: "number", defaultValue: 3 },
-    { id: "m", label: "Memory (KB)", type: "number", defaultValue: 65536 },
-    { id: "p", label: "Parallelism (p)", type: "number", defaultValue: 1 },
-    { id: "length", label: "Derived Length (bytes)", type: "number", defaultValue: 32 },
+    { id: "t", label: "Iterations (t)", type: "number", defaultValue: 3, connectable: false },
+    { id: "m", label: "Memory (KB)", type: "number", defaultValue: 65536, connectable: false },
+    { id: "p", label: "Parallelism (p)", type: "number", defaultValue: 1, connectable: false },
+    {
+      id: "length",
+      label: "Derived Length (bytes)",
+      type: "number",
+      defaultValue: 32,
+      connectable: false,
+    },
   ],
 };
 
@@ -370,14 +429,18 @@ export const SCRYPT_META: NodeKindMeta = {
   description: "Memory-hard key derivation function.",
   defaultOutput: "hex",
   inputs: [
-    { id: "password", label: "Password (utf8)" },
-    { id: "salt", label: "Salt (hex)" },
-  ],
-  fields: [
-    { id: "N", label: "Cost (N)", type: "number", defaultValue: 16384 },
-    { id: "r", label: "Block Size (r)", type: "number", defaultValue: 8 },
-    { id: "p", label: "Parallelism (p)", type: "number", defaultValue: 1 },
-    { id: "length", label: "Derived Length (bytes)", type: "number", defaultValue: 32 },
+    { id: "password", label: "Password", connectable: true, acceptTypes: ["utf8"] },
+    { id: "salt", label: "Salt", connectable: true, acceptTypes: ["hex", "base64"] },
+    { id: "N", label: "Cost (N)", type: "number", defaultValue: 16384, connectable: false },
+    { id: "r", label: "Block Size (r)", type: "number", defaultValue: 8, connectable: false },
+    { id: "p", label: "Parallelism (p)", type: "number", defaultValue: 1, connectable: false },
+    {
+      id: "length",
+      label: "Derived Length (bytes)",
+      type: "number",
+      defaultValue: 32,
+      connectable: false,
+    },
   ],
 };
 
@@ -388,12 +451,18 @@ export const BCRYPT_META: NodeKindMeta = {
   description: "Password hashing function (bcrypt). Output is $2b$ encoded hash string.",
   defaultOutput: "utf8",
   inputs: [
-    { id: "password", label: "Password" },
-    { id: "salt", label: "Salt" },
-    { id: "hash", label: "Hash", visible: (d) => (d["action"] as string) === "verify" },
-  ],
-  fields: [
-    { id: "rounds", label: "Cost (rounds)", type: "number", defaultValue: 10 },
+    { id: "password", label: "Password", connectable: true, acceptTypes: ["utf8"] },
+    { id: "salt", label: "Salt", connectable: true, acceptTypes: ["utf8"] },
+    {
+      id: "hash",
+      label: "Hash to Verify",
+      connectable: true,
+      acceptTypes: ["utf8"],
+      type: "text",
+      placeholder: "$2b$10$...",
+      visible: (d) => (d["action"] as string) === "verify",
+    },
+    { id: "rounds", label: "Cost (rounds)", type: "number", defaultValue: 10, connectable: false },
     {
       id: "action",
       label: "Action",
@@ -403,13 +472,7 @@ export const BCRYPT_META: NodeKindMeta = {
         { label: "Hash", value: "hash" },
         { label: "Verify", value: "verify" },
       ],
-    },
-    {
-      id: "hash",
-      label: "Hash to Verify",
-      type: "text",
-      placeholder: "$2b$10$...",
-      visible: (d) => (d["action"] as string) === "verify",
+      connectable: false,
     },
   ],
 };
@@ -421,7 +484,7 @@ function makeHashMeta(kind: string, label: string, description: string): NodeKin
     category: "hash",
     description,
     defaultOutput: "hex" as DataFormat,
-    inputs: [{ id: "data", label: "Data" }],
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   };
 }
 
@@ -482,7 +545,7 @@ export const EC_KEYGEN_META: NodeKindMeta = {
     { id: "publicKey", label: "Public Key" },
     { id: "privateKey", label: "Private Key" },
   ],
-  fields: [
+  inputs: [
     {
       id: "algorithm",
       label: "Algorithm",
@@ -492,6 +555,7 @@ export const EC_KEYGEN_META: NodeKindMeta = {
         { label: "ECDSA", value: "ECDSA" },
         { label: "ECDH", value: "ECDH" },
       ],
+      connectable: false,
     },
     {
       id: "namedCurve",
@@ -503,6 +567,7 @@ export const EC_KEYGEN_META: NodeKindMeta = {
         { label: "P-384", value: "P-384" },
         { label: "P-521", value: "P-521" },
       ],
+      connectable: false,
     },
   ],
 };
@@ -514,10 +579,13 @@ export const ECDSA_SIGN_META: NodeKindMeta = {
   description: "Sign data using an ECDSA private key.",
   defaultOutput: "base64",
   inputs: [
-    { id: "data", label: "Data" },
-    { id: "privateKey", label: "Private Key (PEM)" },
-  ],
-  fields: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    {
+      id: "privateKey",
+      label: "Private Key",
+      connectable: true,
+      acceptTypes: ["base64", "pem"],
+    },
     {
       id: "namedCurve",
       label: "Curve",
@@ -528,6 +596,7 @@ export const ECDSA_SIGN_META: NodeKindMeta = {
         { label: "P-384", value: "P-384" },
         { label: "P-521", value: "P-521" },
       ],
+      connectable: false,
     },
     {
       id: "hash",
@@ -539,6 +608,7 @@ export const ECDSA_SIGN_META: NodeKindMeta = {
         { label: "SHA-384", value: "SHA-384" },
         { label: "SHA-512", value: "SHA-512" },
       ],
+      connectable: false,
     },
   ],
 };
@@ -550,11 +620,19 @@ export const ECDSA_VERIFY_META: NodeKindMeta = {
   description: "Verify data signature using an ECDSA public key.",
   defaultOutput: "utf8",
   inputs: [
-    { id: "data", label: "Data" },
-    { id: "signature", label: "Signature (base64)" },
-    { id: "publicKey", label: "Public Key (PEM)" },
-  ],
-  fields: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    {
+      id: "signature",
+      label: "Signature",
+      connectable: true,
+      acceptTypes: ["base64", "hex"],
+    },
+    {
+      id: "publicKey",
+      label: "Public Key",
+      connectable: true,
+      acceptTypes: ["base64", "pem"],
+    },
     {
       id: "namedCurve",
       label: "Curve",
@@ -565,6 +643,7 @@ export const ECDSA_VERIFY_META: NodeKindMeta = {
         { label: "P-384", value: "P-384" },
         { label: "P-521", value: "P-521" },
       ],
+      connectable: false,
     },
     {
       id: "hash",
@@ -576,6 +655,7 @@ export const ECDSA_VERIFY_META: NodeKindMeta = {
         { label: "SHA-384", value: "SHA-384" },
         { label: "SHA-512", value: "SHA-512" },
       ],
+      connectable: false,
     },
   ],
 };
@@ -587,10 +667,18 @@ export const ECDH_META: NodeKindMeta = {
   description: "Derive bits using ECDH (Elliptic Curve Diffie-Hellman).",
   defaultOutput: "hex",
   inputs: [
-    { id: "privateKey", label: "My Private Key (PEM)" },
-    { id: "publicKey", label: "Peer Public Key (PEM)" },
-  ],
-  fields: [
+    {
+      id: "privateKey",
+      label: "My Private Key",
+      connectable: true,
+      acceptTypes: ["base64", "pem"],
+    },
+    {
+      id: "publicKey",
+      label: "Peer Public Key",
+      connectable: true,
+      acceptTypes: ["base64", "pem"],
+    },
     {
       id: "namedCurve",
       label: "Curve",
@@ -601,7 +689,14 @@ export const ECDH_META: NodeKindMeta = {
         { label: "P-384", value: "P-384" },
         { label: "P-521", value: "P-521" },
       ],
+      connectable: false,
     },
-    { id: "length", label: "Derived Length (bits)", type: "number", defaultValue: 256 },
+    {
+      id: "length",
+      label: "Derived Length (bits)",
+      type: "number",
+      defaultValue: 256,
+      connectable: false,
+    },
   ],
 };

@@ -1,6 +1,7 @@
 import { Handle, Position, useNodeConnections, type NodeProps } from "@xyflow/react";
 import { NODE_KIND_META, CATEGORY_META } from "@/lib/crypto/registry";
-import type { NodeData, NodeFieldMeta, NodeInputMeta } from "@/lib/crypto/types";
+import type { NodeData, NodeInputMeta } from "@/lib/crypto/types";
+import { formatAcceptType } from "@/lib/crypto/types";
 import { graphStore } from "./store";
 import { Upload, File as FileIcon, Link2 } from "lucide-react";
 import { CategoryIcon } from "./parts/CategoryIcon";
@@ -22,36 +23,18 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
     : null;
 
   let dynamicInputs = meta?.inputs || [];
-  const dynamicFields = meta?.fields || [];
   const dynamicOutputs = meta?.outputs || [];
 
   if (d.kind === "join") {
     const count = parseInt((d["count"] as string) || "2", 10);
-    dynamicInputs = [];
+    const staticInputs = dynamicInputs.filter((i) => i.id === "count" || i.id === "separator");
+    dynamicInputs = [...staticInputs];
     for (let i = 1; i <= count; i++) {
-      dynamicInputs.push({ id: `in_${i}`, label: `Input ${i}` });
+      dynamicInputs.push({ id: `in_${i}`, label: `Input ${i}`, connectable: true });
     }
   }
 
-  const isSourceNode = [
-    "input",
-    "file",
-    "rsa_keygen",
-    "ec_keygen",
-    "ed_keygen",
-    "keyGen",
-    "random",
-    "sm2_keygen",
-  ].includes(d.kind);
-
-  const allInputs =
-    dynamicInputs.length > 0
-      ? dynamicInputs
-      : meta?.inputs
-        ? meta.inputs
-        : !isSourceNode
-          ? [{ id: "data", label: "Data" }]
-          : [];
+  const allInputs = dynamicInputs.length > 0 ? dynamicInputs : [];
 
   const allOutputs =
     dynamicOutputs.length > 0
@@ -64,11 +47,6 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
 
   const visibleOutputs = allOutputs.filter((output) => output.visible?.(d) ?? true);
   const visibleInputs = allInputs.filter((input) => input.visible?.(d) ?? true);
-
-  const fieldInputIds = new Set(dynamicFields.map((f) => f.id));
-  const orphanInputs = visibleInputs.filter((i) => !fieldInputIds.has(i.id));
-
-  const visibleFields = dynamicFields.filter((field) => field.visible?.(d) ?? true);
 
   // Disconnect edges attached to handles that are no longer visible (must be before any return)
   useEffect(() => {
@@ -130,10 +108,23 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
       </div>
 
       <div className="p-3 space-y-2 text-[11px] relative">
-        {/* Orphan inputs (like 'Data') that don't have a matching field */}
-        {orphanInputs.map((input) => (
-          <OrphanInput key={input.id} nodeId={id} input={input} />
-        ))}
+        {visibleInputs.map((input) => {
+          const hasHandle = input.connectable !== false;
+          const hasForm = input.type != null;
+          if (hasHandle && !hasForm) {
+            return <OrphanInput key={input.id} nodeId={id} input={input} />;
+          }
+          return (
+            <NodeField
+              key={input.id}
+              nodeId={id}
+              field={input}
+              value={d[input.id] as string | undefined}
+              update={update}
+              hasHandle={hasHandle}
+            />
+          );
+        })}
 
         {d.kind === "file" && (
           <div className="space-y-1.5">
@@ -160,17 +151,6 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
             </label>
           </div>
         )}
-
-        {visibleFields.map((field) => (
-          <NodeField
-            key={field.id}
-            nodeId={id}
-            field={field}
-            value={d[field.id] as string | undefined}
-            update={update}
-            hasHandle={visibleInputs.some((i) => i.id === field.id)}
-          />
-        ))}
 
         {/* Multi-output handles */}
         {visibleOutputs.length > 1 ||
@@ -238,7 +218,7 @@ function NodeField({
   sourceHandleId,
 }: {
   nodeId: string;
-  field: NodeFieldMeta;
+  field: NodeInputMeta;
   value: string | undefined;
   update: (patch: Partial<NodeData>) => void;
   hasHandle: boolean;
@@ -270,10 +250,17 @@ function NodeField({
       )}
 
       <div className="flex items-center justify-between">
-        <div
-          className={`text-[10px] font-bold uppercase tracking-wider ${error ? "text-destructive" : "text-muted-foreground"}`}
-        >
-          {field.label}
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`text-[10px] font-bold uppercase tracking-wider ${error ? "text-destructive" : "text-muted-foreground"}`}
+          >
+            {field.label}
+          </span>
+          {hasHandle && field.acceptTypes && field.acceptTypes.length > 0 && (
+            <span className="text-[8px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded">
+              ({field.acceptTypes.map(formatAcceptType).join("/")})
+            </span>
+          )}
           {error && <span className="ml-2 normal-case font-medium text-[9px]">({error})</span>}
         </div>
         {isConnected && <Link2 className="w-3 h-3 text-primary animate-pulse" />}
@@ -304,7 +291,7 @@ function NodeField({
             </option>
           ))}
         </select>
-      ) : (
+      ) : field.type ? (
         <input
           type={field.type}
           className={`nodrag w-full bg-background border rounded-md px-2.5 py-1.5 text-[11px] text-foreground shadow-sm outline-none focus:ring-1 font-mono transition-all placeholder:text-muted-foreground/50 ${error ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border focus:border-primary focus:ring-primary"}`}
@@ -313,7 +300,7 @@ function NodeField({
           placeholder={field.placeholder}
           onClick={(e) => e.stopPropagation()}
         />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -324,17 +311,24 @@ function OrphanInput({ nodeId, input }: { nodeId: string; input: NodeInputMeta }
 
   return (
     <div className="space-y-1 relative">
-      <div className="relative h-5 flex items-center">
-        <Handle
-          type="target"
-          position={Position.Left}
-          id={input.id}
-          className="!w-4 !h-4 !bg-muted-foreground !border-2 !border-background !-left-[22px] transition-transform hover:scale-125 z-20"
-        />
-        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          {input.label}
-        </span>
-        {isConnected && <Link2 className="w-3 h-3 text-primary animate-pulse ml-1" />}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Handle
+            type="target"
+            position={Position.Left}
+            id={input.id}
+            className="!w-3.5 !h-3.5 !bg-muted-foreground !border-2 !border-background !-left-[20px] top-2.5 transition-transform hover:scale-125 z-20"
+          />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            {input.label}
+          </span>
+          {input.acceptTypes && input.acceptTypes.length > 0 && (
+            <span className="text-[8px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded">
+              ({input.acceptTypes.map(formatAcceptType).join("/")})
+            </span>
+          )}
+        </div>
+        {isConnected && <Link2 className="w-3 h-3 text-primary animate-pulse" />}
       </div>
       {isConnected && (
         <div className="w-full bg-primary/5 border border-primary/20 rounded-md px-2.5 py-1.5 text-[10px] text-primary font-medium italic shadow-inner">

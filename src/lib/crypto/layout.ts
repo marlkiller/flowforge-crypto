@@ -6,7 +6,8 @@ const NODE_WIDTH = 260;
 
 function estimateNodeHeight(node: GraphNode): number {
   const meta = node.data?.kind ? NODE_KIND_META[node.data.kind] : undefined;
-  const fieldCount = meta?.fields?.length ?? 0;
+  const formFields = meta?.inputs?.filter((i) => i.type) ?? [];
+  const fieldCount = formFields.length;
   const hasOutput = !!(node.data?.output || node.data?.error);
   return 56 + fieldCount * 40 + (hasOutput ? 48 : 0);
 }
