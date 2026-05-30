@@ -1,4 +1,5 @@
 import { utf8ToBytes, b64ToBytes, hexToBytes, type DataFormat } from "./service";
+import type { CipherProvider } from "./service";
 import type { GraphNode } from "./types";
 
 export function parseAs(text: string, fmt: DataFormat): Uint8Array {
@@ -121,4 +122,42 @@ export function getParamBytes(
   } catch (e) {
     throw new Error(`${id} parsing failed: ${(e as Error).message}`);
   }
+}
+
+// ─── Shared Cipher Helpers ─────────────────────────────────────────
+
+export async function cipherEncrypt(
+  provider: CipherProvider,
+  keyBytes: Uint8Array,
+  mainInput: Uint8Array,
+  iv: Uint8Array | undefined,
+  ivSize: number,
+  params?: Record<string, unknown>,
+): Promise<Uint8Array> {
+  if (ivSize === 0) {
+    return provider.encrypt(keyBytes, null, mainInput, params);
+  }
+  const actualIv = iv ?? crypto.getRandomValues(new Uint8Array(ivSize));
+  const ct = await provider.encrypt(keyBytes, actualIv, mainInput, params);
+  if (iv) return ct;
+  const out = new Uint8Array(actualIv.length + ct.length);
+  out.set(actualIv, 0);
+  out.set(ct, actualIv.length);
+  return out;
+}
+
+export async function cipherDecrypt(
+  provider: CipherProvider,
+  keyBytes: Uint8Array,
+  mainInput: Uint8Array,
+  iv: Uint8Array | undefined,
+  ivSize: number,
+  params?: Record<string, unknown>,
+): Promise<Uint8Array> {
+  if (ivSize === 0) {
+    return await provider.decrypt(keyBytes, null, mainInput, params);
+  }
+  const actualIv = iv ?? mainInput.slice(0, ivSize);
+  const ct = iv ? mainInput : mainInput.slice(ivSize);
+  return await provider.decrypt(keyBytes, actualIv, ct, params);
 }
