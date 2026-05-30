@@ -4,7 +4,7 @@ import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
 import "@/lib/crypto/setup";
 import { NODE_KIND_META } from "@/lib/crypto/registry";
 import { getLayoutedNodes } from "@/lib/crypto/layout";
-import { getAESStandardSeed } from "@/demo/seeds";
+import { getAESStandardSeed } from "@/presets/seeds";
 
 export interface Workflow {
   id: string;

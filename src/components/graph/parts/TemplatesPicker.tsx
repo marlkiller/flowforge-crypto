@@ -11,7 +11,7 @@ import {
   getOTPSeed,
   getXChaCha20Seed,
   getSM4Seed,
-} from "@/demo/seeds";
+} from "@/presets/seeds";
 
 const PICKER_DISMISSED_KEY = "cryptoflow-picker-dismissed";
 
@@ -27,7 +27,7 @@ const demos = [
   { label: "SM4 (ECB)", seed: getSM4Seed() },
 ];
 
-export function DemoPicker() {
+export function TemplatesPicker() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {

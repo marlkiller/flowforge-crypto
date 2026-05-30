@@ -47,7 +47,7 @@ import { ExecutionStatus } from "./parts/ExecutionStatus";
 import { WorkflowTab } from "./parts/WorkflowTab";
 import { GraphDialogs } from "./parts/GraphDialogs";
 import { Sidebar } from "./parts/Sidebar";
-import { DemoPicker } from "./parts/DemoPicker";
+import { TemplatesPicker } from "./parts/TemplatesPicker";
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
@@ -489,7 +489,7 @@ function InnerEditor() {
             </ReactFlow>
 
             {/* Demo picker on first visit */}
-            <DemoPicker />
+            <TemplatesPicker />
 
             {/* Execution Status Bar */}
             <ExecutionStatus errorCount={errorCount} nodeCount={nodes.length} />
