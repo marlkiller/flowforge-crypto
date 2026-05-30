@@ -488,6 +488,16 @@ function makeHashMeta(kind: string, label: string, description: string): NodeKin
   };
 }
 
+export const SHA224_META = makeHashMeta(
+  "sha224",
+  "SHA-224",
+  "SHA-224 digest (SHA-2 family, 224-bit output).",
+);
+export const SHA3224_META = makeHashMeta(
+  "sha3224",
+  "SHA3-224",
+  "SHA3-224 digest (Keccak-based, 224-bit output).",
+);
 export const SHA1_META = makeHashMeta("sha1", "SHA-1", "SHA-1 digest.");
 export const SHA256_META = makeHashMeta("sha256", "SHA-256", "SHA-256 digest.");
 export const SHA384_META = makeHashMeta("sha384", "SHA-384", "SHA-384 digest.");

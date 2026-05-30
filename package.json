@@ -78,6 +78,7 @@
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",
     "tw-animate-css": "^1.3.4",
+    "twofish-ts": "^1.0.2",
     "vite-tsconfig-paths": "^6.0.2",
     "whirlpool-hash": "^1.1.6",
     "zod": "^3.24.2"

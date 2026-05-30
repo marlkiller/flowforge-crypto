@@ -20,6 +20,8 @@ import {
   Search,
   Network,
   Split,
+  Archive,
+  GitBranch,
 } from "lucide-react";
 import { getActiveCategories, CATEGORY_META, NODE_KIND_META } from "@/lib/crypto/registry";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -43,7 +45,7 @@ const PRESET_ICONS: Record<string, typeof Fingerprint> = {
   "Ed25519 Sign & Verify": Telescope,
   "JWT Sign & Verify": FileKey,
   "HMAC Sign & Verify": KeyRound,
-  "Hash Suite (4 algorithms)": Hash,
+  "Hash Suite (6 algorithms)": Hash,
   "KDF (PBKDF2) + AES": KeyRound,
   "Argon2 (Password Hash)": KeyRound,
   "TOTP Authenticator": ScanFace,
@@ -56,6 +58,13 @@ const PRESET_ICONS: Record<string, typeof Fingerprint> = {
   "X448 Key Exchange": KeyRound,
   "BLS12-381 Sign & Verify": Network,
   "Diffie-Hellman Key Exchange": KeyRound,
+  "Twofish-CBC Encrypt/Decrypt": ShieldCheck,
+  "XSalsa20-Poly1305 Encrypt/Decrypt": ShieldCheck,
+  "Blowfish-CBC Encrypt/Decrypt": ShieldCheck,
+  "Salsa20 Stream Cipher": ShieldCheck,
+  "RC4 Stream Cipher": Archive,
+  "Rabbit Stream Cipher": Archive,
+  "Merkle Tree": GitBranch,
   "Frequency Analysis": Search,
   "ECB Block Detection": Search,
   "Shamir Split & Join": Split,
@@ -94,7 +103,7 @@ function TemplateMenuButton() {
           {filtered.length === 0 ? (
             <div className="px-2 py-4 text-center text-[10px] opacity-40">No templates found</div>
           ) : (
-            filtered.map((p) => {
+            filtered.map((p, i) => {
               const Icon = PRESET_ICONS[p.label] ?? LayoutTemplate;
               return (
                 <DropdownMenuItem
@@ -102,6 +111,9 @@ function TemplateMenuButton() {
                   onClick={() => graphStore.setActiveGraph(p.seed)}
                   className="text-[11px] cursor-pointer gap-2"
                 >
+                  <span className="text-muted-foreground/30 tabular-nums text-[10px] w-4 text-right shrink-0">
+                    {i + 1}.
+                  </span>
                   <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                   {p.label}
                 </DropdownMenuItem>

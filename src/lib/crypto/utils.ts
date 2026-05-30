@@ -1,6 +1,19 @@
-import { utf8ToBytes, b64ToBytes, hexToBytes, type DataFormat } from "./service";
+import {
+  utf8ToBytes,
+  b64ToBytes,
+  hexToBytes,
+  getProvider,
+  type DataFormat,
+  type HashProvider,
+} from "./service";
 import type { CipherProvider } from "./service";
 import type { GraphNode } from "./types";
+
+export function getProviderHash(name: string): (data: Uint8Array) => Promise<Uint8Array> {
+  const provider = getProvider(name) as HashProvider | undefined;
+  if (!provider) throw new Error(`Hash provider "${name}" not found`);
+  return (data: Uint8Array) => provider.digest(data);
+}
 
 export function parseAs(text: string, fmt: DataFormat): Uint8Array {
   if (fmt === "utf8") return utf8ToBytes(text);

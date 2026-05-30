@@ -6,3 +6,4 @@ import "./sm";
 import "./noble";
 import "./aesCustom";
 import "./extraHashes";
+import "./twofish";
