@@ -204,6 +204,10 @@ function InnerEditor() {
               onEdgeClick={interaction.onEdgeClick}
               onEdgeContextMenu={interaction.onEdgeContextMenu}
               onMoveEnd={onMoveEnd}
+              onBeforeDelete={() => {
+                graphStore.snapshot();
+                return true;
+              }}
               onInit={setRf}
               defaultViewport={active.viewport}
               fitView={!active.viewport}

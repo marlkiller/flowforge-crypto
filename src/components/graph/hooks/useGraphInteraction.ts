@@ -70,7 +70,6 @@ export function useGraphInteraction(
         target: idMap.get(e.target) ?? e.target,
         selected: false,
       }));
-    graphStore.snapshot();
     const cur = graphStore.getActive();
     graphStore.setActiveGraph({
       nodes: [...cur.nodes, ...dupNodes],
@@ -126,7 +125,6 @@ export function useGraphInteraction(
     const selected = rf.getNodes().filter((n) => n.selected);
     if (!selected || selected.length === 0) return;
     const ids = new Set(selected.map((n) => n.id));
-    graphStore.snapshot();
     const w = graphStore.getActive();
     graphStore.setActiveGraph({
       nodes: w.nodes.filter((n) => !ids.has(n.id)),
