@@ -3,55 +3,10 @@ import type { GraphNode } from "../types";
 import { CryptoService, getProvider, type RsaProvider, type MacProvider, utf8ToBytes } from "../service";
 import { getField, getNumberField, getParamBytes } from "../utils";
 
+import { RSA_KEYGEN_META, RSA_META, RSA_SIGN_META, RSA_VERIFY_META } from "./meta";
+
 registerNodeDef("rsa_keygen", {
-  meta: {
-    kind: "rsa_keygen",
-    label: "RSA Key Gen",
-    category: "asymmetric",
-    description: "Generate an RSA key pair.",
-    defaultOutput: "pem",
-    supportedFormats: ["pem", "base64", "hex", "utf8"],
-    outputs: [
-      { id: "publicKey", label: "Public Key" },
-      { id: "privateKey", label: "Private Key" },
-    ],
-    fields: [
-      {
-        id: "algorithm",
-        label: "Algorithm",
-        type: "select",
-        defaultValue: "RSA-OAEP",
-        options: [
-          { label: "RSA-OAEP", value: "RSA-OAEP" },
-          { label: "RSASSA-PKCS1-v1_5", value: "RSASSA-PKCS1-v1_5" },
-          { label: "RSA-PSS", value: "RSA-PSS" },
-        ],
-      },
-      {
-        id: "modulusLength",
-        label: "Modulus Length (bits)",
-        type: "select",
-        defaultValue: "2048",
-        options: [
-          { label: "1024", value: "1024" },
-          { label: "2048", value: "2048" },
-          { label: "4096", value: "4096" },
-        ],
-      },
-      {
-        id: "hash",
-        label: "Hash",
-        type: "select",
-        defaultValue: "SHA-256",
-        options: [
-          { label: "SHA-1", value: "SHA-1" },
-          { label: "SHA-256", value: "SHA-256" },
-          { label: "SHA-384", value: "SHA-384" },
-          { label: "SHA-512", value: "SHA-512" },
-        ],
-      },
-    ],
-  },
+  meta: RSA_KEYGEN_META,
   runner: async (node) => {
     const algo = (node.data["algorithm"] as any) || "RSA-OAEP";
     const modulusLength = getNumberField(node, "modulusLength", 2048);
@@ -70,68 +25,7 @@ registerNodeDef("rsa_keygen", {
 });
 
 registerNodeDef("rsa", {
-  meta: {
-    kind: "rsa",
-    label: "RSA",
-    category: "asymmetric",
-    description: "RSA encrypt/decrypt. Supports RSA-OAEP, RSAES-PKCS1-V1_5, RAW.",
-    defaultOutput: "base64",
-    inputs: [
-      { id: "data", label: "Data" },
-      { id: "publicKey", label: "Public Key (PEM)", visible: (d) => d["action"] !== "decrypt" },
-      { id: "privateKey", label: "Private Key (PEM)", visible: (d) => d["action"] === "decrypt" },
-    ],
-    fields: [
-      {
-        id: "action",
-        label: "Action",
-        type: "select",
-        defaultValue: "encrypt",
-        options: [
-          { label: "Encrypt", value: "encrypt" },
-          { label: "Decrypt", value: "decrypt" },
-        ],
-      },
-      {
-        id: "scheme",
-        label: "Scheme",
-        type: "select",
-        defaultValue: "RSA-OAEP",
-        options: [
-          { label: "RSA-OAEP", value: "RSA-OAEP" },
-          { label: "RSAES-PKCS1-V1_5", value: "RSAES-PKCS1-V1_5" },
-          { label: "RAW", value: "RAW" },
-        ],
-      },
-      {
-        id: "publicKey",
-        label: "Public Key (B64/PEM)",
-        type: "textarea",
-        placeholder: "Paste SPKI public key...",
-        visible: (d) => d["action"] !== "decrypt",
-      },
-      {
-        id: "privateKey",
-        label: "Private Key (B64/PEM)",
-        type: "password",
-        placeholder: "Paste PKCS8 private key...",
-        visible: (d) => d["action"] === "decrypt",
-      },
-      {
-        id: "hash",
-        label: "Hash",
-        type: "select",
-        defaultValue: "SHA-256",
-        visible: (d) => d["scheme"] === "RSA-OAEP",
-        options: [
-          { label: "SHA-1", value: "SHA-1" },
-          { label: "SHA-256", value: "SHA-256" },
-          { label: "SHA-384", value: "SHA-384" },
-          { label: "SHA-512", value: "SHA-512" },
-        ],
-      },
-    ],
-  },
+  meta: RSA_META,
   runner: async (node, inputs) => {
     const action = getField(node, "action", "encrypt");
     const scheme = getField(node, "scheme", "RSA-OAEP");
@@ -157,47 +51,7 @@ registerNodeDef("rsa", {
 });
 
 registerNodeDef("rsa_sign", {
-  meta: {
-    kind: "rsa_sign",
-    label: "RSA Sign",
-    category: "asymmetric",
-    description: "Digital signature generation using a private key.",
-    defaultOutput: "base64",
-    inputs: [
-      { id: "data", label: "Data" },
-      { id: "privateKey", label: "Private Key (PEM)" },
-    ],
-    fields: [
-      {
-        id: "algorithm",
-        label: "Algorithm",
-        type: "select",
-        defaultValue: "RSASSA-PKCS1-v1_5",
-        options: [
-          { label: "RSASSA-PKCS1-v1_5", value: "RSASSA-PKCS1-v1_5" },
-          { label: "RSA-PSS", value: "RSA-PSS" },
-        ],
-      },
-      {
-        id: "hash",
-        label: "Hash",
-        type: "select",
-        defaultValue: "SHA-256",
-        options: [
-          { label: "SHA-1", value: "SHA-1" },
-          { label: "SHA-256", value: "SHA-256" },
-          { label: "SHA-384", value: "SHA-384" },
-          { label: "SHA-512", value: "SHA-512" },
-        ],
-      },
-      {
-        id: "privateKey",
-        label: "Private Key (B64/PEM)",
-        type: "password",
-        placeholder: "Paste PKCS8 private key...",
-      },
-    ],
-  },
+  meta: RSA_SIGN_META,
   runner: async (node, inputs) => {
     const data = inputs["data"] ?? new Uint8Array(0);
     const algo = getField(node, "algorithm", "RSASSA-PKCS1-v1_5");
@@ -214,48 +68,7 @@ registerNodeDef("rsa_sign", {
 });
 
 registerNodeDef("rsa_verify", {
-  meta: {
-    kind: "rsa_verify",
-    label: "RSA Verify",
-    category: "asymmetric",
-    description: "Digital signature verification using a public key.",
-    defaultOutput: "utf8",
-    inputs: [
-      { id: "data", label: "Data" },
-      { id: "signature", label: "Signature (base64)" },
-      { id: "publicKey", label: "Public Key (PEM)" },
-    ],
-    fields: [
-      {
-        id: "algorithm",
-        label: "Algorithm",
-        type: "select",
-        defaultValue: "RSASSA-PKCS1-v1_5",
-        options: [
-          { label: "RSASSA-PKCS1-v1_5", value: "RSASSA-PKCS1-v1_5" },
-          { label: "RSA-PSS", value: "RSA-PSS" },
-        ],
-      },
-      {
-        id: "hash",
-        label: "Hash",
-        type: "select",
-        defaultValue: "SHA-256",
-        options: [
-          { label: "SHA-1", value: "SHA-1" },
-          { label: "SHA-256", value: "SHA-256" },
-          { label: "SHA-384", value: "SHA-384" },
-          { label: "SHA-512", value: "SHA-512" },
-        ],
-      },
-      {
-        id: "publicKey",
-        label: "Public Key (B64/PEM)",
-        type: "textarea",
-        placeholder: "Paste SPKI public key...",
-      },
-    ],
-  },
+  meta: RSA_VERIFY_META,
   runner: async (node, inputs) => {
     const data = inputs["data"] ?? new Uint8Array(0);
     const signature = inputs["signature"] ?? new Uint8Array(0);

@@ -1,17 +1,30 @@
 import { registerNodeDef } from "../registry";
-import { getProvider, type HashProvider, type DataFormat } from "../service";
-import type { GraphNode, NodeDef } from "../types";
+import { getProvider, type HashProvider } from "../service";
+import type { GraphNode, NodeDef, NodeKindMeta } from "../types";
+import {
+  SHA1_META,
+  SHA256_META,
+  SHA384_META,
+  SHA512_META,
+  MD5_META,
+  SHA3256_META,
+  SHA3384_META,
+  SHA3512_META,
+  KECCAK256_META,
+  BLAKE2B_META,
+  BLAKE2S_META,
+  BLAKE3_META,
+  RIPEMD160_META,
+  SHAKE128_META,
+  SHAKE256_META,
+  SM3_META,
+  WHIRLPOOL_META,
+  SHA0_META,
+} from "./meta";
 
-function makeHashNode(algo: string, kind: string, label: string, description: string): NodeDef {
+function makeHashNode(algo: string, meta: NodeKindMeta): NodeDef {
   return {
-    meta: {
-      kind,
-      label,
-      category: "hash",
-      description,
-      defaultOutput: "hex" as DataFormat,
-      inputs: [{ id: "data", label: "Data" }],
-    },
+    meta,
     runner: (_: GraphNode, inputs: Record<string, Uint8Array>) => {
       const provider = getProvider(algo) as HashProvider;
       if (!provider) throw new Error(`Hash provider for ${algo} not found`);
@@ -20,19 +33,21 @@ function makeHashNode(algo: string, kind: string, label: string, description: st
   };
 }
 
-registerNodeDef("sha1", makeHashNode("SHA-1", "sha1", "SHA-1", "SHA-1 digest."));
-registerNodeDef("sha256", makeHashNode("SHA-256", "sha256", "SHA-256", "SHA-256 digest."));
-registerNodeDef("sha384", makeHashNode("SHA-384", "sha384", "SHA-384", "SHA-384 digest."));
-registerNodeDef("sha512", makeHashNode("SHA-512", "sha512", "SHA-512", "SHA-512 digest."));
-registerNodeDef("md5", makeHashNode("MD5", "md5", "MD5", "Legacy MD5 digest."));
-registerNodeDef("sha3256", makeHashNode("SHA3-256", "sha3256", "SHA3-256", "SHA3-256 digest."));
-registerNodeDef("sha3384", makeHashNode("SHA3-384", "sha3384", "SHA3-384", "SHA3-384 digest."));
-registerNodeDef("sha3512", makeHashNode("SHA3-512", "sha3512", "SHA3-512", "SHA3-512 digest."));
-registerNodeDef("keccak256", makeHashNode("Keccak-256", "keccak256", "Keccak-256", "Keccak-256 digest (Ethereum standard)."));
-registerNodeDef("blake2b", makeHashNode("BLAKE2b", "blake2b", "BLAKE2b", "BLAKE2b hash (optimized for 64-bit platforms)."));
-registerNodeDef("blake2s", makeHashNode("BLAKE2s", "blake2s", "BLAKE2s", "BLAKE2s hash (optimized for 8/32-bit platforms)."));
-registerNodeDef("blake3", makeHashNode("BLAKE3", "blake3", "BLAKE3", "BLAKE3 hash (extremely fast, tree-structured)."));
-registerNodeDef("ripemd160", makeHashNode("RIPEMD-160", "ripemd160", "RIPEMD-160", "RIPEMD-160 digest (160-bit hash)."));
-registerNodeDef("shake128", makeHashNode("SHAKE128", "shake128", "SHAKE128", "SHAKE128 XOF (32-byte output)."));
-registerNodeDef("shake256", makeHashNode("SHAKE256", "shake256", "SHAKE256", "SHAKE256 XOF (64-byte output)."));
-registerNodeDef("sm3", makeHashNode("SM3", "sm3", "SM3", "SM3 (Chinese national hash standard, GB/T 32905-2016)."));
+registerNodeDef("sha1", makeHashNode("SHA-1", SHA1_META));
+registerNodeDef("sha256", makeHashNode("SHA-256", SHA256_META));
+registerNodeDef("sha384", makeHashNode("SHA-384", SHA384_META));
+registerNodeDef("sha512", makeHashNode("SHA-512", SHA512_META));
+registerNodeDef("md5", makeHashNode("MD5", MD5_META));
+registerNodeDef("sha3256", makeHashNode("SHA3-256", SHA3256_META));
+registerNodeDef("sha3384", makeHashNode("SHA3-384", SHA3384_META));
+registerNodeDef("sha3512", makeHashNode("SHA3-512", SHA3512_META));
+registerNodeDef("keccak256", makeHashNode("Keccak-256", KECCAK256_META));
+registerNodeDef("blake2b", makeHashNode("BLAKE2b", BLAKE2B_META));
+registerNodeDef("blake2s", makeHashNode("BLAKE2s", BLAKE2S_META));
+registerNodeDef("blake3", makeHashNode("BLAKE3", BLAKE3_META));
+registerNodeDef("ripemd160", makeHashNode("RIPEMD-160", RIPEMD160_META));
+registerNodeDef("shake128", makeHashNode("SHAKE128", SHAKE128_META));
+registerNodeDef("shake256", makeHashNode("SHAKE256", SHAKE256_META));
+registerNodeDef("sm3", makeHashNode("SM3", SM3_META));
+registerNodeDef("whirlpool", makeHashNode("Whirlpool", WHIRLPOOL_META));
+registerNodeDef("sha0", makeHashNode("SHA-0", SHA0_META));

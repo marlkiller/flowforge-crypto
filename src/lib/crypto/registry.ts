@@ -5,16 +5,68 @@ import type { DataFormat } from "./service";
 
 const _registry: Record<string, NodeDef> = {};
 const _kindMeta: Record<string, NodeKindMeta> = {};
+const _loaders: Record<string, () => Promise<void>> = {};
+const _loadingPromises: Record<string, Promise<void>> = {};
 
 export const NODE_REGISTRY: Record<string, NodeDef> = _registry;
 export const NODE_KIND_META: Record<string, NodeKindMeta> = _kindMeta;
 
 export function registerNodeDef(kind: string, def: NodeDef) {
   if (_registry[kind]) {
-    console.warn(`[registry] Node kind "${kind}" is already registered — overwriting.`);
+    // console.warn(`[registry] Node kind "${kind}" is already registered — overwriting.`);
   }
   _registry[kind] = def;
   _kindMeta[kind] = def.meta;
+}
+
+export function registerLazyNode(kind: string, meta: NodeKindMeta, loader: () => Promise<void>) {
+  _kindMeta[kind] = meta;
+  _loaders[kind] = loader;
+}
+
+export async function loadNodeDef(kind: string): Promise<NodeDef> {
+  if (_registry[kind]) return _registry[kind];
+  
+  if (_loadingPromises[kind]) {
+    await _loadingPromises[kind];
+    return _registry[kind];
+  }
+
+  const loader = _loaders[kind];
+  if (!loader) throw new Error(`Unknown node kind: "${kind}"`);
+
+  // Create a timeout promise to prevent infinite waiting on import()
+  const timeoutPromise = new Promise<void>((_, reject) => 
+    setTimeout(() => reject(new Error(`Loading implementation for "${kind}" timed out (5s)`)), 5000)
+  );
+
+  _loadingPromises[kind] = Promise.race([loader(), timeoutPromise]).finally(() => {
+    delete _loadingPromises[kind];
+  });
+
+  try {
+    await _loadingPromises[kind];
+    return _registry[kind];
+  } catch (e) {
+    throw e;
+  }
+}
+
+/**
+ * Loads an external node definition from a URL.
+ * The module should call registerNodeDef or export a NodeDef.
+ */
+export async function loadExternalNode(url: string): Promise<void> {
+  try {
+    const module = await import(/* @vite-ignore */ url);
+    const def = module.nodeDef || module.default;
+
+    if (def && def.meta && def.runner) {
+      registerNodeDef(def.meta.kind, def);
+    }
+  } catch (e) {
+    throw e;
+  }
 }
 
 // ─── Convenience ───────────────────────────────────────────────
@@ -98,7 +150,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
 };
 
 export function getActiveCategories(): string[] {
-  const cats = new Set(Object.values(NODE_REGISTRY).map((n) => n.meta.category));
+  const cats = new Set(Object.values(NODE_KIND_META).map((m) => m.category));
   return Array.from(cats);
 }
 

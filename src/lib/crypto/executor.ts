@@ -1,9 +1,10 @@
 import type { GraphNode, GraphEdge, ExecutionResult, NodeExecutionLog, NodeRunner } from "./types";
-import { NODE_REGISTRY } from "./registry";
+import { loadNodeDef } from "./registry";
 import { topologicalOrder } from "./topoSort";
 
-function nodeParams(node: GraphNode): string | undefined {
-  const meta = NODE_REGISTRY[node.data.kind]?.meta;
+async function nodeParams(node: GraphNode): Promise<string | undefined> {
+  const def = await loadNodeDef(node.data.kind);
+  const meta = def.meta;
   const parts: string[] = [];
   for (const field of meta?.fields ?? []) {
     if (field.type === "select") {
@@ -25,7 +26,8 @@ export async function executeNode(
   node: GraphNode,
   inputs: Record<string, Uint8Array>,
 ): Promise<Record<string, Uint8Array>> {
-  const runner = NODE_REGISTRY[node.data.kind]?.runner as NodeRunner | undefined;
+  const def = await loadNodeDef(node.data.kind);
+  const runner = def.runner as NodeRunner | undefined;
   if (!runner) {
     throw new Error(`Unknown node kind: "${node.data.kind}"`);
   }
@@ -71,18 +73,18 @@ export async function executeGraph(
   const { order, cycle } = topologicalOrder(nodes, edges);
 
   if (cycle) {
-    nodes.forEach((n) => {
+    for (const n of nodes) {
       errors.set(n.id, "Cycle detected in graph");
       logs.push({
         nodeId: n.id,
         label: n.data.label,
         kind: n.data.kind,
-        params: nodeParams(n),
+        params: await nodeParams(n),
         status: "error",
         error: "Cycle detected in graph",
         duration: 0,
       });
-    });
+    }
     return { outputs, errors, order: [], logs };
   }
 
@@ -104,7 +106,7 @@ export async function executeGraph(
         nodeId: node.id,
         label: node.data.label,
         kind: node.data.kind,
-        params: nodeParams(node),
+        params: await nodeParams(node),
         status: "skipped",
         duration: 0,
       });
@@ -132,7 +134,7 @@ export async function executeGraph(
       nodeId: node.id,
       label: node.data.label,
       kind: node.data.kind,
-      params: nodeParams(node),
+      params: await nodeParams(node),
       outputFormat: node.data.outputFormat,
       status: "success",
       duration: 0,

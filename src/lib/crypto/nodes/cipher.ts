@@ -1,7 +1,7 @@
 import { registerNodeDef } from "../registry";
-import type { NodeDef, GraphNode } from "../types";
+import type { NodeDef, GraphNode, CipherProvider } from "../types";
 import { getProvider } from "../service";
-import { getField, getParamBytes } from "../utils";
+import { getField, getParamBytes, validateHex } from "../utils";
 
 function validateKeyLength(key: Uint8Array) {
   const kl = key.byteLength;
@@ -58,6 +58,7 @@ const sm4NodeDef: NodeDef = {
         label: "Key (Hex)",
         type: "password",
         placeholder: "32-char hex (128-bit)...",
+        validate: validateHex(16),
       },
       {
         id: "iv",
@@ -65,6 +66,7 @@ const sm4NodeDef: NodeDef = {
         type: "text",
         placeholder: "32-char hex for CBC...",
         visible: (d) => (d["cipherMode"] as string) !== "ECB",
+        validate: validateHex(16),
       },
     ],
   },
@@ -134,17 +136,17 @@ registerNodeDef("sm4", sm4NodeDef);
 registerNodeDef("aes", {
   meta: {
     kind: "aes",
-      label: "AES",
-      category: "cipher",
-      description: "AES encrypt/decrypt. Key: 32/48/64-char hex. IV sizes vary by mode.",
-      defaultOutput: "hex",
-      inputs: [
-        { id: "data", label: "Data" },
-        { id: "key", label: "Key" },
-        { id: "iv", label: "IV", visible: (d) => (d["cipherMode"] as string) !== "ECB" },
-        { id: "aad", label: "AAD", visible: (d) => (d["cipherMode"] as string) === "GCM" },
-      ],
-      fields: [
+    label: "AES",
+    category: "cipher",
+    description: "AES encrypt/decrypt. Key: 32/48/64-char hex. IV sizes vary by mode.",
+    defaultOutput: "hex",
+    inputs: [
+      { id: "data", label: "Data" },
+      { id: "key", label: "Key" },
+      { id: "iv", label: "IV", visible: (d) => (d["cipherMode"] as string) !== "ECB" },
+      { id: "aad", label: "AAD", visible: (d) => (d["cipherMode"] as string) === "GCM" },
+    ],
+    fields: [
         {
           id: "action",
           label: "Action",
@@ -167,13 +169,20 @@ registerNodeDef("aes", {
             { label: "OFB", value: "OFB" },
           ],
         },
-        { id: "key", label: "Key (Hex)", type: "password", placeholder: "32/48/64-char hex..." },
+        {
+          id: "key",
+          label: "Key (Hex)",
+          type: "password",
+          placeholder: "32/48/64-char hex...",
+          validate: validateHex([16, 24, 32]),
+        },
         {
           id: "iv",
           label: "IV / Counter (Hex)",
           type: "text",
           placeholder: "All modes = 32 hex chars",
           visible: (d) => (d["cipherMode"] as string) !== "ECB",
+          validate: validateHex(16),
         },
         {
           id: "padding",
@@ -194,6 +203,7 @@ registerNodeDef("aes", {
           type: "text",
           placeholder: "optional hex for GCM...",
           visible: (d) => (d["cipherMode"] as string) === "GCM",
+          validate: validateHex(),
         },
       ],
     },
@@ -246,34 +256,34 @@ registerNodeDef("aes", {
 registerNodeDef("chacha20poly1305", {
   meta: {
     kind: "chacha20poly1305",
-      label: "ChaCha20-Poly1305",
-      category: "cipher",
-      description: "Modern Authenticated Encryption (AEAD) with 256-bit key and 96-bit nonce.",
-      defaultOutput: "hex",
-      inputs: [
-        { id: "data", label: "Data" },
-        { id: "key", label: "Key" },
-        { id: "iv", label: "Nonce (IV)" },
-      ],
-      fields: [
-        {
-          id: "action",
-          label: "Action",
-          type: "select",
-          options: [
-            { label: "Encrypt", value: "encrypt" },
-            { label: "Decrypt", value: "decrypt" },
-          ],
-        },
-        {
-          id: "key",
-          label: "Key (Hex)",
-          type: "password",
-          placeholder: "64-char hex (256-bit)...",
-        },
-        { id: "iv", label: "Nonce (Hex)", type: "text", placeholder: "24-char hex (96-bit)..." },
-      ],
-    },
+    label: "ChaCha20-Poly1305",
+    category: "cipher",
+    description: "Modern Authenticated Encryption (AEAD) with 256-bit key and 96-bit nonce.",
+    defaultOutput: "hex",
+    inputs: [
+      { id: "data", label: "Data" },
+      { id: "key", label: "Key" },
+      { id: "iv", label: "Nonce (IV)" },
+    ],
+    fields: [
+      {
+        id: "action",
+        label: "Action",
+        type: "select",
+        options: [
+          { label: "Encrypt", value: "encrypt" },
+          { label: "Decrypt", value: "decrypt" },
+        ],
+      },
+      {
+        id: "key",
+        label: "Key (Hex)",
+        type: "password",
+        placeholder: "64-char hex (256-bit)...",
+      },
+      { id: "iv", label: "Nonce (Hex)", type: "text", placeholder: "24-char hex (96-bit)..." },
+    ],
+  },
     runner: async (node, inputs) => {
       const mainInput = inputs["data"] ?? new Uint8Array(0);
       const action = getField(node, "action", "encrypt");
@@ -305,36 +315,36 @@ registerNodeDef("chacha20poly1305", {
 registerNodeDef("xchacha20poly1305", {
   meta: {
     kind: "xchacha20poly1305",
-      label: "XChaCha20-Poly1305",
-      category: "cipher",
-      description:
-        "Extended-nonce ChaCha20-Poly1305 AEAD with 192-bit nonce for safe random usage.",
-      defaultOutput: "hex",
-      inputs: [
-        { id: "data", label: "Data" },
-        { id: "key", label: "Key" },
-        { id: "iv", label: "Nonce (IV)" },
-      ],
-      fields: [
-        {
-          id: "action",
-          label: "Action",
-          type: "select",
-          options: [
-            { label: "Encrypt", value: "encrypt" },
-            { label: "Decrypt", value: "decrypt" },
-          ],
-        },
-        {
-          id: "key",
-          label: "Key (Hex)",
-          type: "password",
-          placeholder: "64-char hex (256-bit)...",
-        },
-        { id: "iv", label: "Nonce (Hex)", type: "text", placeholder: "48-char hex (192-bit)..." },
-      ],
-    },
-    runner: async (node, inputs) => {
+    label: "XChaCha20-Poly1305",
+    category: "cipher",
+    description:
+      "Extended-nonce ChaCha20-Poly1305 AEAD with 192-bit nonce for safe random usage.",
+    defaultOutput: "hex",
+    inputs: [
+      { id: "data", label: "Data" },
+      { id: "key", label: "Key" },
+      { id: "iv", label: "Nonce (IV)" },
+    ],
+    fields: [
+      {
+        id: "action",
+        label: "Action",
+        type: "select",
+        options: [
+          { label: "Encrypt", value: "encrypt" },
+          { label: "Decrypt", value: "decrypt" },
+        ],
+      },
+      {
+        id: "key",
+        label: "Key (Hex)",
+        type: "password",
+        placeholder: "64-char hex (256-bit)...",
+      },
+      { id: "iv", label: "Nonce (Hex)", type: "text", placeholder: "48-char hex (192-bit)..." },
+    ],
+  },
+  runner: async (node, inputs) => {
       const mainInput = inputs["data"] ?? new Uint8Array(0);
       const action = getField(node, "action", "encrypt");
       const keyBytes = getParamBytes(node as GraphNode, inputs, "key");
@@ -365,32 +375,32 @@ registerNodeDef("xchacha20poly1305", {
 registerNodeDef("aesGcmSiv", {
   meta: {
     kind: "aesGcmSiv",
-      label: "AES-GCM-SIV",
-      category: "cipher",
-      description: "Nonce-misuse resistant AEAD (AES-GCM-SIV). Key: 16 or 32 bytes.",
-      defaultOutput: "hex",
-      inputs: [
-        { id: "data", label: "Data" },
-        { id: "key", label: "Key" },
-        { id: "iv", label: "Nonce (IV)" },
-        { id: "aad", label: "AAD" },
-      ],
-      fields: [
-        {
-          id: "action",
-          label: "Action",
-          type: "select",
-          options: [
-            { label: "Encrypt", value: "encrypt" },
-            { label: "Decrypt", value: "decrypt" },
-          ],
-        },
-        { id: "key", label: "Key (Hex)", type: "password", placeholder: "32 or 64-char hex..." },
-        { id: "iv", label: "Nonce (Hex)", type: "text", placeholder: "24-char hex (96-bit)..." },
-        { id: "aad", label: "AAD (Hex)", type: "text", placeholder: "optional hex..." },
-      ],
-    },
-    runner: async (node, inputs) => {
+    label: "AES-GCM-SIV",
+    category: "cipher",
+    description: "Nonce-misuse resistant AEAD (AES-GCM-SIV). Key: 16 or 32 bytes.",
+    defaultOutput: "hex",
+    inputs: [
+      { id: "data", label: "Data" },
+      { id: "key", label: "Key" },
+      { id: "iv", label: "Nonce (IV)" },
+      { id: "aad", label: "AAD" },
+    ],
+    fields: [
+      {
+        id: "action",
+        label: "Action",
+        type: "select",
+        options: [
+          { label: "Encrypt", value: "encrypt" },
+          { label: "Decrypt", value: "decrypt" },
+        ],
+      },
+      { id: "key", label: "Key (Hex)", type: "password", placeholder: "32 or 64-char hex..." },
+      { id: "iv", label: "Nonce (Hex)", type: "text", placeholder: "24-char hex (96-bit)..." },
+      { id: "aad", label: "AAD (Hex)", type: "text", placeholder: "optional hex..." },
+    ],
+  },
+  runner: async (node, inputs) => {
       const mainInput = inputs["data"] ?? new Uint8Array(0);
       const action = getField(node, "action", "encrypt");
       const keyBytes = getParamBytes(node as GraphNode, inputs, "key");

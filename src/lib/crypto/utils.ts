@@ -25,6 +25,33 @@ export function getNumberField(node: GraphNode, id: string, defaultValue = 0): n
   return parseInt((val as string) || String(defaultValue), 10);
 }
 
+// ─── Validation Helpers ──────────────────────────────────────────
+
+export const isHex = (val: string) => /^[0-9a-fA-F]*$/.test(val.replace(/[:\s]/g, ""));
+export const getHexLen = (val: string) => val.replace(/[:\s]/g, "").length / 2;
+
+export const validateHex =
+  (expectedLen?: number | number[]) =>
+  (val: any): string | null => {
+    if (!val || typeof val !== "string") return null;
+    const clean = val.trim();
+    if (clean === "") return null;
+
+    if (clean.startsWith("-----BEGIN")) return null; // Assume PEM is valid for now
+
+    if (!isHex(clean)) return "Invalid hex";
+
+    const actual = getHexLen(clean);
+    if (expectedLen !== undefined) {
+      if (Array.isArray(expectedLen)) {
+        if (!expectedLen.includes(actual)) return `${actual}B (expected ${expectedLen.join("/")})`;
+      } else {
+        if (actual !== expectedLen) return `${actual}B (expected ${expectedLen})`;
+      }
+    }
+    return null;
+  };
+
 // ─── Param Helper with Caching ───────────────────────────────────
 
 const paramCache = new WeakMap<Record<string, any>, Map<string, { raw: string; bytes: Uint8Array }>>();
