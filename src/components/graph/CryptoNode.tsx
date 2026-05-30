@@ -3,6 +3,7 @@ import { NODE_KIND_META, CATEGORY_META } from "@/lib/crypto/registry";
 import type { NodeData, NodeFieldMeta, NodeInputMeta } from "@/lib/crypto/types";
 import { graphStore } from "./store";
 import { Upload, File as FileIcon, Link2 } from "lucide-react";
+import { CategoryIcon } from "./parts/CategoryIcon";
 import { useEffect } from "react";
 
 export function CryptoNode({ id, data, selected }: NodeProps) {
@@ -13,6 +14,7 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
   const cat = meta
     ? (CATEGORY_META[meta.category] ?? {
         label: meta.category,
+        icon: "Hash",
         accent: "text-muted-foreground",
         chip: "bg-muted/50 text-muted-foreground border-border/50",
         dot: "bg-muted-foreground",
@@ -121,7 +123,8 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
         className={`flex items-center justify-between px-3 py-2 rounded-t-xl border-b border-border/50 bg-muted/30 ${cat!.chip}`}
       >
         <span className="text-sm font-bold text-foreground truncate">{d.label}</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider opacity-80 px-2 py-0.5 rounded-full bg-background/50 border border-border/50">
+        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider opacity-80 px-2 py-0.5 rounded-full bg-background/50 border border-border/50">
+          <CategoryIcon name={cat!.icon} className="w-3 h-3" />
           {cat!.label}
         </span>
       </div>
