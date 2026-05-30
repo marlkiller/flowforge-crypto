@@ -21,6 +21,7 @@ interface State {
   activeId: string;
   pluginUrls: string[];
   sessionPluginUrls: string[];
+  graphKey: number;
 }
 
 const STORAGE_KEY = "flowforge-crypto-workflows";
@@ -71,6 +72,7 @@ function loadPersistedState(): State | null {
       activeId: parsed.activeId || parsed.workflows[0].id,
       pluginUrls: parsed.pluginUrls || [],
       sessionPluginUrls: [],
+      graphKey: 0,
     };
   } catch {
     return null;
@@ -94,7 +96,7 @@ let state: State = (() => {
       const num = parseInt(w.id.replace("wf_", ""), 10);
       return isNaN(num) ? max : Math.max(max, num + 1);
     }, 1);
-    return restored;
+    return { ...restored, graphKey: restored.graphKey ?? 0 };
   }
   wfIdCounter = 1;
   const seed = getAESStandardSeed();
@@ -106,7 +108,7 @@ let state: State = (() => {
     selectedNodeId: null,
     selectedEdgeId: null,
   };
-  return { workflows: [w], activeId: w.id, pluginUrls: [], sessionPluginUrls: [] };
+  return { workflows: [w], activeId: w.id, pluginUrls: [], sessionPluginUrls: [], graphKey: 0 };
 })();
 
 const listeners = new Set<() => void>();
@@ -204,7 +206,8 @@ export const graphStore = {
   setEdgeSelected: (selectedEdgeId: string | null) => patchActive({ selectedEdgeId }),
   setActiveGraph: (g: { nodes: GraphNode[]; edges: GraphEdge[]; name?: string }) => {
     snapshot();
-    patchActive({ ...g, selectedNodeId: null, selectedEdgeId: null });
+    state = { ...state, graphKey: state.graphKey + 1 };
+    patchActive({ ...g, selectedNodeId: null, selectedEdgeId: null, viewport: undefined });
   },
   updateNodeData: (id: string, patch: Record<string, unknown>) => {
     snapshot();
