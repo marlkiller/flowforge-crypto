@@ -25,7 +25,7 @@ registerNodeDef("rot13", {
     category: "string",
     description: "Apply ROT13 substitution.",
     defaultOutput: "utf8",
-    inputs: [{ id: "data", label: "Input" }],
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) => {
     const input = new TextDecoder().decode(inputs["data"] ?? new Uint8Array(0));
@@ -61,7 +61,7 @@ Then in `src/lib/crypto/setup.ts`, add `import "./nodes/rot13";` to the immediat
 
 ## Meta Structure
 
-The `meta: NodeKindMeta` object defines what appears in the UI:
+The `meta: NodeKindMeta` object defines what appears in the UI. There is no separate `fields` concept — everything is an `input`, differentiated by `connectable`:
 
 ```typescript
 interface NodeKindMeta {
@@ -81,15 +81,16 @@ interface NodeKindMeta {
     | "legacy";
   description: string; // tooltip
   defaultOutput?: "utf8" | "hex" | "base64" | "pem" | "base32" | "base58";
-  inputs?: { id: string; label: string; visible?: (data) => boolean }[];
+  inputs?: NodeInputMeta[]; // all ports + form controls
   outputs?: { id: string; label: string; visible?: (data) => boolean }[];
-  fields?: NodeFieldMeta[]; // form controls
 }
 
-interface NodeFieldMeta {
+interface NodeInputMeta {
   id: string;
-  label: string;
-  type: "text" | "password" | "select" | "textarea" | "number";
+  label: string; // display name (type hint omitted — shown via acceptTypes badge)
+  type?: "text" | "password" | "select" | "textarea" | "number"; // set = form control
+  connectable?: boolean; // true = has Handle port (default: true)
+  acceptTypes?: string[]; // displayed as badge: e.g. "B64/PEM" (base64→B64, pem→PEM, hex→HEX, utf8→UTF8, base32→B32, base58→B58)
   placeholder?: string;
   defaultValue?: string | number;
   options?: { label: string; value: string }[]; // for "select" type
@@ -103,14 +104,15 @@ interface NodeFieldMeta {
 
 ### Common meta patterns
 
-| Pattern                          | Example                                                                       |
-| -------------------------------- | ----------------------------------------------------------------------------- |
-| No inputs, no fields (generator) | `entropy/random` — only `defaultOutput`                                       |
-| Single input, no fields          | hash nodes — `inputs: [{ id: "data", label: "Data" }]`                        |
-| Single input + fields            | encoding nodes — `fields: [{ id: "action", type: "select", options: [...] }]` |
-| Multiple inputs + fields         | `aes` — data/key/iv/aad inputs, mode/action/padding fields                    |
-| Multiple named outputs           | `rsa_keygen` — `outputs: [{ id: "publicKey" }, { id: "privateKey" }]`         |
-| Conditional inputs               | `iv` input visible only when `mode !== "ECB"` via `visible` callback          |
+| Pattern                               | Example                                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------------------------- |
+| No inputs (generator)                 | `entropy/random` — only `defaultOutput`                                                 |
+| Single connectable input              | hash nodes — `{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }`   |
+| Form-only inputs (connectable: false) | encoding mode select — `{ id: "mode", type: "select", connectable: false, ... }`        |
+| Connectable + form mixed              | `aes` key/iv — `{ id: "key", connectable: true, acceptTypes: ["HEX", "B64"], type: "password", ... }` |
+| Handle + form (shared id)             | cipher key — single entry with both `connectable: true` and `type: "password"`           |
+| Multiple named outputs                | `rsa_keygen` — `outputs: [{ id: "publicKey" }, { id: "privateKey" }]`                   |
+| Conditional visibility                | `iv` visible only when `mode !== "ECB"` via `visible` callback                          |
 
 ## Runner Signature
 
@@ -173,8 +175,8 @@ registerNodeDef("xor", {
     description: "Byte-wise XOR of two inputs.",
     defaultOutput: "hex",
     inputs: [
-      { id: "a", label: "Input A" },
-      { id: "b", label: "Input B" },
+      { id: "a", label: "Input A", connectable: true, acceptTypes: ["raw"] },
+      { id: "b", label: "Input B", connectable: true, acceptTypes: ["raw"] },
     ],
   },
   runner: (_, inputs) => {
@@ -205,37 +207,12 @@ registerNodeDef("aes", {
     description: "AES encrypt/decrypt.",
     defaultOutput: "hex",
     inputs: [
-      { id: "data", label: "Data" },
-      { id: "key", label: "Key" },
-      { id: "iv", label: "IV", visible: (d) => d["cipherMode"] !== "ECB" },
-      { id: "aad", label: "AAD", visible: (d) => d["cipherMode"] === "GCM" },
-    ],
-    fields: [
-      {
-        id: "action",
-        label: "Action",
-        type: "select",
-        options: [
-          { label: "Encrypt", value: "encrypt" },
-          { label: "Decrypt", value: "decrypt" },
-        ],
-      },
-      {
-        id: "cipherMode",
-        label: "Mode",
-        type: "select",
-        options: [
-          { label: "CBC", value: "CBC" },
-          { label: "GCM", value: "GCM" } /* ... */,
-        ],
-      },
-      {
-        id: "key",
-        label: "Key (Hex)",
-        type: "password",
-        placeholder: "32/48/64 hex...",
-        validate: validateHex([16, 24, 32]),
-      },
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      { id: "key", label: "Key", connectable: true, acceptTypes: ["HEX", "B64"], type: "password", placeholder: "32/48/64 hex...", validate: validateHex([16, 24, 32]) },
+      { id: "iv", label: "IV", connectable: true, acceptTypes: ["HEX", "B64"], type: "text", placeholder: "All modes = 32 hex chars", visible: (d) => d["cipherMode"] !== "ECB" },
+      { id: "aad", label: "AAD", connectable: true, acceptTypes: ["HEX", "B64"], type: "text", placeholder: "optional hex for GCM...", visible: (d) => d["cipherMode"] === "GCM" },
+      { id: "action", label: "Action", type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }], connectable: false },
+      { id: "cipherMode", label: "Mode", type: "select", options: [{ label: "CBC", value: "CBC" }, { label: "GCM", value: "GCM" } /* ... */], connectable: false },
     ],
   },
   runner: async (node, inputs) => {

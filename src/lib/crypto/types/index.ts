@@ -8,21 +8,9 @@ export type NodeKind = string;
 export interface NodeInputMeta {
   id: string;
   label: string;
-  type?: string;
-  visible?: (data: Record<string, unknown>) => boolean;
-}
-
-export interface NodeOutputMeta {
-  id: string;
-  label: string;
-  type?: string;
-  visible?: (data: Record<string, unknown>) => boolean;
-}
-
-export interface NodeFieldMeta {
-  id: string;
-  label: string;
-  type: "text" | "password" | "select" | "textarea" | "number";
+  type?: "text" | "password" | "select" | "textarea" | "number";
+  connectable?: boolean;
+  acceptTypes?: string[];
   placeholder?: string;
   defaultValue?: string | number;
   options?: { label: string; value: string }[];
@@ -33,10 +21,11 @@ export interface NodeFieldMeta {
   tooltip?: string;
 }
 
-export interface FieldGroup {
+export interface NodeOutputMeta {
   id: string;
   label: string;
-  fields: string[];
+  type?: string;
+  visible?: (data: Record<string, unknown>) => boolean;
 }
 
 export interface NodeKindMeta {
@@ -48,12 +37,20 @@ export interface NodeKindMeta {
   supportedFormats?: DataFormat[];
   inputs?: NodeInputMeta[];
   outputs?: NodeOutputMeta[];
-  fields?: NodeFieldMeta[];
-  fieldGroups?: FieldGroup[];
   version?: number;
   migrate?: (data: Record<string, unknown>) => Record<string, unknown>;
-  compatibleInputs?: string[];
-  compatibleOutputs?: string[];
+}
+
+export function formatAcceptType(type: string): string {
+  const map: Record<string, string> = {
+    base64: "B64",
+    pem: "PEM",
+    hex: "HEX",
+    utf8: "UTF8",
+    base32: "B32",
+    base58: "B58",
+  };
+  return map[type] || type.toUpperCase();
 }
 
 export interface NodeData extends Record<string, unknown> {

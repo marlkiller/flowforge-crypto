@@ -12,14 +12,18 @@ registerNodeDef("jwt_sign", {
     description: "Sign a JSON Web Token.",
     defaultOutput: "utf8",
     inputs: [
-      { id: "payload", label: "Payload (JSON)" },
-      { id: "key", label: "Secret/Private Key (PEM)" },
-    ],
-    fields: [
+      { id: "payload", label: "Payload", connectable: true, acceptTypes: ["UTF8"] },
+      {
+        id: "key",
+        label: "Secret/Private Key",
+        connectable: true,
+        acceptTypes: ["PEM", "B64"],
+      },
       {
         id: "algorithm",
         label: "Algorithm",
         type: "select",
+        connectable: false,
         defaultValue: "HS256",
         options: [
           { label: "HS256 (HMAC SHA-256)", value: "HS256" },
@@ -28,9 +32,27 @@ registerNodeDef("jwt_sign", {
           { label: "ES256 (ECDSA P-256 SHA-256)", value: "ES256" },
         ],
       },
-      { id: "issuer", label: "Issuer (iss)", type: "text", placeholder: "optional..." },
-      { id: "subject", label: "Subject (sub)", type: "text", placeholder: "optional..." },
-      { id: "expiresIn", label: "Expires In (e.g. 2h)", type: "text", defaultValue: "2h" },
+      {
+        id: "issuer",
+        label: "Issuer (iss)",
+        type: "text",
+        connectable: false,
+        placeholder: "optional...",
+      },
+      {
+        id: "subject",
+        label: "Subject (sub)",
+        type: "text",
+        connectable: false,
+        placeholder: "optional...",
+      },
+      {
+        id: "expiresIn",
+        label: "Expires In (e.g. 2h)",
+        type: "text",
+        connectable: false,
+        defaultValue: "2h",
+      },
     ],
   },
   runner: async (node, inputs) => {
@@ -76,14 +98,18 @@ registerNodeDef("jwt_verify", {
     description: "Verify a JSON Web Token.",
     defaultOutput: "utf8",
     inputs: [
-      { id: "token", label: "JWT Token" },
-      { id: "key", label: "Secret/Public Key (PEM)" },
-    ],
-    fields: [
+      { id: "token", label: "JWT Token", connectable: true, acceptTypes: ["UTF8"] },
+      {
+        id: "key",
+        label: "Secret/Public Key",
+        connectable: true,
+        acceptTypes: ["PEM", "B64"],
+      },
       {
         id: "algorithm",
         label: "Expected Alg",
         type: "select",
+        connectable: false,
         defaultValue: "HS256",
         options: [
           { label: "HS256", value: "HS256" },

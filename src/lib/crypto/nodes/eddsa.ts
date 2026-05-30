@@ -31,8 +31,13 @@ registerNodeDef("ed_sign", {
     description: "Sign data using an Ed25519 private key.",
     defaultOutput: "base64",
     inputs: [
-      { id: "data", label: "Data" },
-      { id: "privateKey", label: "Private Key (PEM)" },
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      {
+        id: "privateKey",
+        label: "Private Key",
+        connectable: true,
+        acceptTypes: ["PEM", "B64"],
+      },
     ],
   },
   runner: async (node, inputs) => {
@@ -51,9 +56,19 @@ registerNodeDef("ed_verify", {
     description: "Verify data signature using an Ed25519 public key.",
     defaultOutput: "utf8",
     inputs: [
-      { id: "data", label: "Data" },
-      { id: "signature", label: "Signature (base64)" },
-      { id: "publicKey", label: "Public Key (PEM)" },
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      {
+        id: "signature",
+        label: "Signature",
+        connectable: true,
+        acceptTypes: ["B64", "HEX"],
+      },
+      {
+        id: "publicKey",
+        label: "Public Key",
+        connectable: true,
+        acceptTypes: ["PEM", "B64"],
+      },
     ],
   },
   runner: async (node, inputs) => {
@@ -74,8 +89,18 @@ registerNodeDef("x25519_derive", {
     description: "Derive shared secret using X25519 Diffie-Hellman key agreement.",
     defaultOutput: "hex",
     inputs: [
-      { id: "privateKey", label: "My Private Key (PEM)" },
-      { id: "publicKey", label: "Peer Public Key (PEM)" },
+      {
+        id: "privateKey",
+        label: "My Private Key",
+        connectable: true,
+        acceptTypes: ["PEM", "B64"],
+      },
+      {
+        id: "publicKey",
+        label: "Peer Public Key",
+        connectable: true,
+        acceptTypes: ["PEM", "B64"],
+      },
     ],
   },
   runner: async (node, inputs) => {

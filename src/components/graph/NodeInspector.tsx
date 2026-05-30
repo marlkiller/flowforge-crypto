@@ -1,7 +1,7 @@
 import { useNodeConnections } from "@xyflow/react";
 import { graphStore } from "./store";
 import { NODE_KIND_META, CATEGORY_META, getSupportedFormats } from "@/lib/crypto/registry";
-import type { GraphNode, NodeFieldMeta } from "@/lib/crypto/types";
+import type { GraphNode, NodeInputMeta } from "@/lib/crypto/types";
 import type { DataFormat } from "@/lib/crypto/service";
 import { Trash2, File, Upload, Link2, Settings2 } from "lucide-react";
 
@@ -120,14 +120,14 @@ export function NodeInspector({ node }: Props) {
           </Section>
         )}
 
-        {(meta.fields ?? [])
-          .filter((field) => field.visible?.(d) ?? true)
-          .map((field) => (
+        {(meta.inputs ?? [])
+          .filter((input) => input.type != null && (input.visible?.(d) ?? true))
+          .map((input) => (
             <InspectorField
-              key={field.id}
+              key={input.id}
               nodeId={node.id}
-              field={field}
-              value={d[field.id] as string | undefined}
+              field={input}
+              value={d[input.id] as string | undefined}
               update={update}
             />
           ))}
@@ -172,7 +172,7 @@ function InspectorField({
   update,
 }: {
   nodeId: string;
-  field: NodeFieldMeta;
+  field: NodeInputMeta;
   value: string | undefined;
   update: (patch: Record<string, unknown>) => void;
 }) {

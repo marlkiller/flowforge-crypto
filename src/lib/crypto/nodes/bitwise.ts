@@ -10,8 +10,8 @@ registerNodeDef("xor", {
     description: "Byte-wise XOR of two inputs.",
     defaultOutput: "hex",
     inputs: [
-      { id: "a", label: "Input A" },
-      { id: "b", label: "Input B" },
+      { id: "a", label: "Input A", connectable: true, acceptTypes: ["hex", "base64"] },
+      { id: "b", label: "Input B", connectable: true, acceptTypes: ["hex", "base64"] },
     ],
   },
   runner: (_, inputs) => {
@@ -34,8 +34,8 @@ registerNodeDef("constantTimeCompare", {
     description: "Timing-safe byte comparison. Outputs 'Match' or 'No Match'.",
     defaultOutput: "utf8",
     inputs: [
-      { id: "a", label: "Input A" },
-      { id: "b", label: "Input B" },
+      { id: "a", label: "Input A", connectable: true, acceptTypes: ["hex", "base64"] },
+      { id: "b", label: "Input B", connectable: true, acceptTypes: ["hex", "base64"] },
     ],
   },
   runner: (_, inputs) => {
@@ -55,7 +55,7 @@ registerNodeDef("keyGen", {
     category: "entropy",
     description: "Generate a cryptographically strong symmetric key of specified size.",
     defaultOutput: "hex",
-    fields: [
+    inputs: [
       {
         id: "algorithm",
         label: "Algorithm",
@@ -70,6 +70,7 @@ registerNodeDef("keyGen", {
           { label: "HMAC-SHA512 (64 bytes)", value: "hmac512" },
           { label: "Custom", value: "custom" },
         ],
+        connectable: false,
       },
       {
         id: "customLength",
@@ -77,6 +78,7 @@ registerNodeDef("keyGen", {
         type: "number",
         defaultValue: 32,
         visible: (d) => (d["algorithm"] as string) === "custom",
+        connectable: false,
       },
     ],
   },

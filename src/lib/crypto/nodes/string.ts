@@ -7,6 +7,7 @@ registerNodeDef("uppercase", {
     label: "Upper Case",
     category: "string",
     description: "UTF-8 text → uppercase.",
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) =>
     utf8ToBytes(bytesToUtf8(inputs["data"] ?? new Uint8Array(0)).toUpperCase()),
@@ -18,6 +19,7 @@ registerNodeDef("lowercase", {
     label: "Lower Case",
     category: "string",
     description: "UTF-8 text → lowercase.",
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) =>
     utf8ToBytes(bytesToUtf8(inputs["data"] ?? new Uint8Array(0)).toLowerCase()),
@@ -29,6 +31,7 @@ registerNodeDef("reverse", {
     label: "Reverse",
     category: "string",
     description: "Reverse UTF-8 string.",
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) =>
     utf8ToBytes([...bytesToUtf8(inputs["data"] ?? new Uint8Array(0))].reverse().join("")),
@@ -40,6 +43,7 @@ registerNodeDef("trim", {
     label: "Trim",
     category: "string",
     description: "Trim leading/trailing whitespace.",
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) => utf8ToBytes(bytesToUtf8(inputs["data"] ?? new Uint8Array(0)).trim()),
 });
@@ -50,6 +54,7 @@ registerNodeDef("length", {
     label: "Length",
     category: "string",
     description: "Emit decimal byte length.",
+    inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) => utf8ToBytes(String((inputs["data"] ?? new Uint8Array(0)).byteLength)),
 });

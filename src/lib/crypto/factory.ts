@@ -19,8 +19,8 @@ export function makeNode(
     ...initialData,
   };
 
-  // Seed defaults for any field without a value
-  for (const f of meta.fields ?? []) {
+  const formFields = meta.inputs?.filter((i) => i.type) ?? [];
+  for (const f of formFields) {
     if (data[f.id] !== undefined) continue;
 
     if (f.type === "select" && f.options?.length) {

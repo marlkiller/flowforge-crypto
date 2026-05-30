@@ -12,9 +12,9 @@ import {
   bytesToB58,
   b58ToBytes,
 } from "../service";
-import type { NodeFieldMeta } from "../types";
+import type { NodeInputMeta } from "../types";
 
-const baseEncodingFields: NodeFieldMeta[] = [
+const baseEncodingFields: NodeInputMeta[] = [
   {
     id: "mode",
     label: "Mode",
@@ -23,6 +23,7 @@ const baseEncodingFields: NodeFieldMeta[] = [
       { label: "Encode", value: "encode" },
       { label: "Decode", value: "decode" },
     ],
+    connectable: false,
   },
 ];
 
@@ -32,7 +33,10 @@ registerNodeDef("base64", {
     label: "Base64",
     category: "encoding",
     description: "Base64 encode / decode.",
-    fields: baseEncodingFields,
+    inputs: [
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      ...baseEncodingFields,
+    ],
   },
   runner: (node, inputs) => {
     const mainInput = inputs["data"] ?? new Uint8Array(0);
@@ -48,7 +52,10 @@ registerNodeDef("hex", {
     label: "Hex",
     category: "encoding",
     description: "Hex encode / decode.",
-    fields: baseEncodingFields,
+    inputs: [
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      ...baseEncodingFields,
+    ],
   },
   runner: (node, inputs) => {
     const mainInput = inputs["data"] ?? new Uint8Array(0);
@@ -64,7 +71,10 @@ registerNodeDef("url", {
     label: "URL",
     category: "encoding",
     description: "URL component encode / decode.",
-    fields: baseEncodingFields,
+    inputs: [
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      ...baseEncodingFields,
+    ],
   },
   runner: (node, inputs) => {
     const mainInput = inputs["data"] ?? new Uint8Array(0);
@@ -83,7 +93,10 @@ registerNodeDef("base32", {
     label: "Base32",
     category: "encoding",
     description: "Base32 encode / decode (RFC 4648).",
-    fields: baseEncodingFields,
+    inputs: [
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      ...baseEncodingFields,
+    ],
   },
   runner: (node, inputs) => {
     const mainInput = inputs["data"] ?? new Uint8Array(0);
@@ -99,7 +112,10 @@ registerNodeDef("base58", {
     label: "Base58",
     category: "encoding",
     description: "Base58 encode / decode (Bitcoin alphabet).",
-    fields: baseEncodingFields,
+    inputs: [
+      { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+      ...baseEncodingFields,
+    ],
   },
   runner: (node, inputs) => {
     const mainInput = inputs["data"] ?? new Uint8Array(0);

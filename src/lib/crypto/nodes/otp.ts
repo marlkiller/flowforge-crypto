@@ -11,15 +11,28 @@ registerNodeDef("totp", {
     category: "protocol",
     description: "Time-based One-Time Password (RFC 6238).",
     defaultOutput: "utf8",
-    inputs: [{ id: "secret", label: "Secret (base32)" }],
-    fields: [
-      { id: "issuer", label: "Issuer", type: "text", defaultValue: "FlowForge" },
-      { id: "label", label: "Account Name", type: "text", defaultValue: "user@example.com" },
-      { id: "digits", label: "Digits", type: "number", defaultValue: 6 },
-      { id: "period", label: "Period (s)", type: "number", defaultValue: 30 },
+    inputs: [
+      { id: "secret", label: "Secret", connectable: true, acceptTypes: ["base32"] },
+      {
+        id: "issuer",
+        label: "Issuer",
+        connectable: false,
+        type: "text",
+        defaultValue: "FlowForge",
+      },
+      {
+        id: "label",
+        label: "Account Name",
+        connectable: false,
+        type: "text",
+        defaultValue: "user@example.com",
+      },
+      { id: "digits", label: "Digits", connectable: false, type: "number", defaultValue: 6 },
+      { id: "period", label: "Period (s)", connectable: false, type: "number", defaultValue: 30 },
       {
         id: "algorithm",
         label: "Algorithm",
+        connectable: false,
         type: "select",
         defaultValue: "SHA1",
         options: [
@@ -54,13 +67,14 @@ registerNodeDef("hotp", {
     category: "protocol",
     description: "HMAC-based One-Time Password (RFC 4226).",
     defaultOutput: "utf8",
-    inputs: [{ id: "secret", label: "Secret (base32)" }],
-    fields: [
-      { id: "counter", label: "Counter", type: "number", defaultValue: 0 },
-      { id: "digits", label: "Digits", type: "number", defaultValue: 6 },
+    inputs: [
+      { id: "secret", label: "Secret", connectable: true, acceptTypes: ["base32"] },
+      { id: "counter", label: "Counter", connectable: false, type: "number", defaultValue: 0 },
+      { id: "digits", label: "Digits", connectable: false, type: "number", defaultValue: 6 },
       {
         id: "algorithm",
         label: "Algorithm",
+        connectable: false,
         type: "select",
         defaultValue: "SHA1",
         options: [
