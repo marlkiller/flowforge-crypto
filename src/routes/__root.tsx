@@ -174,7 +174,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-import { ThemeProvider } from "../components/theme-provider";
+import { ThemeProvider } from "../components/ThemeProvider";
 import { Toaster } from "../components/ui/sonner";
 
 function RootComponent() {

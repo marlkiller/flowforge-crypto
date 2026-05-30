@@ -4,19 +4,16 @@ import { utf8ToBytes, bytesToHex, hexToBytes } from "../service";
 import { getParamBytes } from "../utils";
 import { sm2 } from "sm-crypto";
 
+import {
+  SM2_KEYGEN_META,
+  SM2_SIGN_META,
+  SM2_VERIFY_META,
+  SM2_ENCRYPT_META,
+  SM2_DECRYPT_META,
+} from "./meta";
+
 registerNodeDef("sm2_keygen", {
-  meta: {
-    kind: "sm2_keygen",
-    label: "SM2 Key Gen",
-    category: "asymmetric",
-    description:
-      "Generate an SM2 key pair (Chinese national elliptic curve standard, GB/T 32918-2016).",
-    defaultOutput: "hex",
-    outputs: [
-      { id: "publicKey", label: "Public Key" },
-      { id: "privateKey", label: "Private Key" },
-    ],
-  },
+  meta: SM2_KEYGEN_META,
   runner: async () => {
     const kp = sm2.generateKeyPairHex();
     return {
@@ -27,25 +24,7 @@ registerNodeDef("sm2_keygen", {
 });
 
 registerNodeDef("sm2_sign", {
-  meta: {
-    kind: "sm2_sign",
-    label: "SM2 Sign",
-    category: "asymmetric",
-    description: "Sign data using an SM2 private key (SM2 signature with SM3 hash).",
-    defaultOutput: "hex",
-    inputs: [
-      { id: "data", label: "Data" },
-      { id: "privateKey", label: "Private Key (hex)" },
-    ],
-    fields: [
-      {
-        id: "privateKey",
-        label: "Private Key (Hex)",
-        type: "password",
-        placeholder: "64-char hex SM2 private key...",
-      },
-    ],
-  },
+  meta: SM2_SIGN_META,
   runner: async (node, inputs) => {
     const data = inputs["data"] ?? new Uint8Array(0);
     const privateKeyBytes = getParamBytes(node as GraphNode, inputs, "privateKey");
@@ -60,18 +39,7 @@ registerNodeDef("sm2_sign", {
 });
 
 registerNodeDef("sm2_verify", {
-  meta: {
-    kind: "sm2_verify",
-    label: "SM2 Verify",
-    category: "asymmetric",
-    description: "Verify an SM2 signature using an SM2 public key.",
-    defaultOutput: "utf8",
-    inputs: [
-      { id: "data", label: "Data" },
-      { id: "signature", label: "Signature (hex)" },
-      { id: "publicKey", label: "Public Key (hex)" },
-    ],
-  },
+  meta: SM2_VERIFY_META,
   runner: async (node, inputs) => {
     const data = inputs["data"] ?? new Uint8Array(0);
     const signature = inputs["signature"] ?? new Uint8Array(0);
@@ -89,17 +57,7 @@ registerNodeDef("sm2_verify", {
 });
 
 registerNodeDef("sm2_encrypt", {
-  meta: {
-    kind: "sm2_encrypt",
-    label: "SM2 Encrypt",
-    category: "asymmetric",
-    description: "Encrypt data using an SM2 public key.",
-    defaultOutput: "hex",
-    inputs: [
-      { id: "data", label: "Data" },
-      { id: "publicKey", label: "Public Key" },
-    ],
-  },
+  meta: SM2_ENCRYPT_META,
   runner: async (node, inputs) => {
     const data = inputs["data"] ?? new Uint8Array(0);
     const publicKeyBytes = getParamBytes(node as GraphNode, inputs, "publicKey");
@@ -113,25 +71,7 @@ registerNodeDef("sm2_encrypt", {
 });
 
 registerNodeDef("sm2_decrypt", {
-  meta: {
-    kind: "sm2_decrypt",
-    label: "SM2 Decrypt",
-    category: "asymmetric",
-    description: "Decrypt data using an SM2 private key.",
-    defaultOutput: "utf8",
-    inputs: [
-      { id: "data", label: "Data" },
-      { id: "privateKey", label: "Private Key" },
-    ],
-    fields: [
-      {
-        id: "privateKey",
-        label: "Private Key (Hex)",
-        type: "password",
-        placeholder: "64-char hex SM2 private key...",
-      },
-    ],
-  },
+  meta: SM2_DECRYPT_META,
   runner: async (node, inputs) => {
     const data = inputs["data"] ?? new Uint8Array(0);
     const privateKeyBytes = getParamBytes(node as GraphNode, inputs, "privateKey");

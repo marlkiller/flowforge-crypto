@@ -192,6 +192,27 @@ export function getProvider(name: string): AlgorithmProvider | undefined {
   return providerRegistry.get(name);
 }
 
+/**
+ * Loads an external algorithm provider from a URL.
+ * The URL should point to a JavaScript module that exports a 'provider' constant
+ * or a default export that matches the AlgorithmProvider interface.
+ */
+export async function loadExternalProvider(url: string): Promise<AlgorithmProvider> {
+  try {
+    const module = await import(/* @vite-ignore */ url);
+    const provider = module.provider || module.default;
+
+    if (!provider || !provider.name || !provider.type) {
+      throw new Error("Invalid provider module structure. Expected export 'provider' or default.");
+    }
+
+    registerProvider(provider);
+    return provider;
+  } catch (e) {
+    throw e;
+  }
+}
+
 // ─── CryptoService — WebCrypto wrapper ────────────────────────────
 
 export const CryptoService = {

@@ -16,6 +16,8 @@ export interface Workflow {
 interface State {
   workflows: Workflow[];
   activeId: string;
+  pluginUrls: string[];
+  sessionPluginUrls: string[];
 }
 
 const STORAGE_KEY = "cryptoflow-workflows";
@@ -44,17 +46,29 @@ function loadPersistedState(): State | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed?.workflows) || parsed.workflows.length === 0) return null;
-    // Migration: filter out nodes whose kind is no longer registered
+    
     parsed.workflows.forEach((w: Workflow) => {
-      w.nodes = w.nodes.filter((n) => n.data && NODE_REGISTRY[n.data.kind]);
+      // Filter out nodes whose kind is no longer registered
+      w.nodes = w.nodes.filter((n) => n.data && NODE_KIND_META[n.data.kind]);
       w.nodes.forEach((n) => {
-        if (n.data) n.data.fileBytes = undefined;
+        if (n.data) {
+          n.data.fileBytes = undefined;
+          n.data.output = undefined;
+          n.data.error = undefined;
+          n.data.outputBytesLen = undefined;
+        }
       });
     });
-    // Keep only workflows that still have nodes
+
     parsed.workflows = parsed.workflows.filter((w: Workflow) => w.nodes.length > 0);
     if (parsed.workflows.length === 0) return null;
-    return parsed as State;
+    
+    return {
+      workflows: parsed.workflows,
+      activeId: parsed.activeId || parsed.workflows[0].id,
+      pluginUrls: parsed.pluginUrls || [],
+      sessionPluginUrls: [],
+    };
   } catch {
     return null;
   }
@@ -81,7 +95,7 @@ let state: State = (() => {
   }
   wfIdCounter = 1;
   const w = emptyWorkflow("Workflow 1");
-  return { workflows: [w], activeId: w.id };
+  return { workflows: [w], activeId: w.id, pluginUrls: [], sessionPluginUrls: [] };
 })();
 
 const listeners = new Set<() => void>();
@@ -295,6 +309,38 @@ export const graphStore = {
     };
     emit();
     return workflows.length;
+  },
+
+  // plugin ops
+  addPluginUrl: (url: string, persist = true) => {
+    const pUrls = state.pluginUrls || [];
+    const sUrls = state.sessionPluginUrls || [];
+    
+    if (persist) {
+      if (pUrls.includes(url)) return;
+      // If it was in session, move it to persisted
+      state = { 
+        ...state, 
+        pluginUrls: [...pUrls, url],
+        sessionPluginUrls: sUrls.filter(u => u !== url)
+      };
+    } else {
+      if (pUrls.includes(url) || sUrls.includes(url)) return;
+      state = { ...state, sessionPluginUrls: [...sUrls, url] };
+    }
+    emit();
+  },
+  removePluginUrl: (url: string) => {
+    state = {
+      ...state,
+      pluginUrls: (state.pluginUrls || []).filter((u) => u !== url),
+      sessionPluginUrls: (state.sessionPluginUrls || []).filter((u) => u !== url),
+    };
+    emit();
+  },
+  getAllPluginUrls: () => {
+    const all = [...(state.pluginUrls || []), ...(state.sessionPluginUrls || [])];
+    return Array.from(new Set(all));
   },
 
   subscribe: (l: () => void) => {
