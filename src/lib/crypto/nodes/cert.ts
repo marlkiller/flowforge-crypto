@@ -22,14 +22,16 @@ registerNodeDef("x509Parse", {
     ],
   },
   runner: (node, inputs) => {
-    const pemText = inputs["pem"]
-      ? bytesToUtf8(inputs["pem"])
-      : getField(node, "pem", "");
+    const pemText = inputs["pem"] ? bytesToUtf8(inputs["pem"]) : getField(node, "pem", "");
     if (!pemText?.trim()) throw new Error("PEM certificate input is required");
     const cert = forge.pki.certificateFromPem(pemText);
     const lines: string[] = [];
-    lines.push(`Subject: ${cert.subject.attributes.map((a: any) => `${a.name}=${a.value}`).join(", ")}`);
-    lines.push(`Issuer: ${cert.issuer.attributes.map((a: any) => `${a.name}=${a.value}`).join(", ")}`);
+    lines.push(
+      `Subject: ${cert.subject.attributes.map((a: any) => `${a.name}=${a.value}`).join(", ")}`,
+    );
+    lines.push(
+      `Issuer: ${cert.issuer.attributes.map((a: any) => `${a.name}=${a.value}`).join(", ")}`,
+    );
     lines.push(`Serial: ${cert.serialNumber}`);
     lines.push(`Valid From: ${cert.validity.notBefore}`);
     lines.push(`Valid To: ${cert.validity.notAfter}`);
@@ -113,9 +115,7 @@ registerNodeDef("pemDerConvert", {
   },
   runner: (node, inputs) => {
     const direction = getField(node, "direction", "pemToDer");
-    const inputText = inputs["input"]
-      ? bytesToUtf8(inputs["input"])
-      : getField(node, "input", "");
+    const inputText = inputs["input"] ? bytesToUtf8(inputs["input"]) : getField(node, "input", "");
     if (!inputText?.trim()) throw new Error("Input is required");
 
     if (direction === "pemToDer") {
@@ -124,7 +124,11 @@ registerNodeDef("pemDerConvert", {
         .replace(/-----END [^-]+-----/g, "")
         .replace(/\s+/g, "");
       const der = b64ToBytes(cleaned);
-      return utf8ToBytes(Array.from(der).map((b) => b.toString(16).padStart(2, "0")).join(""));
+      return utf8ToBytes(
+        Array.from(der)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(""),
+      );
     }
 
     if (direction === "pemToDerB64") {
@@ -142,7 +146,9 @@ registerNodeDef("pemDerConvert", {
       const b64 = bytesToB64(derBytes);
       const pemLabel = getField(node, "pemLabel", "CERTIFICATE");
       const lines = b64.match(/.{1,64}/g) || [];
-      return utf8ToBytes(`-----BEGIN ${pemLabel}-----\n${lines.join("\n")}\n-----END ${pemLabel}-----`);
+      return utf8ToBytes(
+        `-----BEGIN ${pemLabel}-----\n${lines.join("\n")}\n-----END ${pemLabel}-----`,
+      );
     }
 
     if (direction === "derHexToB64") {
@@ -213,7 +219,19 @@ registerNodeDef("jwkConvert", {
       let pem: string;
       const wireBytes = inputs["keyData"];
       if (wireBytes && wireBytes.length > 0) {
-        const head = String.fromCharCode(wireBytes[0], wireBytes[1], wireBytes[2], wireBytes[3], wireBytes[4], wireBytes[5], wireBytes[6], wireBytes[7], wireBytes[8], wireBytes[9], wireBytes[10]);
+        const head = String.fromCharCode(
+          wireBytes[0],
+          wireBytes[1],
+          wireBytes[2],
+          wireBytes[3],
+          wireBytes[4],
+          wireBytes[5],
+          wireBytes[6],
+          wireBytes[7],
+          wireBytes[8],
+          wireBytes[9],
+          wireBytes[10],
+        );
         pem = head.startsWith("-----BEGIN ") ? bytesToUtf8(wireBytes).trim() : rawDerToPem();
       } else {
         const fieldStr = getField(node, "keyData", "");
@@ -221,9 +239,13 @@ registerNodeDef("jwkConvert", {
         pem = fieldStr.trim();
       }
       let lastError = "";
-      let isPrivate = pem.includes("PRIVATE KEY");
+      const isPrivate = pem.includes("PRIVATE KEY");
       const algsToTry: Array<{ alg: string; private: boolean }> = [];
-      const baseAlgs = /RSA/.test(pem) ? ["RS256", "RS384", "RS512"] : /EC|ECDSA/.test(pem) ? ["ES256", "ES384", "ES512"] : ["RS256", "ES256", "RS384", "ES384"];
+      const baseAlgs = /RSA/.test(pem)
+        ? ["RS256", "RS384", "RS512"]
+        : /EC|ECDSA/.test(pem)
+          ? ["ES256", "ES384", "ES512"]
+          : ["RS256", "ES256", "RS384", "ES384"];
       for (const a of baseAlgs) {
         algsToTry.push({ alg: a, private: isPrivate });
         if (!isPrivate) algsToTry.push({ alg: a, private: true });
@@ -240,7 +262,7 @@ registerNodeDef("jwkConvert", {
       if (!cryptoKey) {
         throw new Error(
           `PEM to JWK failed — could not determine key algorithm. Last error: ${lastError}. ` +
-          `Ensure the PEM/key data is a valid SPKI/PKCS8 key (RSA or EC).`,
+            `Ensure the PEM/key data is a valid SPKI/PKCS8 key (RSA or EC).`,
         );
       }
       const jwk = await jose.exportJWK(cryptoKey);
@@ -249,7 +271,9 @@ registerNodeDef("jwkConvert", {
 
     if (direction === "jwkToPem") {
       let jwk: any;
-      try { jwk = JSON.parse(rawInputText()); } catch {
+      try {
+        jwk = JSON.parse(rawInputText());
+      } catch {
         throw new Error("Invalid JWK JSON");
       }
       try {
@@ -263,7 +287,9 @@ registerNodeDef("jwkConvert", {
 
     if (direction === "analyzeJwk") {
       let jwk: any;
-      try { jwk = JSON.parse(rawInputText()); } catch {
+      try {
+        jwk = JSON.parse(rawInputText());
+      } catch {
         throw new Error("Invalid JWK JSON");
       }
       const lines: string[] = [];
@@ -273,7 +299,8 @@ registerNodeDef("jwkConvert", {
       if (jwk.kid) lines.push(`Key ID (kid): ${jwk.kid}`);
       if (jwk.use) lines.push(`Use (use): ${jwk.use}`);
       if (jwk.key_ops) lines.push(`Key Ops: ${(jwk.key_ops as string[]).join(", ")}`);
-      if (jwk.n) lines.push(`RSA Modulus (n): ${jwk.n.substring(0, 40)}... (${jwk.n.length * 6} bits est.)`);
+      if (jwk.n)
+        lines.push(`RSA Modulus (n): ${jwk.n.substring(0, 40)}... (${jwk.n.length * 6} bits est.)`);
       if (jwk.x) lines.push(`EC X: ${jwk.x.substring(0, 20)}...`);
       if (jwk.y) lines.push(`EC Y: ${jwk.y.substring(0, 20)}...`);
       if (jwk.d) lines.push(`Private Key (d): present`);
@@ -321,7 +348,8 @@ registerNodeDef("sshKeyParse", {
       const decoder = new TextDecoder();
       let offset = 0;
       const readLen = (): number => {
-        const len = (raw[offset] << 24) | (raw[offset + 1] << 16) | (raw[offset + 2] << 8) | raw[offset + 3];
+        const len =
+          (raw[offset] << 24) | (raw[offset + 1] << 16) | (raw[offset + 2] << 8) | raw[offset + 3];
         offset += 4;
         return len;
       };
@@ -339,7 +367,9 @@ registerNodeDef("sshKeyParse", {
         lines.push(`Modulus (n): ${n.length * 8} bits est.`);
       } else if (embeddedType === "ssh-ed25519") {
         const pubKey = raw.slice(offset);
-        const hex = Array.from(pubKey).map((b) => b.toString(16).padStart(2, "0")).join("");
+        const hex = Array.from(pubKey)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
         lines.push(`Public Key (hex): ${hex}`);
         lines.push(`Key Length: ${pubKey.length} bytes`);
       } else if (embeddedType.startsWith("ecdsa-")) {

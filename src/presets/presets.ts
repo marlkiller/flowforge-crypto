@@ -482,37 +482,128 @@ export function getTOTPPreset(): WorkflowSeed {
 }
 
 export function getMlKemPreset(): WorkflowSeed {
-  const aliceKeyGen = makeNode("ml_kem_keygen", { x: 50, y: 50 }, { parameterSet: "ML-KEM-768", label: "Alice Key Gen" });
-  const bobEncaps = makeNode("ml_kem_encaps", { x: 400, y: 50 }, { parameterSet: "ML-KEM-768", label: "Bob Encaps" });
-  const aliceDecaps = makeNode("ml_kem_decaps", { x: 750, y: 50 }, { parameterSet: "ML-KEM-768", label: "Alice Decaps" });
-  const sigOut = makeNode("output", { x: 1100, y: 10 }, { label: "Ciphertext", outputFormat: "hex" });
-  const ssA = makeNode("output", { x: 1100, y: 150 }, { label: "Alice Shared Secret", outputFormat: "hex" });
-  const ssB = makeNode("output", { x: 1100, y: 290 }, { label: "Bob Shared Secret", outputFormat: "hex" });
-  const hexPub = makeNode("hex", { x: 170, y: 180 }, { mode: "encode", label: "Pub Key (hex)", outputFormat: "utf8" });
-  const pubOut = makeNode("output", { x: 170, y: 280 }, { label: "Public Key", outputFormat: "hex" });
+  const aliceKeyGen = makeNode(
+    "ml_kem_keygen",
+    { x: 50, y: 50 },
+    { parameterSet: "ML-KEM-768", label: "Alice Key Gen" },
+  );
+  const bobEncaps = makeNode(
+    "ml_kem_encaps",
+    { x: 400, y: 50 },
+    { parameterSet: "ML-KEM-768", label: "Bob Encaps" },
+  );
+  const aliceDecaps = makeNode(
+    "ml_kem_decaps",
+    { x: 750, y: 50 },
+    { parameterSet: "ML-KEM-768", label: "Alice Decaps" },
+  );
+  const sigOut = makeNode(
+    "output",
+    { x: 1100, y: 10 },
+    { label: "Ciphertext", outputFormat: "hex" },
+  );
+  const ssA = makeNode(
+    "output",
+    { x: 1100, y: 150 },
+    { label: "Alice Shared Secret", outputFormat: "hex" },
+  );
+  const ssB = makeNode(
+    "output",
+    { x: 1100, y: 290 },
+    { label: "Bob Shared Secret", outputFormat: "hex" },
+  );
+  const hexPub = makeNode(
+    "hex",
+    { x: 170, y: 180 },
+    { mode: "encode", label: "Pub Key (hex)", outputFormat: "utf8" },
+  );
+  const pubOut = makeNode(
+    "output",
+    { x: 170, y: 280 },
+    { label: "Public Key", outputFormat: "hex" },
+  );
 
   return {
     name: "ML-KEM Encapsulation",
     nodes: [aliceKeyGen, bobEncaps, aliceDecaps, sigOut, ssA, ssB, hexPub, pubOut],
     edges: [
-      { id: "k1", source: aliceKeyGen.id, target: bobEncaps.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
-      { id: "k2", source: aliceKeyGen.id, target: aliceDecaps.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      { id: "k3", source: bobEncaps.id, target: aliceDecaps.id, sourceHandle: "ciphertext", targetHandle: "ciphertext", animated: true },
-      { id: "k4", source: bobEncaps.id, target: sigOut.id, sourceHandle: "ciphertext", animated: true },
+      {
+        id: "k1",
+        source: aliceKeyGen.id,
+        target: bobEncaps.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
+      {
+        id: "k2",
+        source: aliceKeyGen.id,
+        target: aliceDecaps.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+      {
+        id: "k3",
+        source: bobEncaps.id,
+        target: aliceDecaps.id,
+        sourceHandle: "ciphertext",
+        targetHandle: "ciphertext",
+        animated: true,
+      },
+      {
+        id: "k4",
+        source: bobEncaps.id,
+        target: sigOut.id,
+        sourceHandle: "ciphertext",
+        animated: true,
+      },
       { id: "k5", source: aliceDecaps.id, target: ssA.id, animated: true },
-      { id: "k6", source: bobEncaps.id, target: ssB.id, sourceHandle: "sharedSecret", animated: true },
-      { id: "k7", source: aliceKeyGen.id, target: hexPub.id, sourceHandle: "publicKey", animated: true },
+      {
+        id: "k6",
+        source: bobEncaps.id,
+        target: ssB.id,
+        sourceHandle: "sharedSecret",
+        animated: true,
+      },
+      {
+        id: "k7",
+        source: aliceKeyGen.id,
+        target: hexPub.id,
+        sourceHandle: "publicKey",
+        animated: true,
+      },
       { id: "k8", source: hexPub.id, target: pubOut.id, animated: true },
     ],
   };
 }
 
 export function getMlDsaPreset(): WorkflowSeed {
-  const input = makeNode("input", { x: 50, y: 200 }, { text: "hello world - post-quantum signing", label: "Message" });
-  const keyGen = makeNode("ml_dsa_keygen", { x: 50, y: 50 }, { parameterSet: "ML-DSA-65", label: "ML-DSA Key Gen" });
-  const sign = makeNode("ml_dsa_sign", { x: 450, y: 50 }, { parameterSet: "ML-DSA-65", label: "ML-DSA Sign" });
-  const verify = makeNode("ml_dsa_verify", { x: 850, y: 50 }, { parameterSet: "ML-DSA-65", label: "ML-DSA Verify" });
-  const sigOut = makeNode("output", { x: 1200, y: 10 }, { label: "Signature", outputFormat: "base64" });
+  const input = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    { text: "hello world - post-quantum signing", label: "Message" },
+  );
+  const keyGen = makeNode(
+    "ml_dsa_keygen",
+    { x: 50, y: 50 },
+    { parameterSet: "ML-DSA-65", label: "ML-DSA Key Gen" },
+  );
+  const sign = makeNode(
+    "ml_dsa_sign",
+    { x: 450, y: 50 },
+    { parameterSet: "ML-DSA-65", label: "ML-DSA Sign" },
+  );
+  const verify = makeNode(
+    "ml_dsa_verify",
+    { x: 850, y: 50 },
+    { parameterSet: "ML-DSA-65", label: "ML-DSA Verify" },
+  );
+  const sigOut = makeNode(
+    "output",
+    { x: 1200, y: 10 },
+    { label: "Signature", outputFormat: "base64" },
+  );
   const result = makeNode("output", { x: 1200, y: 150 }, { label: "Verify Result" });
 
   return {
@@ -520,10 +611,24 @@ export function getMlDsaPreset(): WorkflowSeed {
     nodes: [input, keyGen, sign, verify, sigOut, result],
     edges: [
       { id: "d1", source: input.id, target: sign.id, targetHandle: "data", animated: true },
-      { id: "d2", source: keyGen.id, target: sign.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
+      {
+        id: "d2",
+        source: keyGen.id,
+        target: sign.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
       { id: "d3", source: input.id, target: verify.id, targetHandle: "data", animated: true },
       { id: "d4", source: sign.id, target: verify.id, targetHandle: "signature", animated: true },
-      { id: "d5", source: keyGen.id, target: verify.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "d5",
+        source: keyGen.id,
+        target: verify.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "d6", source: sign.id, target: sigOut.id, animated: true },
       { id: "d7", source: verify.id, target: result.id, animated: true },
     ],
@@ -531,11 +636,31 @@ export function getMlDsaPreset(): WorkflowSeed {
 }
 
 export function getSlhDsaPreset(): WorkflowSeed {
-  const input = makeNode("input", { x: 50, y: 200 }, { text: "hello world - hash-based signing", label: "Message" });
-  const keyGen = makeNode("slh_dsa_keygen", { x: 50, y: 50 }, { parameterSet: "SLH-DSA-SHAKE-128s", label: "SLH-DSA Key Gen" });
-  const sign = makeNode("slh_dsa_sign", { x: 450, y: 50 }, { parameterSet: "SLH-DSA-SHAKE-128s", label: "SLH-DSA Sign" });
-  const verify = makeNode("slh_dsa_verify", { x: 850, y: 50 }, { parameterSet: "SLH-DSA-SHAKE-128s", label: "SLH-DSA Verify" });
-  const sigOut = makeNode("output", { x: 1200, y: 10 }, { label: "Signature", outputFormat: "base64" });
+  const input = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    { text: "hello world - hash-based signing", label: "Message" },
+  );
+  const keyGen = makeNode(
+    "slh_dsa_keygen",
+    { x: 50, y: 50 },
+    { parameterSet: "SLH-DSA-SHAKE-128s", label: "SLH-DSA Key Gen" },
+  );
+  const sign = makeNode(
+    "slh_dsa_sign",
+    { x: 450, y: 50 },
+    { parameterSet: "SLH-DSA-SHAKE-128s", label: "SLH-DSA Sign" },
+  );
+  const verify = makeNode(
+    "slh_dsa_verify",
+    { x: 850, y: 50 },
+    { parameterSet: "SLH-DSA-SHAKE-128s", label: "SLH-DSA Verify" },
+  );
+  const sigOut = makeNode(
+    "output",
+    { x: 1200, y: 10 },
+    { label: "Signature", outputFormat: "base64" },
+  );
   const result = makeNode("output", { x: 1200, y: 150 }, { label: "Verify Result" });
 
   return {
@@ -543,10 +668,24 @@ export function getSlhDsaPreset(): WorkflowSeed {
     nodes: [input, keyGen, sign, verify, sigOut, result],
     edges: [
       { id: "h1", source: input.id, target: sign.id, targetHandle: "data", animated: true },
-      { id: "h2", source: keyGen.id, target: sign.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
+      {
+        id: "h2",
+        source: keyGen.id,
+        target: sign.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
       { id: "h3", source: input.id, target: verify.id, targetHandle: "data", animated: true },
       { id: "h4", source: sign.id, target: verify.id, targetHandle: "signature", animated: true },
-      { id: "h5", source: keyGen.id, target: verify.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "h5",
+        source: keyGen.id,
+        target: verify.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "h6", source: sign.id, target: sigOut.id, animated: true },
       { id: "h7", source: verify.id, target: result.id, animated: true },
     ],
@@ -556,9 +695,21 @@ export function getSlhDsaPreset(): WorkflowSeed {
 export function getSecp256k1Preset(): WorkflowSeed {
   const input = makeNode("input", { x: 50, y: 200 }, { text: "hello world", label: "Message" });
   const keyGen = makeNode("secp256k1_keygen", { x: 50, y: 50 }, { label: "Key Gen" });
-  const sign = makeNode("secp256k1_sign", { x: 400, y: 50 }, { hashFirst: "true", label: "Sign (ECDSA)" });
-  const verify = makeNode("secp256k1_verify", { x: 750, y: 50 }, { hashFirst: "true", label: "Verify" });
-  const sigOut = makeNode("output", { x: 1100, y: 10 }, { label: "Signature", outputFormat: "base64" });
+  const sign = makeNode(
+    "secp256k1_sign",
+    { x: 400, y: 50 },
+    { hashFirst: "true", label: "Sign (ECDSA)" },
+  );
+  const verify = makeNode(
+    "secp256k1_verify",
+    { x: 750, y: 50 },
+    { hashFirst: "true", label: "Verify" },
+  );
+  const sigOut = makeNode(
+    "output",
+    { x: 1100, y: 10 },
+    { label: "Signature", outputFormat: "base64" },
+  );
   const result = makeNode("output", { x: 1100, y: 150 }, { label: "Verify Result" });
 
   return {
@@ -566,10 +717,24 @@ export function getSecp256k1Preset(): WorkflowSeed {
     nodes: [input, keyGen, sign, verify, sigOut, result],
     edges: [
       { id: "s1", source: input.id, target: sign.id, targetHandle: "data", animated: true },
-      { id: "s2", source: keyGen.id, target: sign.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
+      {
+        id: "s2",
+        source: keyGen.id,
+        target: sign.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
       { id: "s3", source: input.id, target: verify.id, targetHandle: "data", animated: true },
       { id: "s4", source: sign.id, target: verify.id, targetHandle: "signature", animated: true },
-      { id: "s5", source: keyGen.id, target: verify.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "s5",
+        source: keyGen.id,
+        target: verify.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "s6", source: sign.id, target: sigOut.id, animated: true },
       { id: "s7", source: verify.id, target: result.id, animated: true },
     ],
@@ -581,17 +746,53 @@ export function getSecp256k1EcdhPreset(): WorkflowSeed {
   const bobKey = makeNode("secp256k1_keygen", { x: 50, y: 250 }, { label: "Bob Key Gen" });
   const aliceDerive = makeNode("ecdh_secp256k1", { x: 400, y: 50 }, { label: "Alice ECDH" });
   const bobDerive = makeNode("ecdh_secp256k1", { x: 400, y: 250 }, { label: "Bob ECDH" });
-  const sharedA = makeNode("output", { x: 750, y: 50 }, { label: "Alice Shared", outputFormat: "hex" });
-  const sharedB = makeNode("output", { x: 750, y: 250 }, { label: "Bob Shared", outputFormat: "hex" });
+  const sharedA = makeNode(
+    "output",
+    { x: 750, y: 50 },
+    { label: "Alice Shared", outputFormat: "hex" },
+  );
+  const sharedB = makeNode(
+    "output",
+    { x: 750, y: 250 },
+    { label: "Bob Shared", outputFormat: "hex" },
+  );
 
   return {
     name: "secp256k1 ECDH Key Exchange",
     nodes: [aliceKey, bobKey, aliceDerive, bobDerive, sharedA, sharedB],
     edges: [
-      { id: "e1", source: aliceKey.id, target: aliceDerive.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      { id: "e2", source: bobKey.id, target: bobDerive.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      { id: "e3", source: aliceKey.id, target: bobDerive.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
-      { id: "e4", source: bobKey.id, target: aliceDerive.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "e1",
+        source: aliceKey.id,
+        target: aliceDerive.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+      {
+        id: "e2",
+        source: bobKey.id,
+        target: bobDerive.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+      {
+        id: "e3",
+        source: aliceKey.id,
+        target: bobDerive.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
+      {
+        id: "e4",
+        source: bobKey.id,
+        target: aliceDerive.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "e5", source: aliceDerive.id, target: sharedA.id, animated: true },
       { id: "e6", source: bobDerive.id, target: sharedB.id, animated: true },
     ],
@@ -599,11 +800,19 @@ export function getSecp256k1EcdhPreset(): WorkflowSeed {
 }
 
 export function getEd448Preset(): WorkflowSeed {
-  const input = makeNode("input", { x: 50, y: 200 }, { text: "hello world - Ed448 signing", label: "Message" });
+  const input = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    { text: "hello world - Ed448 signing", label: "Message" },
+  );
   const keyGen = makeNode("ed448_keygen", { x: 50, y: 50 }, { label: "Key Gen" });
   const sign = makeNode("ed448_sign", { x: 400, y: 50 }, { label: "Sign" });
   const verify = makeNode("ed448_verify", { x: 750, y: 50 }, { label: "Verify" });
-  const sigOut = makeNode("output", { x: 1100, y: 10 }, { label: "Signature", outputFormat: "base64" });
+  const sigOut = makeNode(
+    "output",
+    { x: 1100, y: 10 },
+    { label: "Signature", outputFormat: "base64" },
+  );
   const result = makeNode("output", { x: 1100, y: 150 }, { label: "Verify Result" });
 
   return {
@@ -611,10 +820,24 @@ export function getEd448Preset(): WorkflowSeed {
     nodes: [input, keyGen, sign, verify, sigOut, result],
     edges: [
       { id: "e1", source: input.id, target: sign.id, targetHandle: "data", animated: true },
-      { id: "e2", source: keyGen.id, target: sign.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
+      {
+        id: "e2",
+        source: keyGen.id,
+        target: sign.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
       { id: "e3", source: input.id, target: verify.id, targetHandle: "data", animated: true },
       { id: "e4", source: sign.id, target: verify.id, targetHandle: "signature", animated: true },
-      { id: "e5", source: keyGen.id, target: verify.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "e5",
+        source: keyGen.id,
+        target: verify.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "e6", source: sign.id, target: sigOut.id, animated: true },
       { id: "e7", source: verify.id, target: result.id, animated: true },
     ],
@@ -626,17 +849,53 @@ export function getX448Preset(): WorkflowSeed {
   const bobKey = makeNode("ed448_keygen", { x: 50, y: 250 }, { label: "Bob Ed448 Key Gen" });
   const aliceX = makeNode("x448_derive", { x: 400, y: 50 }, { label: "Alice X448" });
   const bobX = makeNode("x448_derive", { x: 400, y: 250 }, { label: "Bob X448" });
-  const sharedA = makeNode("output", { x: 750, y: 50 }, { label: "Alice Shared", outputFormat: "hex" });
-  const sharedB = makeNode("output", { x: 750, y: 250 }, { label: "Bob Shared", outputFormat: "hex" });
+  const sharedA = makeNode(
+    "output",
+    { x: 750, y: 50 },
+    { label: "Alice Shared", outputFormat: "hex" },
+  );
+  const sharedB = makeNode(
+    "output",
+    { x: 750, y: 250 },
+    { label: "Bob Shared", outputFormat: "hex" },
+  );
 
   return {
     name: "X448 Key Exchange",
     nodes: [aliceKey, bobKey, aliceX, bobX, sharedA, sharedB],
     edges: [
-      { id: "x1", source: aliceKey.id, target: aliceX.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      { id: "x2", source: bobKey.id, target: bobX.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      { id: "x3", source: aliceKey.id, target: bobX.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
-      { id: "x4", source: bobKey.id, target: aliceX.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "x1",
+        source: aliceKey.id,
+        target: aliceX.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+      {
+        id: "x2",
+        source: bobKey.id,
+        target: bobX.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+      {
+        id: "x3",
+        source: aliceKey.id,
+        target: bobX.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
+      {
+        id: "x4",
+        source: bobKey.id,
+        target: aliceX.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "x5", source: aliceX.id, target: sharedA.id, animated: true },
       { id: "x6", source: bobX.id, target: sharedB.id, animated: true },
     ],
@@ -644,11 +903,19 @@ export function getX448Preset(): WorkflowSeed {
 }
 
 export function getBlsPreset(): WorkflowSeed {
-  const input = makeNode("input", { x: 50, y: 200 }, { text: "hello world - BLS aggregate signing", label: "Message" });
+  const input = makeNode(
+    "input",
+    { x: 50, y: 200 },
+    { text: "hello world - BLS aggregate signing", label: "Message" },
+  );
   const keyGen = makeNode("bls_keygen", { x: 50, y: 50 }, { label: "Key Gen" });
   const sign = makeNode("bls_sign", { x: 400, y: 50 }, { label: "Sign" });
   const verify = makeNode("bls_verify", { x: 750, y: 50 }, { label: "Verify" });
-  const sigOut = makeNode("output", { x: 1100, y: 10 }, { label: "Signature", outputFormat: "base64" });
+  const sigOut = makeNode(
+    "output",
+    { x: 1100, y: 10 },
+    { label: "Signature", outputFormat: "base64" },
+  );
   const result = makeNode("output", { x: 1100, y: 150 }, { label: "Verify Result" });
 
   return {
@@ -656,10 +923,24 @@ export function getBlsPreset(): WorkflowSeed {
     nodes: [input, keyGen, sign, verify, sigOut, result],
     edges: [
       { id: "b1", source: input.id, target: sign.id, targetHandle: "data", animated: true },
-      { id: "b2", source: keyGen.id, target: sign.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
+      {
+        id: "b2",
+        source: keyGen.id,
+        target: sign.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
       { id: "b3", source: input.id, target: verify.id, targetHandle: "data", animated: true },
       { id: "b4", source: sign.id, target: verify.id, targetHandle: "signature", animated: true },
-      { id: "b5", source: keyGen.id, target: verify.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "b5",
+        source: keyGen.id,
+        target: verify.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "b6", source: sign.id, target: sigOut.id, animated: true },
       { id: "b7", source: verify.id, target: result.id, animated: true },
     ],
@@ -667,21 +948,73 @@ export function getBlsPreset(): WorkflowSeed {
 }
 
 export function getDhPreset(): WorkflowSeed {
-  const aliceKey = makeNode("dh_keygen", { x: 50, y: 50 }, { group: "MODP-2048", label: "Alice DH Key" });
-  const bobKey = makeNode("dh_keygen", { x: 50, y: 250 }, { group: "MODP-2048", label: "Bob DH Key" });
-  const aliceDerive = makeNode("dh_derive", { x: 400, y: 50 }, { group: "MODP-2048", label: "Alice Derive" });
-  const bobDerive = makeNode("dh_derive", { x: 400, y: 250 }, { group: "MODP-2048", label: "Bob Derive" });
-  const sharedA = makeNode("output", { x: 750, y: 50 }, { label: "Alice Shared", outputFormat: "hex" });
-  const sharedB = makeNode("output", { x: 750, y: 250 }, { label: "Bob Shared", outputFormat: "hex" });
+  const aliceKey = makeNode(
+    "dh_keygen",
+    { x: 50, y: 50 },
+    { group: "MODP-2048", label: "Alice DH Key" },
+  );
+  const bobKey = makeNode(
+    "dh_keygen",
+    { x: 50, y: 250 },
+    { group: "MODP-2048", label: "Bob DH Key" },
+  );
+  const aliceDerive = makeNode(
+    "dh_derive",
+    { x: 400, y: 50 },
+    { group: "MODP-2048", label: "Alice Derive" },
+  );
+  const bobDerive = makeNode(
+    "dh_derive",
+    { x: 400, y: 250 },
+    { group: "MODP-2048", label: "Bob Derive" },
+  );
+  const sharedA = makeNode(
+    "output",
+    { x: 750, y: 50 },
+    { label: "Alice Shared", outputFormat: "hex" },
+  );
+  const sharedB = makeNode(
+    "output",
+    { x: 750, y: 250 },
+    { label: "Bob Shared", outputFormat: "hex" },
+  );
 
   return {
     name: "Diffie-Hellman Key Exchange",
     nodes: [aliceKey, bobKey, aliceDerive, bobDerive, sharedA, sharedB],
     edges: [
-      { id: "d1", source: aliceKey.id, target: aliceDerive.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      { id: "d2", source: bobKey.id, target: bobDerive.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      { id: "d3", source: aliceKey.id, target: bobDerive.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
-      { id: "d4", source: bobKey.id, target: aliceDerive.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "d1",
+        source: aliceKey.id,
+        target: aliceDerive.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+      {
+        id: "d2",
+        source: bobKey.id,
+        target: bobDerive.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+      {
+        id: "d3",
+        source: aliceKey.id,
+        target: bobDerive.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
+      {
+        id: "d4",
+        source: bobKey.id,
+        target: aliceDerive.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "d5", source: aliceDerive.id, target: sharedA.id, animated: true },
       { id: "d6", source: bobDerive.id, target: sharedB.id, animated: true },
     ],
@@ -689,8 +1022,19 @@ export function getDhPreset(): WorkflowSeed {
 }
 
 export function getFreqAnalysisPreset(): WorkflowSeed {
-  const input = makeNode("input", { x: 50, y: 100 }, { text: "The quick brown fox jumps over the lazy dog. The quick brown fox jumps. The quick fox. Fox fox fox.", label: "Sample Text" });
-  const freq = makeNode("frequencyAnalysis", { x: 400, y: 100 }, { topN: 10, label: "Frequency Analysis" });
+  const input = makeNode(
+    "input",
+    { x: 50, y: 100 },
+    {
+      text: "The quick brown fox jumps over the lazy dog. The quick brown fox jumps. The quick fox. Fox fox fox.",
+      label: "Sample Text",
+    },
+  );
+  const freq = makeNode(
+    "frequencyAnalysis",
+    { x: 400, y: 100 },
+    { topN: 10, label: "Frequency Analysis" },
+  );
   const entropy = makeNode("entropyCalc", { x: 400, y: 300 }, { label: "Entropy" });
   const out1 = makeNode("output", { x: 750, y: 100 }, { label: "Frequencies" });
   const out2 = makeNode("output", { x: 750, y: 300 }, { label: "Entropy" });
@@ -708,22 +1052,50 @@ export function getFreqAnalysisPreset(): WorkflowSeed {
 }
 
 export function getEcbDetectPreset(): WorkflowSeed {
-  const input = makeNode("input", { x: 50, y: 60 }, {
-    text: "Top Secret Data!Top Secret Data!Top Secret Data!Padding for last block.",
-    label: "Plaintext (3× repeating \"Top Secret Data!\")",
-  });
-  const key = makeNode("input", { x: 50, y: 260 }, {
-    text: "00112233445566778899aabbccddeeff",
-    inputFormat: "hex",
-    outputFormat: "hex",
-    label: "AES-128 Key",
-  });
-  const ecbEnc = makeNode("aes", { x: 350, y: 60 }, { action: "encrypt", cipherMode: "ECB", label: "AES-ECB Encrypt" });
-  const ecbDetect = makeNode("ecbDetect", { x: 700, y: 60 }, { blockSize: 16, label: "ECB Detect" });
+  const input = makeNode(
+    "input",
+    { x: 50, y: 60 },
+    {
+      text: "Top Secret Data!Top Secret Data!Top Secret Data!Padding for last block.",
+      label: 'Plaintext (3× repeating "Top Secret Data!")',
+    },
+  );
+  const key = makeNode(
+    "input",
+    { x: 50, y: 260 },
+    {
+      text: "00112233445566778899aabbccddeeff",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "AES-128 Key",
+    },
+  );
+  const ecbEnc = makeNode(
+    "aes",
+    { x: 350, y: 60 },
+    { action: "encrypt", cipherMode: "ECB", label: "AES-ECB Encrypt" },
+  );
+  const ecbDetect = makeNode(
+    "ecbDetect",
+    { x: 700, y: 60 },
+    { blockSize: 16, label: "ECB Detect" },
+  );
   const ecbResult = makeNode("output", { x: 1000, y: 60 }, { label: "Detection Result" });
-  const ecbCipherOut = makeNode("output", { x: 1000, y: 260 }, { label: "Ciphertext (hex)", outputFormat: "hex" });
-  const ecbDec = makeNode("aes", { x: 700, y: 460 }, { action: "decrypt", cipherMode: "ECB", label: "AES-ECB Decrypt" });
-  const decOut = makeNode("output", { x: 1000, y: 460 }, { label: "Decrypted (verify)", outputFormat: "utf8" });
+  const ecbCipherOut = makeNode(
+    "output",
+    { x: 1000, y: 260 },
+    { label: "Ciphertext (hex)", outputFormat: "hex" },
+  );
+  const ecbDec = makeNode(
+    "aes",
+    { x: 700, y: 460 },
+    { action: "decrypt", cipherMode: "ECB", label: "AES-ECB Decrypt" },
+  );
+  const decOut = makeNode(
+    "output",
+    { x: 1000, y: 460 },
+    { label: "Decrypted (verify)", outputFormat: "utf8" },
+  );
 
   return {
     name: "ECB Block Detection",
@@ -742,9 +1114,21 @@ export function getEcbDetectPreset(): WorkflowSeed {
 }
 
 export function getShamirPreset(): WorkflowSeed {
-  const secret = makeNode("input", { x: 50, y: 100 }, { text: "my-super-secret-password-123", label: "Original Secret" });
-  const split = makeNode("shamirSplit", { x: 400, y: 100 }, { totalShares: 5, threshold: 3, label: "Shamir Split (3/5)" });
-  const join = makeNode("shamirJoin", { x: 750, y: 100 }, { threshold: 3, label: "Shamir Join (3 shares)" });
+  const secret = makeNode(
+    "input",
+    { x: 50, y: 100 },
+    { text: "my-super-secret-password-123", label: "Original Secret" },
+  );
+  const split = makeNode(
+    "shamirSplit",
+    { x: 400, y: 100 },
+    { totalShares: 5, threshold: 3, label: "Shamir Split (3/5)" },
+  );
+  const join = makeNode(
+    "shamirJoin",
+    { x: 750, y: 100 },
+    { threshold: 3, label: "Shamir Join (3 shares)" },
+  );
   const out = makeNode("output", { x: 1050, y: 100 }, { label: "Recovered Secret" });
   const sharesOut = makeNode("output", { x: 1050, y: 300 }, { label: "Shares (JSON)" });
 
@@ -753,7 +1137,14 @@ export function getShamirPreset(): WorkflowSeed {
     nodes: [secret, split, join, out, sharesOut],
     edges: [
       { id: "sh1", source: secret.id, target: split.id, targetHandle: "secret", animated: true },
-      { id: "sh2", source: split.id, target: join.id, sourceHandle: "shares", targetHandle: "shares", animated: true },
+      {
+        id: "sh2",
+        source: split.id,
+        target: join.id,
+        sourceHandle: "shares",
+        targetHandle: "shares",
+        animated: true,
+      },
       { id: "sh3", source: join.id, target: out.id, animated: true },
       { id: "sh4", source: split.id, target: sharesOut.id, sourceHandle: "shares", animated: true },
     ],
@@ -761,8 +1152,11 @@ export function getShamirPreset(): WorkflowSeed {
 }
 
 export function getX509Preset(): WorkflowSeed {
-  const pemInput = makeNode("input", { x: 50, y: 100 }, {
-    text: `-----BEGIN CERTIFICATE-----
+  const pemInput = makeNode(
+    "input",
+    { x: 50, y: 100 },
+    {
+      text: `-----BEGIN CERTIFICATE-----
 MIIBrDCCARWgAwIBAgIBATANBgkqhkiG9w0BAQUFADAcMRowGAYDVQQDExFGbG93
 Rm9yZ2UgRGVtbyBDQTAeFw0yNjA1MzAxMTQ5MjBaFw0zNjA1MzAxMTQ5MjBaMBwx
 GjAYBgNVBAMTEUZsb3dGb3JnZSBEZW1vIENBMIGfMA0GCSqGSIb3DQEBAQUAA4GN
@@ -773,8 +1167,9 @@ CSqGSIb3DQEBBQUAA4GBAD6FXK/K6Hr6jXaEdBb2Fu8YkiwS5KjVVTTisA7fPnbq
 9KJylmwROCc3aCoO4fP/Tvs1/dFdhKdSb/wyYUK+TYeowzEhh6oV1X84VC85l+Ll
 H2izKz/oiSZcnJIFWwx0lNSNbN8WunR/L+AjUIEmzoGLn3RDXzT6OxbnKgZvJ9wW
 -----END CERTIFICATE-----`,
-    label: "PEM Certificate",
-  });
+      label: "PEM Certificate",
+    },
+  );
   const parse = makeNode("x509Parse", { x: 400, y: 100 }, { label: "Parse X.509" });
   const out = makeNode("output", { x: 750, y: 100 }, { label: "Certificate Details" });
 
@@ -789,8 +1184,11 @@ H2izKz/oiSZcnJIFWwx0lNSNbN8WunR/L+AjUIEmzoGLn3RDXzT6OxbnKgZvJ9wW
 }
 
 export function getJwkPreset(): WorkflowSeed {
-  const pemInput = makeNode("input", { x: 50, y: 100 }, {
-    text: `-----BEGIN PUBLIC KEY-----
+  const pemInput = makeNode(
+    "input",
+    { x: 50, y: 100 },
+    {
+      text: `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8ONDmjN9tHDI919mwWkA
 XCj9Sxrbiq3xJSimx+NXsziuk52T2ClBDimf+/xNYhzqZDWUjX9ix3Aw0ILjPgfm
 PimWON1qbDCxa7pjIpmNDDgGF0Ol9lFKA7gUgaGosMLpSQL3ZnZPsmS9hgaXaY3V
@@ -799,26 +1197,41 @@ NVuU/HPhfylcawBHSkj4+As81uN0uaiBi9/VDStuPQFLC7uQuLOMuJpxYC0TFLmY
 T3N5zevrDMMSW8LOnuM/HrQT9zC5luoi6IoDOLLKLEQTHFXQ1RMTHacbMjOsLM6p
 twIDAQAB
 -----END PUBLIC KEY-----`,
-    label: "RSA Public Key (PEM)",
-  });
-  const convert = makeNode("jwkConvert", { x: 400, y: 100 }, { direction: "pemToJwk", label: "PEM → JWK" });
+      label: "RSA Public Key (PEM)",
+    },
+  );
+  const convert = makeNode(
+    "jwkConvert",
+    { x: 400, y: 100 },
+    { direction: "pemToJwk", label: "PEM → JWK" },
+  );
   const out = makeNode("output", { x: 750, y: 100 }, { label: "JWK Output" });
 
   return {
     name: "PEM to JWK Conversion",
     nodes: [pemInput, convert, out],
     edges: [
-      { id: "j1", source: pemInput.id, target: convert.id, targetHandle: "keyData", animated: true },
+      {
+        id: "j1",
+        source: pemInput.id,
+        target: convert.id,
+        targetHandle: "keyData",
+        animated: true,
+      },
       { id: "j2", source: convert.id, target: out.id, animated: true },
     ],
   };
 }
 
 export function getSshKeyPreset(): WorkflowSeed {
-  const sshInput = makeNode("input", { x: 50, y: 100 }, {
-    text: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUAlR+H9yFoXODkzO4ClBjRnCwRBOAcL/uxOavdABq8 user@example.com",
-    label: "SSH Public Key",
-  });
+  const sshInput = makeNode(
+    "input",
+    { x: 50, y: 100 },
+    {
+      text: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUAlR+H9yFoXODkzO4ClBjRnCwRBOAcL/uxOavdABq8 user@example.com",
+      label: "SSH Public Key",
+    },
+  );
   const parse = makeNode("sshKeyParse", { x: 400, y: 100 }, { label: "Parse SSH Key" });
   const out = makeNode("output", { x: 750, y: 100 }, { label: "Key Details" });
 
@@ -873,19 +1286,71 @@ export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string 
     keywords: "argon2 password hash kdf memory hard",
   },
   { label: "TOTP Authenticator", seed: getTOTPPreset(), keywords: "totp otp authenticator 2fa" },
-  { label: "ML-KEM Encapsulation", seed: getMlKemPreset(), keywords: "pqc ml-kem kyber kem encapsulate decapsulate post-quantum" },
-  { label: "ML-DSA Sign & Verify", seed: getMlDsaPreset(), keywords: "pqc ml-dsa dilithium sign verify post-quantum" },
-  { label: "SLH-DSA Sign & Verify", seed: getSlhDsaPreset(), keywords: "pqc slh-dsa sphincs sign verify hash-based" },
-  { label: "secp256k1 Sign & Verify", seed: getSecp256k1Preset(), keywords: "secp256k1 bitcoin ethereum ecdsa sign verify" },
-  { label: "secp256k1 ECDH Key Exchange", seed: getSecp256k1EcdhPreset(), keywords: "secp256k1 ecdh key exchange shared secret" },
+  {
+    label: "ML-KEM Encapsulation",
+    seed: getMlKemPreset(),
+    keywords: "pqc ml-kem kyber kem encapsulate decapsulate post-quantum",
+  },
+  {
+    label: "ML-DSA Sign & Verify",
+    seed: getMlDsaPreset(),
+    keywords: "pqc ml-dsa dilithium sign verify post-quantum",
+  },
+  {
+    label: "SLH-DSA Sign & Verify",
+    seed: getSlhDsaPreset(),
+    keywords: "pqc slh-dsa sphincs sign verify hash-based",
+  },
+  {
+    label: "secp256k1 Sign & Verify",
+    seed: getSecp256k1Preset(),
+    keywords: "secp256k1 bitcoin ethereum ecdsa sign verify",
+  },
+  {
+    label: "secp256k1 ECDH Key Exchange",
+    seed: getSecp256k1EcdhPreset(),
+    keywords: "secp256k1 ecdh key exchange shared secret",
+  },
   { label: "Ed448 Sign & Verify", seed: getEd448Preset(), keywords: "ed448 eddsa sign verify" },
-  { label: "X448 Key Exchange", seed: getX448Preset(), keywords: "x448 diffie-hellman key exchange shared secret" },
-  { label: "BLS12-381 Sign & Verify", seed: getBlsPreset(), keywords: "bls12-381 bls sign verify aggregate" },
-  { label: "Diffie-Hellman Key Exchange", seed: getDhPreset(), keywords: "diffie hellman modp key exchange shared secret" },
-  { label: "Frequency Analysis", seed: getFreqAnalysisPreset(), keywords: "frequency analysis entropy byte distribution" },
-  { label: "ECB Block Detection", seed: getEcbDetectPreset(), keywords: "ecb block detection aes encryption analysis" },
-  { label: "Shamir Split & Join", seed: getShamirPreset(), keywords: "shamir secret sharing split join threshold" },
-  { label: "X.509 Certificate Parse", seed: getX509Preset(), keywords: "x509 certificate parse pem" },
+  {
+    label: "X448 Key Exchange",
+    seed: getX448Preset(),
+    keywords: "x448 diffie-hellman key exchange shared secret",
+  },
+  {
+    label: "BLS12-381 Sign & Verify",
+    seed: getBlsPreset(),
+    keywords: "bls12-381 bls sign verify aggregate",
+  },
+  {
+    label: "Diffie-Hellman Key Exchange",
+    seed: getDhPreset(),
+    keywords: "diffie hellman modp key exchange shared secret",
+  },
+  {
+    label: "Frequency Analysis",
+    seed: getFreqAnalysisPreset(),
+    keywords: "frequency analysis entropy byte distribution",
+  },
+  {
+    label: "ECB Block Detection",
+    seed: getEcbDetectPreset(),
+    keywords: "ecb block detection aes encryption analysis",
+  },
+  {
+    label: "Shamir Split & Join",
+    seed: getShamirPreset(),
+    keywords: "shamir secret sharing split join threshold",
+  },
+  {
+    label: "X.509 Certificate Parse",
+    seed: getX509Preset(),
+    keywords: "x509 certificate parse pem",
+  },
   { label: "PEM to JWK Conversion", seed: getJwkPreset(), keywords: "jwk pem convert key format" },
-  { label: "SSH Key Parse", seed: getSshKeyPreset(), keywords: "ssh public key parse authorized_keys" },
+  {
+    label: "SSH Key Parse",
+    seed: getSshKeyPreset(),
+    keywords: "ssh public key parse authorized_keys",
+  },
 ];

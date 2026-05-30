@@ -18,7 +18,8 @@ function _lagrangeInterpolate(shares: [number, number][], x: number): number {
   let result = 0;
   for (let i = 0; i < shares.length; i++) {
     const [xi, yi] = shares[i];
-    let num = 1, den = 1;
+    let num = 1,
+      den = 1;
     for (let j = 0; j < shares.length; j++) {
       if (i === j) continue;
       const xj = shares[j][0];
@@ -32,7 +33,10 @@ function _lagrangeInterpolate(shares: [number, number][], x: number): number {
 }
 
 function _modInverse(a: number): number {
-  let t = 0, newt = 1, r = _prime, newr = a;
+  let t = 0,
+    newt = 1,
+    r = _prime,
+    newr = a;
   while (newr !== 0) {
     const q = Math.floor(r / newr);
     [t, newt] = [newt, t - q * newt];
@@ -71,9 +75,7 @@ registerNodeDef("shamirSplit", {
     category: "protocol",
     description: "Split a secret into shares using Shamir's Secret Sharing over GF(257).",
     defaultOutput: "utf8",
-    outputs: [
-      { id: "shares", label: "All Shares (JSON)" },
-    ],
+    outputs: [{ id: "shares", label: "All Shares (JSON)" }],
     inputs: [
       { id: "secret", label: "Secret", connectable: true, acceptTypes: ["raw"] },
       {
@@ -149,9 +151,9 @@ registerNodeDef("shamirJoin", {
     if (!Array.isArray(shares) || shares.length < threshold) {
       throw new Error(`Need at least ${threshold} shares`);
     }
-    const sharePoints: [number, number][][] = shares.slice(0, threshold).map((s) =>
-      s.data.map(([x, y]) => [x, y] as [number, number]),
-    );
+    const sharePoints: [number, number][][] = shares
+      .slice(0, threshold)
+      .map((s) => s.data.map(([x, y]) => [x, y] as [number, number]));
     const secret = _joinBytes(sharePoints, threshold);
     return secret;
   },

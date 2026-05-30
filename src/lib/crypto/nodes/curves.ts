@@ -103,8 +103,18 @@ registerNodeDef("ecdh_secp256k1", {
     description: "Derive a shared secret using secp256k1 ECDH.",
     defaultOutput: "hex",
     inputs: [
-      { id: "privateKey", label: "My Private Key", connectable: true, acceptTypes: ["hex", "base64"] },
-      { id: "publicKey", label: "Peer Public Key", connectable: true, acceptTypes: ["hex", "base64"] },
+      {
+        id: "privateKey",
+        label: "My Private Key",
+        connectable: true,
+        acceptTypes: ["hex", "base64"],
+      },
+      {
+        id: "publicKey",
+        label: "Peer Public Key",
+        connectable: true,
+        acceptTypes: ["hex", "base64"],
+      },
     ],
   },
   runner: async (node, inputs) => {
@@ -185,8 +195,18 @@ registerNodeDef("x448_derive", {
     description: "Derive a shared secret using X448 Diffie-Hellman.",
     defaultOutput: "hex",
     inputs: [
-      { id: "privateKey", label: "My Private Key", connectable: true, acceptTypes: ["hex", "base64"] },
-      { id: "publicKey", label: "Peer Public Key", connectable: true, acceptTypes: ["hex", "base64"] },
+      {
+        id: "privateKey",
+        label: "My Private Key",
+        connectable: true,
+        acceptTypes: ["hex", "base64"],
+      },
+      {
+        id: "publicKey",
+        label: "Peer Public Key",
+        connectable: true,
+        acceptTypes: ["hex", "base64"],
+      },
     ],
   },
   runner: async (node, inputs) => {
