@@ -3,7 +3,9 @@
   "private": true,
   "sideEffects": [
     "src/lib/crypto/setup.ts",
-    "src/lib/crypto/nodes/*.ts"
+    "src/lib/crypto/nodes/*.ts",
+    "src/lib/crypto/providers/**/*.ts",
+    "src/lib/errorCapture.ts"
   ],
   "type": "module",
   "scripts": {
