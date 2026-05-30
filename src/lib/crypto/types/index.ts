@@ -1,5 +1,5 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { DataFormat } from "./service";
+import type { DataFormat } from "../service";
 
 export type NodeCategory = string;
 
@@ -8,12 +8,14 @@ export type NodeKind = string;
 export interface NodeInputMeta {
   id: string;
   label: string;
+  type?: string;
   visible?: (data: Record<string, unknown>) => boolean;
 }
 
 export interface NodeOutputMeta {
   id: string;
   label: string;
+  type?: string;
   visible?: (data: Record<string, unknown>) => boolean;
 }
 
@@ -26,6 +28,15 @@ export interface NodeFieldMeta {
   options?: { label: string; value: string }[];
   visible?: (data: Record<string, unknown>) => boolean;
   validate?: (value: any) => string | null;
+  group?: string;
+  sensitive?: boolean;
+  tooltip?: string;
+}
+
+export interface FieldGroup {
+  id: string;
+  label: string;
+  fields: string[];
 }
 
 export interface NodeKindMeta {
@@ -38,6 +49,11 @@ export interface NodeKindMeta {
   inputs?: NodeInputMeta[];
   outputs?: NodeOutputMeta[];
   fields?: NodeFieldMeta[];
+  fieldGroups?: FieldGroup[];
+  version?: number;
+  migrate?: (data: Record<string, unknown>) => Record<string, unknown>;
+  compatibleInputs?: string[];
+  compatibleOutputs?: string[];
 }
 
 export interface NodeData extends Record<string, unknown> {
@@ -75,10 +91,7 @@ export interface ExecutionResult {
 export type NodeRunner = (
   node: GraphNode,
   inputs: Record<string, Uint8Array>,
-) =>
-  | Promise<Uint8Array | Record<string, Uint8Array>>
-  | Uint8Array
-  | Record<string, Uint8Array>;
+) => Promise<Uint8Array | Record<string, Uint8Array>> | Uint8Array | Record<string, Uint8Array>;
 
 export interface NodeDef {
   meta: NodeKindMeta;

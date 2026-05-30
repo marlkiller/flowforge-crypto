@@ -5,7 +5,7 @@ import type { DataFormat } from "./service";
 
 const _registry: Record<string, NodeDef> = {};
 const _kindMeta: Record<string, NodeKindMeta> = {};
-const _loaders: Record<string, () => Promise<void>> = {};
+const _loaders: Record<string, () => Promise<unknown>> = {};
 const _loadingPromises: Record<string, Promise<void>> = {};
 
 export const NODE_REGISTRY: Record<string, NodeDef> = _registry;
@@ -19,15 +19,15 @@ export function registerNodeDef(kind: string, def: NodeDef) {
   _kindMeta[kind] = def.meta;
 }
 
-export function registerLazyNode(kind: string, meta: NodeKindMeta, loader: () => Promise<void>) {
+export function registerLazyNode(kind: string, meta: NodeKindMeta, loader: () => Promise<unknown>) {
   _kindMeta[kind] = meta;
   _loaders[kind] = loader;
 }
 
 export async function loadNodeDef(kind: string): Promise<NodeDef> {
   if (_registry[kind]) return _registry[kind];
-  
-  if (_loadingPromises[kind]) {
+
+  if (kind in _loadingPromises) {
     await _loadingPromises[kind];
     return _registry[kind];
   }
@@ -35,21 +35,19 @@ export async function loadNodeDef(kind: string): Promise<NodeDef> {
   const loader = _loaders[kind];
   if (!loader) throw new Error(`Unknown node kind: "${kind}"`);
 
-  // Create a timeout promise to prevent infinite waiting on import()
-  const timeoutPromise = new Promise<void>((_, reject) => 
-    setTimeout(() => reject(new Error(`Loading implementation for "${kind}" timed out (5s)`)), 5000)
+  const timeoutPromise = new Promise<void>((_, reject) =>
+    setTimeout(
+      () => reject(new Error(`Loading implementation for "${kind}" timed out (5s)`)),
+      5000,
+    ),
   );
 
-  _loadingPromises[kind] = Promise.race([loader(), timeoutPromise]).finally(() => {
+  _loadingPromises[kind] = Promise.race([loader() as Promise<void>, timeoutPromise]).finally(() => {
     delete _loadingPromises[kind];
   });
 
-  try {
-    await _loadingPromises[kind];
-    return _registry[kind];
-  } catch (e) {
-    throw e;
-  }
+  await _loadingPromises[kind];
+  return _registry[kind];
 }
 
 /**
@@ -57,15 +55,11 @@ export async function loadNodeDef(kind: string): Promise<NodeDef> {
  * The module should call registerNodeDef or export a NodeDef.
  */
 export async function loadExternalNode(url: string): Promise<void> {
-  try {
-    const module = await import(/* @vite-ignore */ url);
-    const def = module.nodeDef || module.default;
+  const module = await import(/* @vite-ignore */ url);
+  const def = module.nodeDef || module.default;
 
-    if (def && def.meta && def.runner) {
-      registerNodeDef(def.meta.kind, def);
-    }
-  } catch (e) {
-    throw e;
+  if (def && def.meta && def.runner) {
+    registerNodeDef(def.meta.kind, def);
   }
 }
 

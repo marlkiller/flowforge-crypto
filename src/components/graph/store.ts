@@ -1,8 +1,10 @@
 // Multi-workflow (tabbed) graph store.
 import { useSyncExternalStore } from "react";
 import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
-import { NODE_REGISTRY } from "@/lib/crypto/registry";
+import "@/lib/crypto/setup";
+import { NODE_KIND_META } from "@/lib/crypto/registry";
 import { getLayoutedNodes } from "@/lib/crypto/layout";
+import { getAESStandardSeed } from "@/demo/seeds";
 
 export interface Workflow {
   id: string;
@@ -21,7 +23,7 @@ interface State {
   sessionPluginUrls: string[];
 }
 
-const STORAGE_KEY = "cryptoflow-workflows";
+const STORAGE_KEY = "flowforge-crypto-workflows";
 
 function persistState(s: State) {
   try {
@@ -47,7 +49,7 @@ function loadPersistedState(): State | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed?.workflows) || parsed.workflows.length === 0) return null;
-    
+
     parsed.workflows.forEach((w: Workflow) => {
       // Filter out nodes whose kind is no longer registered
       w.nodes = w.nodes.filter((n) => n.data && NODE_KIND_META[n.data.kind]);
@@ -63,7 +65,7 @@ function loadPersistedState(): State | null {
 
     parsed.workflows = parsed.workflows.filter((w: Workflow) => w.nodes.length > 0);
     if (parsed.workflows.length === 0) return null;
-    
+
     return {
       workflows: parsed.workflows,
       activeId: parsed.activeId || parsed.workflows[0].id,
@@ -95,7 +97,15 @@ let state: State = (() => {
     return restored;
   }
   wfIdCounter = 1;
-  const w = emptyWorkflow("Workflow 1");
+  const seed = getAESStandardSeed();
+  const w: Workflow = {
+    id: nextWfId(),
+    name: seed.name || "AES Standard",
+    nodes: seed.nodes,
+    edges: seed.edges,
+    selectedNodeId: null,
+    selectedEdgeId: null,
+  };
   return { workflows: [w], activeId: w.id, pluginUrls: [], sessionPluginUrls: [] };
 })();
 
@@ -159,7 +169,7 @@ export const graphStore = {
   addWorkflow: () => {
     snapshot();
     const w = emptyWorkflow(`Workflow ${state.workflows.length + 1}`);
-    state = { workflows: [...state.workflows, w], activeId: w.id };
+    state = { ...state, workflows: [...state.workflows, w], activeId: w.id };
     emit();
     return w.id;
   },
@@ -169,7 +179,7 @@ export const graphStore = {
     const idx = state.workflows.findIndex((w) => w.id === id);
     const next = state.workflows.filter((w) => w.id !== id);
     const activeId = state.activeId === id ? next[Math.max(0, idx - 1)].id : state.activeId;
-    state = { workflows: next, activeId };
+    state = { ...state, workflows: next, activeId };
     emit();
   },
   setActive: (id: string) => {
@@ -233,11 +243,12 @@ export const graphStore = {
   reflowLayout: () => {
     snapshot();
     const w = active();
+    if (w.nodes.length === 0) return;
     try {
       const layouted = getLayoutedNodes(w.nodes, w.edges);
-      patchActive({ nodes: layouted });
-    } catch {
-      // dagre may fail on cyclic graphs — ignore
+      patchActive({ nodes: layouted.nodes, edges: layouted.edges });
+    } catch (e) {
+      console.warn("[layout] dagre layout failed (possibly cyclic graph):", e);
     }
   },
 
@@ -251,7 +262,13 @@ export const graphStore = {
       ...w,
       nodes: w.nodes.map((n) => ({
         ...n,
-        data: { ...n.data, fileBytes: undefined, output: undefined, error: undefined, outputBytesLen: undefined },
+        data: {
+          ...n.data,
+          fileBytes: undefined,
+          output: undefined,
+          error: undefined,
+          outputBytesLen: undefined,
+        },
       })),
     }));
     const blob = new Blob([JSON.stringify({ version: 1, workflows: serializable }, null, 2)], {
@@ -260,7 +277,7 @@ export const graphStore = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "cryptoflow-workflows.json";
+    a.download = "flowforge-crypto-workflows.json";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -280,7 +297,7 @@ export const graphStore = {
           const cleaned: Workflow[] = [];
           for (const w of imported) {
             if (!w.nodes || !w.edges) continue;
-            const nodes = w.nodes.filter((n: GraphNode) => n.data && NODE_REGISTRY[n.data.kind]);
+            const nodes = w.nodes.filter((n: GraphNode) => n.data && NODE_KIND_META[n.data.kind]);
             if (nodes.length === 0) continue;
             nodes.forEach((n: GraphNode) => {
               if (n.data) {
@@ -316,6 +333,7 @@ export const graphStore = {
     if (workflows.length === 0) return 0;
     snapshot();
     state = {
+      ...state,
       workflows: [...state.workflows, ...workflows],
       activeId: workflows[workflows.length - 1].id,
     };
@@ -327,14 +345,14 @@ export const graphStore = {
   addPluginUrl: (url: string, persist = true) => {
     const pUrls = state.pluginUrls || [];
     const sUrls = state.sessionPluginUrls || [];
-    
+
     if (persist) {
       if (pUrls.includes(url)) return;
       // If it was in session, move it to persisted
-      state = { 
-        ...state, 
+      state = {
+        ...state,
         pluginUrls: [...pUrls, url],
-        sessionPluginUrls: sUrls.filter(u => u !== url)
+        sessionPluginUrls: sUrls.filter((u) => u !== url),
       };
     } else {
       if (pUrls.includes(url) || sUrls.includes(url)) return;

@@ -1,6 +1,12 @@
 import { registerNodeDef } from "../registry";
 import type { GraphNode } from "../types";
-import { CryptoService, getProvider, type RsaProvider, type MacProvider, utf8ToBytes } from "../service";
+import {
+  CryptoService,
+  getProvider,
+  type RsaProvider,
+  type MacProvider,
+  utf8ToBytes,
+} from "../service";
 import { getField, getNumberField, getParamBytes } from "../utils";
 
 import { RSA_KEYGEN_META, RSA_META, RSA_SIGN_META, RSA_VERIFY_META } from "./meta";
@@ -13,7 +19,12 @@ registerNodeDef("rsa_keygen", {
     const hash = getField(node, "hash", "SHA-256");
     const publicExponent = new Uint8Array([0x01, 0x00, 0x01]);
 
-    const keyPair = await CryptoService.generateRSAKeyPair(algo, modulusLength, publicExponent, hash);
+    const keyPair = await CryptoService.generateRSAKeyPair(
+      algo,
+      modulusLength,
+      publicExponent,
+      hash,
+    );
     const publicKey = await CryptoService.exportKey("spki", keyPair.publicKey);
     const privateKey = await CryptoService.exportKey("pkcs8", keyPair.privateKey);
 

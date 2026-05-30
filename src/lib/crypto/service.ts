@@ -15,9 +15,9 @@ const dec = new TextDecoder("utf-8", { fatal: false });
  */
 export function ensureBufferSource(b: Uint8Array): BufferSource {
   if (b.byteOffset === 0 && b.byteLength === b.buffer.byteLength) {
-    return b.buffer;
+    return b.buffer as ArrayBuffer;
   }
-  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer;
 }
 
 export function bytesToB64(bytes: Uint8Array): string {
@@ -198,19 +198,15 @@ export function getProvider(name: string): AlgorithmProvider | undefined {
  * or a default export that matches the AlgorithmProvider interface.
  */
 export async function loadExternalProvider(url: string): Promise<AlgorithmProvider> {
-  try {
-    const module = await import(/* @vite-ignore */ url);
-    const provider = module.provider || module.default;
+  const module = await import(/* @vite-ignore */ url);
+  const provider = module.provider || module.default;
 
-    if (!provider || !provider.name || !provider.type) {
-      throw new Error("Invalid provider module structure. Expected export 'provider' or default.");
-    }
-
-    registerProvider(provider);
-    return provider;
-  } catch (e) {
-    throw e;
+  if (!provider || !provider.name || !provider.type) {
+    throw new Error("Invalid provider module structure. Expected export 'provider' or default.");
   }
+
+  registerProvider(provider);
+  return provider;
 }
 
 // ─── CryptoService — WebCrypto wrapper ────────────────────────────
@@ -253,16 +249,12 @@ export const CryptoService = {
       await crypto.subtle.decrypt(params as Algorithm, key, data as BufferSource),
     );
   },
-  async sign(
-    algorithm: string | RsaPssParams | EcdsaParams | HmacSignParams,
-    key: CryptoKey,
-    data: Uint8Array,
-  ): Promise<Uint8Array> {
-    const sig = await crypto.subtle.sign(algorithm as any, key, data as BufferSource);
+  async sign(algorithm: any, key: CryptoKey, data: Uint8Array): Promise<Uint8Array> {
+    const sig = await crypto.subtle.sign(algorithm, key, data as BufferSource);
     return new Uint8Array(sig);
   },
   async verify(
-    algorithm: string | RsaPssParams | EcdsaParams | HmacSignParams,
+    algorithm: any,
     key: CryptoKey,
     signature: Uint8Array,
     data: Uint8Array,
@@ -286,7 +278,7 @@ export const CryptoService = {
         modulusLength,
         publicExponent,
         hash,
-      },
+      } as any,
       true,
       name === "RSA-OAEP" ? ["encrypt", "decrypt"] : ["sign", "verify"],
     );

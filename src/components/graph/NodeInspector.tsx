@@ -30,7 +30,9 @@ export function NodeInspector({ node }: Props) {
     return (
       <aside className="h-full w-full rounded-2xl border border-border bg-card/80 backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center p-6 text-center">
         <h3 className="text-lg font-bold text-destructive mb-2">Unknown Node</h3>
-        <p className="text-sm text-muted-foreground">Kind: "{d.kind}" — this node type is no longer registered.</p>
+        <p className="text-sm text-muted-foreground">
+          Kind: "{d.kind}" — this node type is no longer registered.
+        </p>
       </aside>
     );
   }
@@ -86,9 +88,9 @@ export function NodeInspector({ node }: Props) {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 p-2 rounded-lg border border-border bg-background shadow-sm text-foreground">
                 <File className="w-4 h-4 text-primary shrink-0" />
-                  <span className="text-xs font-medium truncate">
-                    {(d["fileName"] as string) || "No file selected"}
-                  </span>
+                <span className="text-xs font-medium truncate">
+                  {(d["fileName"] as string) || "No file selected"}
+                </span>
               </div>
               <input
                 type="file"
@@ -118,15 +120,17 @@ export function NodeInspector({ node }: Props) {
           </Section>
         )}
 
-        {(meta.fields ?? []).filter((field) => field.visible?.(d) ?? true).map((field) => (
-          <InspectorField
-            key={field.id}
-            nodeId={node.id}
-            field={field}
-            value={d[field.id] as string | undefined}
-            update={update}
-          />
-        ))}
+        {(meta.fields ?? [])
+          .filter((field) => field.visible?.(d) ?? true)
+          .map((field) => (
+            <InspectorField
+              key={field.id}
+              nodeId={node.id}
+              field={field}
+              value={d[field.id] as string | undefined}
+              update={update}
+            />
+          ))}
         <Section title="Output Format">
           <FormatPicker
             value={d.outputFormat ?? "utf8"}

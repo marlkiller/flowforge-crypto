@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
@@ -17,17 +16,29 @@ import {
   type Node as RFNode,
   type Viewport,
 } from "@xyflow/react";
+import { toPng, toJpeg, toCanvas } from "html-to-image";
 import "@xyflow/react/dist/style.css";
 
 import { CryptoNode } from "./CryptoNode";
 import { NodeInspector } from "./NodeInspector";
 import { OutputConsole } from "./OutputConsole";
 import { graphStore, useGraphStore } from "./store";
-import "@/lib/crypto/setup";
 import { loadExternalNode } from "@/lib/crypto/registry";
 import type { GraphEdge, GraphNode } from "@/lib/crypto/types";
-import { Plus, Trash2, Copy, ChevronDown, MousePointer2, Loader2, Wand } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Copy,
+  ChevronDown,
+  MousePointer2,
+  Loader2,
+  Wand,
+  Camera,
+  CornerDownRight,
+  GitBranch,
+} from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PluginManager } from "./PluginManager";
 
 // New parts and hooks
@@ -35,6 +46,7 @@ import { ExecutionStatus } from "./parts/ExecutionStatus";
 import { WorkflowTab } from "./parts/WorkflowTab";
 import { GraphDialogs } from "./parts/GraphDialogs";
 import { Sidebar } from "./parts/Sidebar";
+import { DemoPicker } from "./parts/DemoPicker";
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
@@ -43,8 +55,10 @@ const nodeTypes = { crypto: CryptoNode };
 
 function InnerEditor() {
   const { theme } = useTheme();
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const isMobile = useIsMobile();
+  const [leftPanelOpen, setLeftPanelOpen] = useState(!isMobile);
+  const [rightPanelOpen, setRightPanelOpen] = useState(!isMobile);
+  const [mobileSheet, setMobileSheet] = useState<"palette" | "inspector" | null>(null);
 
   const workflows = useGraphStore((s) => s.workflows);
   const activeId = useGraphStore((s) => s.activeId);
@@ -56,9 +70,13 @@ function InnerEditor() {
   const selectedNode = active.nodes.find((n) => n.id === active.selectedNodeId) ?? null;
   const selectedEdgeId = active.selectedEdgeId;
 
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [edgeType, setEdgeType] = useState<"smoothstep" | "default">("smoothstep");
+  const [screenshotFormat, setScreenshotFormat] = useState<"png" | "jpeg" | "webp">("png");
+  const [showFormatPicker, setShowFormatPicker] = useState(false);
+  const [screenshotLoading, setScreenshotLoading] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [rf, setRf] = useState<ReactFlowInstance | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,7 +109,9 @@ function InnerEditor() {
     const filtered = cur.filter(
       (e) => e.target !== conn.target || e.targetHandle !== conn.targetHandle,
     );
-    graphStore.setEdges(addEdge({ ...conn, animated: true }, filtered) as GraphEdge[]);
+    graphStore.setEdges(
+      addEdge({ ...conn, type: edgeType, animated: true }, filtered) as GraphEdge[],
+    );
   }, []);
   const onSelectionChange = useCallback(({ nodes: sel }: { nodes: RFNode[] }) => {
     graphStore.setSelected(sel[0]?.id ?? null);
@@ -138,7 +158,7 @@ function InnerEditor() {
         },
       };
     });
-  }, [edges, nodes, selectedEdgeIds]);
+  }, [edges, nodes, selectedEdgeIds, edgeType]);
 
   // Load saved plugins on startup
   useEffect(() => {
@@ -152,23 +172,93 @@ function InnerEditor() {
     });
   }, []);
 
-  const ctxNode = interaction.contextMenu ? nodes.find((n) => n.id === interaction.contextMenu!.nodeId) : null;
+  const ctxNode = interaction.contextMenu
+    ? nodes.find((n) => n.id === interaction.contextMenu!.nodeId)
+    : null;
 
   return (
     <div className="h-screen w-screen bg-background text-foreground font-sans flex">
-      <Sidebar
-        leftPanelOpen={leftPanelOpen}
-        setLeftPanelOpen={setLeftPanelOpen}
-        setPluginDialogOpen={setPluginDialogOpen}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        collapsedCats={collapsedCats}
-        toggleCat={toggleCat}
-        onDragStart={interaction.onDragStart}
-        openExportDialog={workflowActions.openExportDialog}
-        openShareDialog={workflowActions.openShareDialog}
-        fileInputRef={fileInputRef}
-      />
+      {isMobile ? (
+        /* Mobile: toolbar overlay */
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-3 py-1.5 bg-card/90 backdrop-blur-xl border border-border rounded-full shadow-xl">
+          <button
+            onClick={() => setMobileSheet(mobileSheet === "palette" ? null : "palette")}
+            className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          >
+            Palette
+          </button>
+          {selectedNode && (
+            <button
+              onClick={() => setMobileSheet(mobileSheet === "inspector" ? null : "inspector")}
+              className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent text-foreground hover:bg-accent/80 transition-colors"
+            >
+              Inspector
+            </button>
+          )}
+        </div>
+      ) : (
+        <Sidebar
+          leftPanelOpen={leftPanelOpen}
+          setLeftPanelOpen={setLeftPanelOpen}
+          setPluginDialogOpen={setPluginDialogOpen}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          collapsedCats={collapsedCats}
+          toggleCat={toggleCat}
+          onDragStart={interaction.onDragStart}
+          openExportDialog={workflowActions.openExportDialog}
+          openShareDialog={workflowActions.openShareDialog}
+          fileInputRef={fileInputRef}
+        />
+      )}
+
+      {isMobile && mobileSheet === "palette" && (
+        <div className="fixed inset-0 z-[70] flex flex-col bg-background animate-in slide-in-from-bottom duration-200">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+            <span className="text-xs font-semibold">Palette</span>
+            <button
+              onClick={() => setMobileSheet(null)}
+              className="p-1 rounded hover:bg-accent text-muted-foreground"
+              aria-label="Close palette"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <Sidebar
+              leftPanelOpen={true}
+              setLeftPanelOpen={() => {}}
+              setPluginDialogOpen={setPluginDialogOpen}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              collapsedCats={collapsedCats}
+              toggleCat={toggleCat}
+              onDragStart={interaction.onDragStart}
+              openExportDialog={workflowActions.openExportDialog}
+              openShareDialog={workflowActions.openShareDialog}
+              fileInputRef={fileInputRef}
+            />
+          </div>
+        </div>
+      )}
+
+      {isMobile && mobileSheet === "inspector" && selectedNode && (
+        <div className="fixed inset-0 z-[70] flex flex-col bg-background animate-in slide-in-from-bottom duration-200">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+            <span className="text-xs font-semibold">Inspector</span>
+            <button
+              onClick={() => setMobileSheet(null)}
+              className="p-1 rounded hover:bg-accent text-muted-foreground"
+              aria-label="Close inspector"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <NodeInspector key={selectedNode.id} node={selectedNode} />
+          </div>
+        </div>
+      )}
 
       <input
         ref={fileInputRef}
@@ -206,7 +296,7 @@ function InnerEditor() {
               onMoveEnd={onMoveEnd}
               onBeforeDelete={() => {
                 graphStore.snapshot();
-                return true;
+                return true as any;
               }}
               onInit={setRf}
               defaultViewport={active.viewport}
@@ -217,6 +307,7 @@ function InnerEditor() {
               selectionOnDrag={interaction.selectionMode}
               panOnDrag={!interaction.selectionMode}
               defaultEdgeOptions={{
+                type: edgeType,
                 animated: true,
                 style: { stroke: "var(--color-graph-line)", strokeWidth: 2 },
               }}
@@ -237,17 +328,143 @@ function InnerEditor() {
                 style={{ left: 12, bottom: 12 }}
               />
               <button
-                onClick={() => graphStore.reflowLayout()}
+                onClick={() => {
+                  const next = edgeType === "smoothstep" ? "default" : "smoothstep";
+                  setEdgeType(next);
+                  const w = graphStore.getActive();
+                  graphStore.setEdges(w.edges.map((e) => ({ ...e, type: next })));
+                }}
+                className="absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all"
+                title={
+                  edgeType === "smoothstep"
+                    ? "Switch to curved edges"
+                    : "Switch to right-angle edges"
+                }
+                aria-label={
+                  edgeType === "smoothstep"
+                    ? "Switch to curved edges"
+                    : "Switch to right-angle edges"
+                }
+                style={{ top: 12, right: 76 }}
+              >
+                {edgeType === "smoothstep" ? (
+                  <CornerDownRight className="w-4 h-4" />
+                ) : (
+                  <GitBranch className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  graphStore.reflowLayout();
+                  setTimeout(() => rf?.fitView({ padding: 0.3, duration: 200 }), 50);
+                }}
                 disabled={nodes.length === 0}
                 className="absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none"
                 title="Auto-layout nodes with Dagre"
+                aria-label="Auto-layout nodes with Dagre"
                 style={{ top: 12, right: 44 }}
               >
                 <Wand className="w-4 h-4" />
               </button>
+              <div
+                className="absolute z-10 flex flex-col items-end"
+                style={{ top: 12, right: 108 }}
+              >
+                <button
+                  onClick={() => setShowFormatPicker((v) => !v)}
+                  disabled={nodes.length === 0 || screenshotLoading}
+                  className="flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none"
+                  title={`Export screenshot (${screenshotFormat.toUpperCase()})`}
+                  aria-label={`Export screenshot as ${screenshotFormat.toUpperCase()}`}
+                >
+                  {screenshotLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                </button>
+                {showFormatPicker && (
+                  <div className="absolute top-full right-0 mt-1 flex flex-col rounded-md border bg-card shadow-md overflow-hidden">
+                    {(["png", "jpeg", "webp"] as const).map((fmt) => (
+                      <button
+                        key={fmt}
+                        onClick={async () => {
+                          setScreenshotFormat(fmt);
+                          setShowFormatPicker(false);
+                          if (!wrapperRef.current || !rf) return;
+                          setScreenshotLoading(true);
+                          const renderer = wrapperRef.current.querySelector(
+                            ".react-flow__renderer",
+                          ) as HTMLElement | null;
+                          if (!renderer) {
+                            setScreenshotLoading(false);
+                            return;
+                          }
+                          const bgColor =
+                            getComputedStyle(document.body).backgroundColor || "#09090b";
+                          try {
+                            let dataUrl: string;
+                            if (fmt === "png") {
+                              dataUrl = await toPng(renderer, {
+                                backgroundColor: bgColor,
+                                pixelRatio: 3,
+                                cacheBust: true,
+                              });
+                            } else if (fmt === "jpeg") {
+                              dataUrl = await toJpeg(renderer, {
+                                backgroundColor: bgColor,
+                                pixelRatio: 3,
+                                quality: 0.92,
+                                cacheBust: true,
+                              });
+                            } else {
+                              const cvs = await toCanvas(renderer, {
+                                backgroundColor: bgColor,
+                                pixelRatio: 3,
+                                cacheBust: true,
+                              });
+                              dataUrl = await new Promise<string>((resolve) =>
+                                cvs.toBlob(
+                                  (b) => {
+                                    if (b) {
+                                      const u = URL.createObjectURL(b);
+                                      resolve(u);
+                                    } else resolve("");
+                                  },
+                                  "image/webp",
+                                  0.9,
+                                ),
+                              );
+                            }
+                            if (!dataUrl) return;
+                            const a = document.createElement("a");
+                            a.href = dataUrl;
+                            a.download = `flowforge-crypto-${Date.now()}.${fmt}`;
+                            a.click();
+                            if (fmt === "webp")
+                              setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
+                          } catch (e) {
+                            console.error("Screenshot failed", e);
+                          } finally {
+                            setScreenshotLoading(false);
+                          }
+                        }}
+                        className={`px-3 py-1.5 text-xs text-left whitespace-nowrap hover:bg-accent transition-all ${fmt === screenshotFormat ? "bg-accent font-medium" : ""}`}
+                      >
+                        {fmt === "png" ? "PNG" : fmt === "jpeg" ? "JPEG" : "WebP"}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => interaction.setSelectionMode((v) => !v)}
-                title={interaction.selectionMode ? "Switch to pan mode" : "Switch to selection mode"}
+                title={
+                  interaction.selectionMode ? "Switch to pan mode" : "Switch to selection mode"
+                }
+                aria-label={
+                  interaction.selectionMode ? "Switch to pan mode" : "Switch to selection mode"
+                }
                 className={`absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border shadow-md transition-all cursor-pointer ${
                   interaction.selectionMode
                     ? "bg-primary text-primary-foreground border-primary"
@@ -267,6 +484,9 @@ function InnerEditor() {
                 style={{ right: 12, bottom: 12 }}
               />
             </ReactFlow>
+
+            {/* Demo picker on first visit */}
+            <DemoPicker />
 
             {/* Execution Status Bar */}
             <ExecutionStatus errorCount={errorCount} nodeCount={nodes.length} />
@@ -416,30 +636,31 @@ function InnerEditor() {
         <OutputConsole logs={execLogs} running={execRunning} onRun={execute} />
       </div>
 
-      {/* Right Inspector */}
-      <aside
-        className={`bg-card border-l border-border flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${rightPanelOpen ? "w-80" : "w-8"}`}
-      >
-        {/* Header — always visible */}
-        <div
-          className={`flex items-center h-8 shrink-0 border-b border-border ${rightPanelOpen ? "gap-2 px-3 min-w-80" : "px-1 justify-center"}`}
+      {/* Right Inspector — hidden on mobile (use sheet instead) */}
+      {!isMobile && (
+        <aside
+          className={`bg-card border-l border-border flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${rightPanelOpen ? "w-80" : "w-8"}`}
         >
-          <button
-            onClick={() => setRightPanelOpen(!rightPanelOpen)}
-            className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors shrink-0"
+          <div
+            className={`flex items-center h-8 shrink-0 border-b border-border ${rightPanelOpen ? "gap-2 px-3 min-w-80" : "px-1 justify-center"}`}
           >
-            <ChevronDown
-              className={`w-3.5 h-3.5 transition-transform ${rightPanelOpen ? "" : "-rotate-90"}`}
-            />
-          </button>
-          {rightPanelOpen && (
-            <span className="text-xs font-semibold text-foreground">Inspector</span>
-          )}
-        </div>
+            <button
+              onClick={() => setRightPanelOpen(!rightPanelOpen)}
+              className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors shrink-0"
+              aria-label={rightPanelOpen ? "Collapse inspector" : "Expand inspector"}
+            >
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform ${rightPanelOpen ? "" : "-rotate-90"}`}
+              />
+            </button>
+            {rightPanelOpen && (
+              <span className="text-xs font-semibold text-foreground">Inspector</span>
+            )}
+          </div>
 
-        {/* Body — collapsible */}
-        {rightPanelOpen && <NodeInspector key={selectedNode?.id} node={selectedNode} />}
-      </aside>
+          {rightPanelOpen && <NodeInspector key={selectedNode?.id} node={selectedNode} />}
+        </aside>
+      )}
 
       <GraphDialogs
         workflows={workflows}

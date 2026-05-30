@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { graphStore } from "../store";
@@ -66,6 +65,7 @@ export function WorkflowTab({
               : "opacity-0 group-hover:opacity-100 hover:bg-background"
           }`}
           title="Close tab"
+          aria-label={`Close ${name} tab`}
         >
           <X className="w-3.5 h-3.5" />
         </button>

@@ -5,6 +5,7 @@
 FlowForge Crypto is built on a **Metadata-Driven, Decoupled Architecture**. It separates UI representation, cryptographic implementation, and graph execution into distinct layers.
 
 ### Layered Structure
+
 - **UI Layer (`src/components`)**: React components (PascalCase) and Hooks (camelCase). Powered by React Flow.
 - **Service Layer (`src/lib/crypto/service.ts`)**: Pure cryptographic engine. Operates on `Uint8Array`. Ignorant of UI nodes.
 - **Provider Layer (`src/lib/crypto/providers/`)**: Modular algorithm implementations (e.g., WebCrypto, Noble, Forge).
@@ -16,12 +17,14 @@ FlowForge Crypto is built on a **Metadata-Driven, Decoupled Architecture**. It s
 ## 2. Coding Standards
 
 ### Naming Conventions
+
 - **React Components**: `PascalCase.tsx` (e.g., `CryptoNode.tsx`, `PluginManager.tsx`)
 - **React Hooks**: `camelCase.ts` (e.g., `useGraphExecution.ts`)
 - **Utility/Logic Files**: `camelCase.ts` (e.g., `errorCapture.ts`, `topoSort.ts`)
 - **Shadcn UI**: `kebab-case.tsx` (as per library convention)
 
 ### Core Data Type
+
 Always prefer **`Uint8Array`** for binary data passing. Use `service.ts` converters for string/hex/base64 transformations.
 
 ---
@@ -29,6 +32,7 @@ Always prefer **`Uint8Array`** for binary data passing. Use `service.ts` convert
 ## 3. Node Development Workflow
 
 ### Step 1: Define Metadata
+
 For heavyweight nodes (those with large dependencies like RSA), add metadata to `src/lib/crypto/nodes/meta.ts`.
 
 ```typescript
@@ -38,13 +42,12 @@ export const MY_ALGO_META: NodeKindMeta = {
   category: "cipher",
   description: "Secure encryption node.",
   inputs: [{ id: "data", label: "Data" }],
-  fields: [
-    { id: "key", label: "Key (Hex)", type: "password", validate: validateHex(32) }
-  ],
+  fields: [{ id: "key", label: "Key (Hex)", type: "password", validate: validateHex(32) }],
 };
 ```
 
 ### Step 2: Implement Runner
+
 Implement the logic in `src/lib/crypto/nodes/`. If the node is lazy-loaded, ensure it exports a `NodeDef`.
 
 ```typescript
@@ -63,8 +66,9 @@ registerNodeDef("my_algo", {
 ```
 
 ### Step 3: Registration (`src/lib/crypto/setup.ts`)
+
 - **Lightweight nodes**: `import "./nodes/simple.ts";`
-- **Heavyweight nodes**: 
+- **Heavyweight nodes**:
   ```typescript
   registerLazyNode("my_algo", MY_ALGO_META, () => import("./nodes/my_algo"));
   ```
@@ -84,7 +88,7 @@ Providers abstract the implementation of an algorithm (e.g., switching between W
 ## 5. Execution Engine (Web Worker)
 
 - **Worker File**: `src/lib/crypto/executor.worker.ts`
-- **Execution Flow**: 
+- **Execution Flow**:
   1. UI triggers `execute()` (with debounce).
   2. Plugin URLs are synced to Worker.
   3. Worker parallel-loads all required plugins.
@@ -96,6 +100,7 @@ Providers abstract the implementation of an algorithm (e.g., switching between W
 ## 6. Plugin System (Extensibility)
 
 Users can inject custom logic without modifying the core.
+
 - **Format**: ESM module exporting a `nodeDef` or `provider`.
 - **Injection**: Handled by `PluginManager.tsx` via URL or Inline Editor.
 - **Sync**: Automatically synchronized to the Web Worker before execution.

@@ -433,15 +433,43 @@ export const MD5_META = makeHashMeta("md5", "MD5", "Legacy MD5 digest.");
 export const SHA3256_META = makeHashMeta("sha3256", "SHA3-256", "SHA3-256 digest.");
 export const SHA3384_META = makeHashMeta("sha3384", "SHA3-384", "SHA3-384 digest.");
 export const SHA3512_META = makeHashMeta("sha3512", "SHA3-512", "SHA3-512 digest.");
-export const KECCAK256_META = makeHashMeta("keccak256", "Keccak-256", "Keccak-256 digest (Ethereum standard).");
-export const BLAKE2B_META = makeHashMeta("blake2b", "BLAKE2B", "BLAKE2b hash (optimized for 64-bit platforms).");
-export const BLAKE2S_META = makeHashMeta("blake2s", "BLAKE2S", "BLAKE2s hash (optimized for 8/32-bit platforms).");
-export const BLAKE3_META = makeHashMeta("blake3", "BLAKE3", "BLAKE3 hash (extremely fast, tree-structured).");
-export const RIPEMD160_META = makeHashMeta("ripemd160", "RIPEMD-160", "RIPEMD-160 digest (160-bit hash).");
+export const KECCAK256_META = makeHashMeta(
+  "keccak256",
+  "Keccak-256",
+  "Keccak-256 digest (Ethereum standard).",
+);
+export const BLAKE2B_META = makeHashMeta(
+  "blake2b",
+  "BLAKE2B",
+  "BLAKE2b hash (optimized for 64-bit platforms).",
+);
+export const BLAKE2S_META = makeHashMeta(
+  "blake2s",
+  "BLAKE2S",
+  "BLAKE2s hash (optimized for 8/32-bit platforms).",
+);
+export const BLAKE3_META = makeHashMeta(
+  "blake3",
+  "BLAKE3",
+  "BLAKE3 hash (extremely fast, tree-structured).",
+);
+export const RIPEMD160_META = makeHashMeta(
+  "ripemd160",
+  "RIPEMD-160",
+  "RIPEMD-160 digest (160-bit hash).",
+);
 export const SHAKE128_META = makeHashMeta("shake128", "SHAKE128", "SHAKE128 XOF (32-byte output).");
 export const SHAKE256_META = makeHashMeta("shake256", "SHAKE256", "SHAKE256 XOF (64-byte output).");
-export const SM3_META = makeHashMeta("sm3", "SM3", "SM3 (Chinese national hash standard, GB/T 32905-2016).");
-export const WHIRLPOOL_META = makeHashMeta("whirlpool", "Whirlpool", "Whirlpool cryptographic hash (ISO/IEC 10118-3).");
+export const SM3_META = makeHashMeta(
+  "sm3",
+  "SM3",
+  "SM3 (Chinese national hash standard, GB/T 32905-2016).",
+);
+export const WHIRLPOOL_META = makeHashMeta(
+  "whirlpool",
+  "Whirlpool",
+  "Whirlpool cryptographic hash (ISO/IEC 10118-3).",
+);
 export const SHA0_META = makeHashMeta("sha0", "SHA-0", "Legacy SHA-0 hash function.");
 
 export const EC_KEYGEN_META: NodeKindMeta = {

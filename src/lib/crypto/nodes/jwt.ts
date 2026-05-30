@@ -50,14 +50,13 @@ registerNodeDef("jwt_sign", {
     const subject = getField(node, "subject");
     const expiresIn = getField(node, "expiresIn");
 
-    let key: jose.KeyLike | Uint8Array = keyBytes;
+    let key: any = keyBytes;
     if (alg.startsWith("RS") || alg.startsWith("ES")) {
       const pem = bytesToUtf8(keyBytes).trim();
       key = await jose.importPKCS8(pem, alg);
     }
 
-    const jwt = new jose.SignJWT(payload)
-      .setProtectedHeader({ alg });
+    const jwt = new jose.SignJWT(payload).setProtectedHeader({ alg });
 
     if (issuer) jwt.setIssuer(issuer);
     if (subject) jwt.setSubject(subject);
@@ -82,17 +81,17 @@ registerNodeDef("jwt_verify", {
     ],
     fields: [
       {
-          id: "algorithm",
-          label: "Expected Alg",
-          type: "select",
-          defaultValue: "HS256",
-          options: [
-            { label: "HS256", value: "HS256" },
-            { label: "HS512", value: "HS512" },
-            { label: "RS256", value: "RS256" },
-            { label: "ES256", value: "ES256" },
-          ],
-        },
+        id: "algorithm",
+        label: "Expected Alg",
+        type: "select",
+        defaultValue: "HS256",
+        options: [
+          { label: "HS256", value: "HS256" },
+          { label: "HS512", value: "HS512" },
+          { label: "RS256", value: "RS256" },
+          { label: "ES256", value: "ES256" },
+        ],
+      },
     ],
   },
   runner: async (node, inputs) => {
@@ -102,9 +101,9 @@ registerNodeDef("jwt_verify", {
 
     const alg = getField(node, "algorithm", "HS256");
 
-    let key: jose.KeyLike | Uint8Array = keyBytes;
+    let key: any = keyBytes;
     if (alg.startsWith("RS") || alg.startsWith("ES")) {
-        key = await jose.importSPKI(bytesToUtf8(keyBytes), alg);
+      key = await jose.importSPKI(bytesToUtf8(keyBytes), alg);
     }
 
     try {

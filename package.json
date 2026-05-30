@@ -15,6 +15,7 @@
     "build:static": "STATIC_EXPORT=true vite build",
     "build:cf": "vite build && node scripts/deploy-cloudflare.mjs",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -66,6 +67,7 @@
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "hi-base32": "^0.5.1",
+    "html-to-image": "^1.11.11",
     "input-otp": "^1.4.2",
     "jose": "^6.2.3",
     "jssha": "^3.3.1",

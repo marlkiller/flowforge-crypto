@@ -1,7 +1,14 @@
 import { registerProvider } from "../service";
 import { HMAC_ALGOS, makeNobleHmacProvider } from "./hmacLogic";
 import { md5, ripemd160 } from "@noble/hashes/legacy.js";
-import { sha3_256, sha3_384, sha3_512, keccak_256, shake128_32, shake256_64 } from "@noble/hashes/sha3.js";
+import {
+  sha3_256,
+  sha3_384,
+  sha3_512,
+  keccak_256,
+  shake128_32,
+  shake256_64,
+} from "@noble/hashes/sha3.js";
 import { blake2b, blake2s } from "@noble/hashes/blake2.js";
 import { blake3 } from "@noble/hashes/blake3.js";
 import { chacha20poly1305, xchacha20poly1305 } from "@noble/ciphers/chacha.js";

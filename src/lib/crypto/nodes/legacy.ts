@@ -28,14 +28,14 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
           ],
         },
         {
-            id: "mode",
-            label: "Mode",
-            type: "select",
-            defaultValue: "CBC",
-            options: [
-                { label: "CBC", value: "CBC" },
-                { label: "ECB", value: "ECB" },
-            ],
+          id: "mode",
+          label: "Mode",
+          type: "select",
+          defaultValue: "CBC",
+          options: [
+            { label: "CBC", value: "CBC" },
+            { label: "ECB", value: "ECB" },
+          ],
         },
         { id: "key", label: "Key (Hex)", type: "password" },
         { id: "iv", label: "IV (Hex)", type: "text" },

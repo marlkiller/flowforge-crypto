@@ -40,10 +40,14 @@ export async function executeNode(
     return result;
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
-    throw new ExecutionError(`Node "${node.data.label}" (${node.data.kind}) failed: ${error.message}`, error, {
-      nodeId: node.id,
-      nodeKind: node.data.kind,
-    });
+    throw new ExecutionError(
+      `Node "${node.data.label}" (${node.data.kind}) failed: ${error.message}`,
+      error,
+      {
+        nodeId: node.id,
+        nodeKind: node.data.kind,
+      },
+    );
   }
 }
 

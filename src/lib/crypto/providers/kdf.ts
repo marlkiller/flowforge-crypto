@@ -13,7 +13,7 @@ registerProvider({
         salt,
         iterations: (params?.iterations as number) || 100000,
         hash: (params?.hash as string) || "SHA-256",
-      },
+      } as any,
       baseKey,
       length,
     );
@@ -31,7 +31,7 @@ registerProvider({
         salt,
         info: (params?.info as Uint8Array) || new Uint8Array(0),
         hash: (params?.hash as string) || "SHA-256",
-      },
+      } as any,
       baseKey,
       length,
     );

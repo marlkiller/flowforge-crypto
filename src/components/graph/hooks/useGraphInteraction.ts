@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useReactFlow, type Node as RFNode } from "@xyflow/react";
 import { graphStore } from "../store";
@@ -8,8 +7,8 @@ import { toast } from "sonner";
 
 export function useGraphInteraction(
   nodes: GraphNode[],
-  edges: GraphEdge[],
-  wrapperRef: React.RefObject<HTMLDivElement>
+  _edges: GraphEdge[],
+  wrapperRef: React.RefObject<HTMLDivElement | null>,
 ) {
   const rf = useReactFlow();
   const [selectionMode, setSelectionMode] = useState(false);
@@ -140,19 +139,22 @@ export function useGraphInteraction(
     setContextMenu(null);
   }, []);
 
-  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: RFNode) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-    const rect = wrapper.getBoundingClientRect();
-    setContextMenu({
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      nodeId: node.id,
-    });
-    graphStore.setSelected(node.id);
-  }, [wrapperRef]);
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: RFNode) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
+      setContextMenu({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+        nodeId: node.id,
+      });
+      graphStore.setSelected(node.id);
+    },
+    [wrapperRef],
+  );
 
   const onEdgeClick = useCallback((event: React.MouseEvent, edge: GraphEdge) => {
     event.stopPropagation();
@@ -160,19 +162,22 @@ export function useGraphInteraction(
     graphStore.setEdgeSelected(edge.id);
   }, []);
 
-  const onEdgeContextMenu = useCallback((event: React.MouseEvent, edge: GraphEdge) => {
-    graphStore.setEdgeSelected(edge.id);
-    event.preventDefault();
-    event.stopPropagation();
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-    const rect = wrapper.getBoundingClientRect();
-    setContextMenu({
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      edgeId: edge.id,
-    });
-  }, [wrapperRef]);
+  const onEdgeContextMenu = useCallback(
+    (event: React.MouseEvent, edge: GraphEdge) => {
+      graphStore.setEdgeSelected(edge.id);
+      event.preventDefault();
+      event.stopPropagation();
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
+      setContextMenu({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+        edgeId: edge.id,
+      });
+    },
+    [wrapperRef],
+  );
 
   const onDragStart = (e: React.DragEvent, kind: string) => {
     e.dataTransfer.setData("application/x-crypto-kind", kind);
@@ -196,11 +201,36 @@ export function useGraphInteraction(
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const mod = e.metaKey || e.ctrlKey;
-      if (!mod) return;
       const tag = (e.target as HTMLElement).tagName;
       const isInput =
         tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable;
+
+      // Dismiss context menu on Escape
+      if (e.key === "Escape") {
+        setContextMenu(null);
+        return;
+      }
+
+      // Context menu key / Shift+F10 on selected node
+      if ((e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")) && !isInput) {
+        e.preventDefault();
+        const selected = rf.getNodes().find((n) => n.selected);
+        if (selected) {
+          const wrapper = wrapperRef.current;
+          if (wrapper) {
+            const rect = wrapper.getBoundingClientRect();
+            setContextMenu({
+              x: rect.width / 2,
+              y: rect.height / 2,
+              nodeId: selected.id,
+            });
+          }
+        }
+        return;
+      }
+
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
       if (e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         graphStore.undo();
@@ -220,7 +250,7 @@ export function useGraphInteraction(
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [rf, copySelected, pasteClipboard]);
+  }, [rf, copySelected, pasteClipboard, wrapperRef]);
 
   // Context menu actions
   const deleteNode = useCallback(() => {

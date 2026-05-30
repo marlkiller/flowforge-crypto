@@ -1,5 +1,16 @@
-
-import { ChevronDown, ChevronRight, Github, GripVertical, Hash, Download, Upload, Share2, Copy, Trash2, Plug } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Github,
+  GripVertical,
+  Hash,
+  Download,
+  Upload,
+  Share2,
+  Copy,
+  Trash2,
+  Plug,
+} from "lucide-react";
 import { getActiveCategories, CATEGORY_META, NODE_KIND_META } from "@/lib/crypto/registry";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -17,7 +28,7 @@ interface SidebarProps {
   onDragStart: (e: React.DragEvent, kind: string) => void;
   openExportDialog: () => void;
   openShareDialog: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 export function Sidebar({
@@ -44,6 +55,7 @@ export function Sidebar({
         <button
           onClick={() => setLeftPanelOpen(!leftPanelOpen)}
           className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors shrink-0"
+          aria-label={leftPanelOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
           <ChevronDown
             className={`w-3.5 h-3.5 transition-transform ${leftPanelOpen ? "" : "-rotate-90"}`}
@@ -51,12 +63,13 @@ export function Sidebar({
         </button>
         {leftPanelOpen && (
           <>
-            <h1 className="text-xs font-semibold text-foreground">CryptoFlow</h1>
+            <h1 className="text-xs font-semibold text-foreground">FlowForge Crypto</h1>
             <div className="ml-auto flex items-center gap-1">
               <button
                 onClick={() => setPluginDialogOpen(true)}
                 className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-all group"
                 title="Plugin Manager"
+                aria-label="Plugin Manager"
               >
                 <Plug className="w-4 h-4 group-hover:rotate-12 transition-transform" />
               </button>
@@ -66,6 +79,7 @@ export function Sidebar({
                 rel="noopener noreferrer"
                 className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
                 title="View on GitHub"
+                aria-label="View on GitHub"
               >
                 <Github className="w-4 h-4" />
               </a>
@@ -79,7 +93,7 @@ export function Sidebar({
       {leftPanelOpen && (
         <>
           <p className="px-3 pt-2 text-[10px] text-muted-foreground shrink-0">
-            Crypto pipeline editor
+            Visual crypto pipeline editor
           </p>
           <div className="px-3 pt-1 shrink-0">
             <input

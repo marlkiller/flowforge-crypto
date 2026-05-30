@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Play, ChevronDown, GripHorizontal, Loader2, Copy } from "lucide-react";
+import { Play, ChevronDown, GripHorizontal, Loader2, Copy, Timer } from "lucide-react";
 import { toast } from "sonner";
 import type { NodeExecutionLog } from "@/lib/crypto/types";
 import { formatBytes } from "@/lib/crypto/service";
@@ -38,14 +38,32 @@ export function OutputConsole({ logs, running, onRun }: Props) {
   const dragging = useRef(false);
   const startY = useRef(0);
   const startH = useRef(0);
+  const lastRunRef = useRef<number>(0);
 
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    dragging.current = true;
-    startY.current = e.clientY;
-    startH.current = height;
-    document.body.style.cursor = "row-resize";
-    document.body.style.userSelect = "none";
-  }, [height]);
+  useEffect(() => {
+    if (logs.length > 0) {
+      lastRunRef.current = Date.now();
+    }
+  }, [logs.length]);
+
+  const lastRunAgo = useCallback(() => {
+    const elapsed = Date.now() - lastRunRef.current;
+    if (elapsed < 1000) return "just now";
+    if (elapsed < 60000) return `${Math.floor(elapsed / 1000)}s ago`;
+    if (elapsed < 3600000) return `${Math.floor(elapsed / 60000)}m ago`;
+    return `${Math.floor(elapsed / 3600000)}h ago`;
+  }, []);
+
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      dragging.current = true;
+      startY.current = e.clientY;
+      startH.current = height;
+      document.body.style.cursor = "row-resize";
+      document.body.style.userSelect = "none";
+    },
+    [height],
+  );
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -74,7 +92,10 @@ export function OutputConsole({ logs, running, onRun }: Props) {
   const h = minimized ? MIN_H : height;
 
   return (
-    <div className="shrink-0 bg-background flex flex-col border-t border-border relative" style={{ height: h }}>
+    <div
+      className="shrink-0 bg-background flex flex-col border-t border-border relative"
+      style={{ height: h }}
+    >
       {/* Drag handle */}
       <div
         onMouseDown={onMouseDown}
@@ -88,8 +109,11 @@ export function OutputConsole({ logs, running, onRun }: Props) {
         <button
           onClick={() => setMinimized(!minimized)}
           className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors"
+          aria-label={minimized ? "Expand console" : "Collapse console"}
         >
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${minimized ? "-rotate-90" : ""}`} />
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform ${minimized ? "-rotate-90" : ""}`}
+          />
         </button>
         <span className="text-xs font-semibold text-foreground">Console</span>
         {!minimized && !running && logs.length > 0 && (
@@ -105,14 +129,17 @@ export function OutputConsole({ logs, running, onRun }: Props) {
                     log.status === "success" && log.outputs
                       ? (() => {
                           const entries = Object.entries(log.outputs);
-                          if (entries.length === 1 && (entries[0][0] === "default" || entries[0][0] === "data")) {
+                          if (
+                            entries.length === 1 &&
+                            (entries[0][0] === "default" || entries[0][0] === "data")
+                          ) {
                             return formatBytes(entries[0][1], fmt);
                           }
                           return entries
                             .map(([k, b]) => `${k.toUpperCase()}:\n${formatBytes(b, fmt)}`)
                             .join("\n\n");
                         })()
-                      : log.error ?? "";
+                      : (log.error ?? "");
                   const params = log.params ? `\n${log.params}` : "";
                   return `#${i + 1} ${log.label} · ${log.kind} · ${log.status.toUpperCase()} · ${log.outputBytes?.byteLength ?? 0}B · ${log.duration.toFixed(1)}ms${params}\n${out}`;
                 })
@@ -127,6 +154,7 @@ export function OutputConsole({ logs, running, onRun }: Props) {
             }}
             className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors ml-1"
             title="Copy all logs"
+            aria-label="Copy all logs"
           >
             <Copy className="w-3 h-3" />
           </button>
@@ -154,11 +182,12 @@ export function OutputConsole({ logs, running, onRun }: Props) {
       {!minimized && (
         <div ref={ref} className="flex-1 overflow-y-auto px-3 pb-2 space-y-1 custom-scrollbar">
           {logs.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic pt-1">Press Refresh to execute</p>
+            <p className="text-xs text-muted-foreground italic pt-1 flex items-center gap-1.5">
+              <Timer className="w-3 h-3" /> Auto-run enabled
+              {lastRunRef.current > 0 && <> · Last run {lastRunAgo()}</>}
+            </p>
           ) : (
-            logs.map((log, i) => (
-              <LogEntry key={log.nodeId} log={log} index={i} />
-            ))
+            logs.map((log, i) => <LogEntry key={log.nodeId} log={log} index={i} />)
           )}
         </div>
       )}
@@ -172,7 +201,9 @@ function LogEntry({ log, index }: { log: NodeExecutionLog; index: number }) {
   const showParams = log.params && !fmtMatch;
 
   return (
-    <div className={`rounded border ${log.status === "error" ? "border-destructive/30" : "border-border"} ${STATUS_BG[log.status]} p-2`}>
+    <div
+      className={`rounded border ${log.status === "error" ? "border-destructive/30" : "border-border"} ${STATUS_BG[log.status]} p-2`}
+    >
       {/* Line 1: index · kind · format · status badge */}
       <div className="flex items-center gap-2 text-[11px]">
         <span className="text-muted-foreground font-mono">#{index + 1}</span>
@@ -201,37 +232,40 @@ function LogEntry({ log, index }: { log: NodeExecutionLog; index: number }) {
 
       {/* Line 2: non-format params */}
       {showParams && (
-        <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
-          {log.params}
-        </div>
+        <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{log.params}</div>
       )}
 
       {/* Line 3: output / error */}
       {(log.status === "success" || log.status === "error") && (
         <div className="mt-1 text-[11px] font-mono leading-relaxed whitespace-pre-wrap break-all">
-          {log.status === "success" && log.outputs
-            ? (() => {
-                const fmt = (log.outputFormat ?? "utf8") as any;
-                const entries = Object.entries(log.outputs);
-                
-                const getLabel = (key: string) => {
-                  if (key === "publicKey") return "PUBLIC KEY";
-                  if (key === "privateKey") return "PRIVATE KEY";
-                  return key.replace(/([A-Z])/g, " $1").toUpperCase().trim();
-                };
+          {log.status === "success" && log.outputs ? (
+            (() => {
+              const fmt = (log.outputFormat ?? "utf8") as any;
+              const entries = Object.entries(log.outputs);
 
-                if (entries.length === 1 && (entries[0][0] === "default" || entries[0][0] === "data")) {
-                  return formatBytes(entries[0][1], fmt);
-                } else {
-                  return entries
-                    .map(([k, b]) => `${k.toUpperCase()}:\n${formatBytes(b, fmt, getLabel(k))}`)
-                    .join("\n\n");
-                }
-              })()
-            : log.status === "error" && log.error
-              ? <span className="text-destructive">{log.error}</span>
-              : null
-          }
+              const getLabel = (key: string) => {
+                if (key === "publicKey") return "PUBLIC KEY";
+                if (key === "privateKey") return "PRIVATE KEY";
+                return key
+                  .replace(/([A-Z])/g, " $1")
+                  .toUpperCase()
+                  .trim();
+              };
+
+              if (
+                entries.length === 1 &&
+                (entries[0][0] === "default" || entries[0][0] === "data")
+              ) {
+                return formatBytes(entries[0][1], fmt);
+              } else {
+                return entries
+                  .map(([k, b]) => `${k.toUpperCase()}:\n${formatBytes(b, fmt, getLabel(k))}`)
+                  .join("\n\n");
+              }
+            })()
+          ) : log.status === "error" && log.error ? (
+            <span className="text-destructive">{log.error}</span>
+          ) : null}
         </div>
       )}
     </div>

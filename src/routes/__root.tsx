@@ -126,13 +126,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CryptoFlow" },
+      { title: "FlowForge Crypto" },
       {
         name: "description",
         content:
           "A visual node-based editor for composing and executing cryptographic data processing pipelines.",
       },
-      { property: "og:title", content: "CryptoFlow" },
+      { property: "og:title", content: "FlowForge Crypto" },
       {
         property: "og:description",
         content:
@@ -140,7 +140,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "CryptoFlow" },
+      { name: "twitter:title", content: "FlowForge Crypto" },
       {
         name: "twitter:description",
         content:
@@ -181,7 +181,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
-    <ThemeProvider defaultTheme="system" storageKey="crypto-flow-theme">
+    <ThemeProvider defaultTheme="system" storageKey="flowforge-crypto-theme">
       <QueryClientProvider client={queryClient}>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
