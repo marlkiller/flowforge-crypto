@@ -24,7 +24,7 @@ import { CryptoNode } from "./CryptoNode";
 import { NodeInspector } from "./NodeInspector";
 import { OutputConsole } from "./OutputConsole";
 import { graphStore, useGraphStore } from "./store";
-import { loadExternalNode } from "@/lib/crypto/registry";
+import { loadExternalNode, NODE_KIND_META } from "@/lib/crypto/registry";
 import type { GraphEdge, GraphNode } from "@/lib/crypto/types";
 import {
   Plus,
@@ -120,6 +120,56 @@ function InnerEditor() {
   const onSelectionChange = useCallback(({ nodes: sel }: { nodes: RFNode[] }) => {
     graphStore.setSelected(sel[0]?.id ?? null);
   }, []);
+
+  const isValidConnection = useCallback(
+    (conn: Connection | GraphEdge) => {
+      if (conn.source === conn.target) return false;
+
+      const sourceNode = nodes.find((n) => n.id === conn.source);
+      const targetNode = nodes.find((n) => n.id === conn.target);
+      if (!sourceNode || !targetNode) return false;
+
+      const sourceMeta = NODE_KIND_META[sourceNode.data.kind];
+      const targetMeta = NODE_KIND_META[targetNode.data.kind];
+      if (!sourceMeta || !targetMeta) return false;
+
+      // 1. Determine Source Output Type
+      let sourceOutType = "raw";
+      if (conn.sourceHandle && conn.sourceHandle !== "default") {
+        const outMeta = sourceMeta.outputs?.find((o) => o.id === conn.sourceHandle);
+        sourceOutType =
+          outMeta?.type || sourceNode.data.outputFormat || sourceMeta.defaultOutput || "raw";
+      } else {
+        sourceOutType = sourceNode.data.outputFormat || sourceMeta.defaultOutput || "raw";
+      }
+
+      // 2. Determine Target Input Accept Types
+      const inputMeta = targetMeta.inputs?.find((i) => i.id === (conn.targetHandle || "data"));
+      const accepts = inputMeta?.acceptTypes || [];
+
+      if (accepts.length === 0 || accepts.includes("any")) return true;
+
+      const src = sourceOutType.toLowerCase();
+      const acc = accepts.map((t) => t.toLowerCase());
+
+      // 3. Strict Match
+      if (acc.includes(src)) return true;
+
+      // 4. Compatibility / Auto-conversion rules (matching getParamBytes logic)
+      if (acc.includes("raw")) {
+        // Anything that can be parsed as bytes is acceptable for a 'raw' input
+        if (["hex", "base64", "utf8", "string", "text", "pem", "base32", "base58"].includes(src))
+          return true;
+      }
+
+      if (acc.includes("string") || acc.includes("utf8") || acc.includes("text")) {
+        if (["string", "utf8", "text"].includes(src)) return true;
+      }
+
+      return false;
+    },
+    [nodes],
+  );
 
   const onMoveEnd = useCallback((_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
     graphStore.setViewport(viewport);
@@ -298,6 +348,7 @@ function InnerEditor() {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              isValidConnection={isValidConnection}
               onSelectionChange={onSelectionChange}
               onPaneClick={interaction.onPaneClick}
               onContextMenu={interaction.onPaneContextMenu}

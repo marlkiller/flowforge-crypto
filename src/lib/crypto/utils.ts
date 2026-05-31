@@ -3,11 +3,12 @@ import {
   b64ToBytes,
   hexToBytes,
   getProvider,
+  parseBytes,
   type DataFormat,
   type HashProvider,
 } from "./service";
 import type { CipherProvider } from "./service";
-import type { GraphNode } from "./types";
+import type { GraphNode, DataValue } from "./types";
 
 export function getProviderHash(name: string): (data: Uint8Array) => Promise<Uint8Array> {
   const provider = getProvider(name) as HashProvider | undefined;
@@ -79,16 +80,32 @@ const paramCache = new WeakMap<
  */
 export function getParamBytes(
   node: GraphNode,
-  inputs: Record<string, Uint8Array>,
+  inputs: Record<string, any>,
   id: string,
   required = true,
 ): Uint8Array | undefined {
+  // Use escape hatch if using the Proxy from executor, or use inputs directly
+  const rawInputs = inputs["__raw"] || inputs;
+
   // 1. Priority: Wired input
-  if (inputs[id]) {
-    // If input is wired but empty, treat as undefined if not required
-    // to allow fallback to node data or internal defaults.
-    if (inputs[id].length > 0) return inputs[id];
-    if (required) return inputs[id]; // Still return empty if required to let it fail later with better context
+  if (rawInputs[id]) {
+    const val = rawInputs[id];
+    const dv: DataValue =
+      val && typeof val === "object" && "value" in val ? val : { type: "raw", value: val };
+
+    // Case A: It's already bytes
+    if (dv.value instanceof Uint8Array) {
+      if (dv.value.length > 0) return dv.value;
+      if (required) return dv.value;
+    }
+    // Case B: It's a string from a Typed node (e.g. Hex node outputting a string)
+    if (typeof dv.value === "string") {
+      try {
+        return parseBytes(dv.value, dv.type as DataFormat);
+      } catch {
+        // Fallback to trying everything if the type was wrong
+      }
+    }
   }
 
   // 2. Secondary: Node data field (Hex string)

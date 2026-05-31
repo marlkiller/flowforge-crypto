@@ -1,4 +1,12 @@
-import type { GraphNode, GraphEdge, ExecutionResult, NodeExecutionLog, NodeRunner } from "./types";
+import type {
+  GraphNode,
+  GraphEdge,
+  ExecutionResult,
+  NodeExecutionLog,
+  NodeRunner,
+  DataValue,
+  DataType,
+} from "./types";
 import { loadNodeDef } from "./registry";
 import { topologicalOrder } from "./topoSort";
 
@@ -25,8 +33,8 @@ async function nodeParams(node: GraphNode): Promise<string | undefined> {
  */
 export async function executeNode(
   node: GraphNode,
-  inputs: Record<string, Uint8Array>,
-): Promise<Record<string, Uint8Array>> {
+  inputs: Record<string, DataValue>,
+): Promise<Record<string, DataValue>> {
   const def = await loadNodeDef(node.data.kind);
   const runner = def.runner as NodeRunner | undefined;
   if (!runner) {
@@ -34,11 +42,57 @@ export async function executeNode(
   }
 
   try {
-    const result = await runner(node, inputs);
-    if (result instanceof Uint8Array) {
-      return { default: result };
+    // Create a proxy that unwraps .value for legacy runners,
+    // but keep an escape hatch for type-aware utilities.
+    const proxyInputs = new Proxy(inputs, {
+      get(target, prop) {
+        if (prop === "__raw") return target;
+        const val = target[prop as string];
+        if (val && typeof val === "object" && "value" in val) {
+          return val.value;
+        }
+        return val;
+      },
+    });
+
+    const result = await runner(node, proxyInputs as any);
+
+    const wrap = (val: any): DataValue => {
+      // Already a DataValue?
+      if (val && typeof val === "object" && "type" in val && "value" in val) {
+        return val as DataValue;
+      }
+
+      // Auto-determine type
+      let type: DataType =
+        (node.data.outputFormat as DataType) || (def.meta.defaultOutput as DataType) || "raw";
+
+      if (val instanceof Uint8Array) {
+        // use determined type
+      } else if (typeof val === "boolean") {
+        type = "boolean";
+      } else if (typeof val === "string") {
+        // use determined type
+      } else if (val && typeof val === "object" && val.constructor.name === "CryptoKey") {
+        type = "cryptokey";
+      }
+
+      return { type, value: val };
+    };
+
+    if (result instanceof Uint8Array || (result && "type" in (result as any))) {
+      return { default: wrap(result) };
     }
-    return result;
+
+    if (result && typeof result === "object") {
+      const wrapped: Record<string, DataValue> = {};
+      for (const [k, v] of Object.entries(result)) {
+        wrapped[k] = wrap(v);
+      }
+      return wrapped;
+    }
+
+    return { default: wrap(result) };
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
     throw new ExecutionError(
@@ -60,7 +114,7 @@ export async function executeGraph(
   nodes: GraphNode[],
   edges: GraphEdge[],
 ): Promise<ExecutionResult> {
-  const outputs = new Map<string, Record<string, Uint8Array>>();
+  const outputs = new Map<string, Record<string, DataValue>>();
   const errors = new Map<string, string>();
   const logs: NodeExecutionLog[] = [];
   const nodeIds = new Set(nodes.map((n) => n.id));
@@ -118,7 +172,7 @@ export async function executeGraph(
       continue;
     }
 
-    const nodeInputs: Record<string, Uint8Array> = {};
+    const nodeInputs: Record<string, DataValue> = {};
 
     // Collect inputs from connected edges (only from nodes that executed successfully)
     const incoming = edgesByTarget.get(id) || [];
@@ -148,8 +202,12 @@ export async function executeGraph(
     try {
       const result = await executeNode(node, nodeInputs);
       outputs.set(id, result);
-      // For logging, we still use 'default' or the first output available for the quick summary
-      log.outputBytes = result["default"] || Object.values(result)[0];
+
+      // For logging and backwards compatibility in UI:
+      const firstOutput = Object.values(result)[0];
+      if (firstOutput.value instanceof Uint8Array) {
+        log.outputBytes = firstOutput.value;
+      }
       log.outputs = result;
       log.duration = performance.now() - start;
       logs.push(log);

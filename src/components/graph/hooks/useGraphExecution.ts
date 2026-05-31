@@ -118,13 +118,26 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
           };
 
           if (entries.length === 1 && (entries[0][0] === "default" || entries[0][0] === "data")) {
-            output = formatBytes(entries[0][1], fmt, getLabel(entries[0][0]));
-            outputBytesLen = entries[0][1].byteLength;
+            const dv = entries[0][1];
+            output =
+              dv.value instanceof Uint8Array
+                ? formatBytes(dv.value, fmt, getLabel(entries[0][0]))
+                : String(dv.value);
+            outputBytesLen = dv.value instanceof Uint8Array ? dv.value.byteLength : 0;
           } else if (entries.length > 0) {
             output = entries
-              .map(([k, b]) => `${k.toUpperCase()}:\n${formatBytes(b, fmt, getLabel(k))}`)
+              .map(([k, dv]) => {
+                const val =
+                  dv.value instanceof Uint8Array
+                    ? formatBytes(dv.value, fmt, getLabel(k))
+                    : String(dv.value);
+                return `${k.toUpperCase()}:\n${val}`;
+              })
               .join("\n\n");
-            outputBytesLen = entries.reduce((acc, [_, b]) => acc + b.byteLength, 0);
+            outputBytesLen = entries.reduce(
+              (acc, [_, dv]) => acc + (dv.value instanceof Uint8Array ? dv.value.byteLength : 0),
+              0,
+            );
           }
         }
 

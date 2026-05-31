@@ -65,13 +65,20 @@ export interface NodeData extends Record<string, unknown> {
 export type GraphNode = Node<NodeData>;
 export type GraphEdge = Edge;
 
+export type DataType = DataFormat | "cryptokey" | "boolean" | "json" | "raw";
+
+export interface DataValue {
+  type: DataType;
+  value: any; // Uint8Array for raw, string for hex/utf8/etc, CryptoKey for cryptokey
+}
+
 export interface NodeExecutionLog {
   nodeId: string;
   label: string;
   kind: string;
   status: "success" | "error" | "skipped";
   outputBytes?: Uint8Array;
-  outputs?: Record<string, Uint8Array>;
+  outputs?: Record<string, DataValue>;
   outputFormat?: string;
   error?: string;
   duration: number;
@@ -79,7 +86,7 @@ export interface NodeExecutionLog {
 }
 
 export interface ExecutionResult {
-  outputs: Map<string, Record<string, Uint8Array>>;
+  outputs: Map<string, Record<string, DataValue>>;
   errors: Map<string, string>;
   order: string[];
   logs: NodeExecutionLog[];
@@ -87,8 +94,13 @@ export interface ExecutionResult {
 
 export type NodeRunner = (
   node: GraphNode,
-  inputs: Record<string, Uint8Array>,
-) => Promise<Uint8Array | Record<string, Uint8Array>> | Uint8Array | Record<string, Uint8Array>;
+  inputs: Record<string, any>,
+) =>
+  | Promise<DataValue | Record<string, DataValue> | Uint8Array | Record<string, Uint8Array>>
+  | DataValue
+  | Record<string, DataValue>
+  | Uint8Array
+  | Record<string, Uint8Array>;
 
 export interface NodeDef {
   meta: NodeKindMeta;

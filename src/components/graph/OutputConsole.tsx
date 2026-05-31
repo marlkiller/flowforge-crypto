@@ -133,10 +133,19 @@ export function OutputConsole({ logs, running, onRun }: Props) {
                             entries.length === 1 &&
                             (entries[0][0] === "default" || entries[0][0] === "data")
                           ) {
-                            return formatBytes(entries[0][1], fmt);
+                            const dv = entries[0][1];
+                            return dv.value instanceof Uint8Array
+                              ? formatBytes(dv.value, fmt)
+                              : String(dv.value);
                           }
                           return entries
-                            .map(([k, b]) => `${k.toUpperCase()}:\n${formatBytes(b, fmt)}`)
+                            .map(([k, dv]) => {
+                              const val =
+                                dv.value instanceof Uint8Array
+                                  ? formatBytes(dv.value, fmt)
+                                  : String(dv.value);
+                              return `${k.toUpperCase()}:\n${val}`;
+                            })
                             .join("\n\n");
                         })()
                       : (log.error ?? "");
@@ -256,10 +265,19 @@ function LogEntry({ log, index }: { log: NodeExecutionLog; index: number }) {
                 entries.length === 1 &&
                 (entries[0][0] === "default" || entries[0][0] === "data")
               ) {
-                return formatBytes(entries[0][1], fmt);
+                const dv = entries[0][1];
+                return dv.value instanceof Uint8Array
+                  ? formatBytes(dv.value, fmt)
+                  : String(dv.value);
               } else {
                 return entries
-                  .map(([k, b]) => `${k.toUpperCase()}:\n${formatBytes(b, fmt, getLabel(k))}`)
+                  .map(([k, dv]) => {
+                    const val =
+                      dv.value instanceof Uint8Array
+                        ? formatBytes(dv.value, fmt, getLabel(k))
+                        : String(dv.value);
+                    return `${k.toUpperCase()}:\n${val}`;
+                  })
                   .join("\n\n");
               }
             })()

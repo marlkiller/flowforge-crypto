@@ -7,6 +7,30 @@ import { Upload, File as FileIcon, Link2 } from "lucide-react";
 import { CategoryIcon } from "./parts/CategoryIcon";
 import { useEffect } from "react";
 
+function getHandleStyle(types?: string[], isSource = false) {
+  const type = types?.[0]?.toLowerCase() || "raw";
+  let color = isSource ? "!bg-blue-500" : "!bg-blue-400"; // Default: Raw/Unknown
+  let shape = "rounded-full"; // Default: Circle
+
+  if (["utf8", "string", "text"].includes(type)) {
+    color = isSource ? "!bg-emerald-500" : "!bg-emerald-400";
+  } else if (["hex", "base64", "base32", "base58"].includes(type)) {
+    color = isSource ? "!bg-amber-500" : "!bg-amber-400";
+  } else if (["pem", "cert", "x509"].includes(type)) {
+    color = isSource ? "!bg-orange-500" : "!bg-orange-400";
+  } else if (["cryptokey", "key", "privatekey", "publickey"].includes(type)) {
+    color = isSource ? "!bg-fuchsia-600" : "!bg-fuchsia-500";
+    shape = "rotate-45 !rounded-sm"; // Diamond
+  } else if (["boolean", "bool"].includes(type)) {
+    color = isSource ? "!bg-rose-500" : "!bg-rose-400";
+    shape = "!rounded-sm"; // Square
+  } else if (["json", "object"].includes(type)) {
+    color = isSource ? "!bg-cyan-500" : "!bg-cyan-400";
+  }
+
+  return `${color} ${shape}`;
+}
+
 export function CryptoNode({ id, data, selected }: NodeProps) {
   const d = data as NodeData;
   const meta = NODE_KIND_META[d.kind];
@@ -165,7 +189,10 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
                   type="source"
                   position={Position.Right}
                   id={output.id}
-                  className="!w-4 !h-4 !bg-primary !border-2 !border-background !-right-[22px] transition-transform hover:scale-125 z-20"
+                  className={`!w-3.5 !h-3.5 !border-2 !border-background !-right-[22px] transition-transform hover:scale-125 z-20 ${getHandleStyle(
+                    [output.type || d.outputFormat || meta.defaultOutput || "raw"],
+                    true,
+                  )}`}
                 />
               </div>
             ))}
@@ -175,7 +202,10 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
             type="source"
             position={Position.Right}
             id="default"
-            className="!w-3.5 !h-3.5 !bg-primary !border-2 !border-background transition-transform hover:scale-125 z-20"
+            className={`!w-3.5 !h-3.5 !border-2 !border-background transition-transform hover:scale-125 z-20 ${getHandleStyle(
+              [d.outputFormat || meta.defaultOutput || "raw"],
+              true,
+            )}`}
           />
         ) : null}
 
@@ -236,7 +266,9 @@ function NodeField({
           type="target"
           position={Position.Left}
           id={field.id}
-          className="!w-3.5 !h-3.5 !bg-muted-foreground !border-2 !border-background !-left-[20px] top-2.5 transition-transform hover:scale-125 z-20"
+          className={`!w-3 !h-3 !border-2 !border-background !-left-[20px] top-2.5 transition-transform hover:scale-125 z-20 ${getHandleStyle(
+            field.acceptTypes,
+          )}`}
         />
       )}
 
@@ -245,7 +277,10 @@ function NodeField({
           type="source"
           position={Position.Right}
           id={sourceHandleId}
-          className="!w-3.5 !h-3.5 !bg-primary !border-2 !border-background !-right-[20px] top-2.5 transition-transform hover:scale-125 z-20"
+          className={`!w-3 !h-3 !border-2 !border-background !-right-[20px] top-2.5 transition-transform hover:scale-125 z-20 ${getHandleStyle(
+            undefined,
+            true,
+          )}`}
         />
       )}
 
@@ -317,7 +352,9 @@ function OrphanInput({ nodeId, input }: { nodeId: string; input: NodeInputMeta }
             type="target"
             position={Position.Left}
             id={input.id}
-            className="!w-3.5 !h-3.5 !bg-muted-foreground !border-2 !border-background !-left-[20px] top-2.5 transition-transform hover:scale-125 z-20"
+            className={`!w-3 !h-3 !border-2 !border-background !-left-[20px] top-2.5 transition-transform hover:scale-125 z-20 ${getHandleStyle(
+              input.acceptTypes,
+            )}`}
           />
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
             {input.label}
