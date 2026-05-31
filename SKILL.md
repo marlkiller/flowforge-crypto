@@ -128,7 +128,7 @@ type NodeRunner = (
   | Record<string, Uint8Array>;
 ```
 
-**Backward Compatibility**: The `inputs` object is a Proxy. Accessing `inputs["id"]` will return the raw `Uint8Array` (or string/boolean) value. To access the full container (e.g. to check the incoming type), use `inputs.__raw["id"]`.
+**Backward Compatibility**: The `inputs` object is a Proxy. Accessing `inputs["id"]` will return the raw `Uint8Array` (or string/bool) value. To access the full container (e.g. to check the incoming type), use `inputs.__raw["id"]`.
 
 ### Data Types & Port Styles
 
@@ -140,7 +140,7 @@ Handles (ports) are styled based on the `DataType` defined in `acceptTypes` (inp
 | `utf8` / `string` | Green   | Circle  |
 | `hex` / `base64`  | Yellow  | Circle  |
 | `cryptokey`       | Fuchsia | Diamond |
-| `boolean`         | Rose    | Square  |
+| `bool`            | Rose    | Square  |
 | `json`            | Cyan    | Circle  |
 
 ### Utilities

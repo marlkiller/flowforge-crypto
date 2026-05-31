@@ -2017,7 +2017,7 @@ export function getRncryptorDeepDivePreset(): WorkflowSeed {
   const validOut = makeNode(
     "output",
     { x: 800, y: 1150 },
-    { label: "Integrity Valid?", outputFormat: "boolean" },
+    { label: "Integrity Valid?", outputFormat: "bool" },
   );
   const aesD = makeNode(
     "aes",

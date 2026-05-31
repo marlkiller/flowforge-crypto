@@ -70,7 +70,7 @@ export async function executeNode(
       if (val instanceof Uint8Array) {
         // use determined type
       } else if (typeof val === "boolean") {
-        type = "boolean";
+        type = "bool";
       } else if (typeof val === "string") {
         // use determined type
       } else if (val && typeof val === "object" && val.constructor.name === "CryptoKey") {

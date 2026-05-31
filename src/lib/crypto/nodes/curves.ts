@@ -66,7 +66,7 @@ registerNodeDef("secp256k1_verify", {
     category: "asymmetric",
     description: "Verify a secp256k1 signature using a public key.",
     defaultOutput: "utf8",
-    supportedFormats: ["utf8", "boolean"],
+    supportedFormats: ["utf8", "bool"],
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "signature", label: "Signature", connectable: true, acceptTypes: ["raw"] },
@@ -93,7 +93,7 @@ registerNodeDef("secp256k1_verify", {
     const msg = hashFirst ? sha256(data) : data;
     const isValid = secp256k1.verify(sig, msg, pubKeyBytes);
     const fmt = getField(node as GraphNode, "outputFormat", "utf8");
-    if (fmt === "boolean") return isValid;
+    if (fmt === "bool") return isValid;
     return utf8ToBytes(isValid ? "Valid" : "Invalid");
   },
 });
@@ -174,7 +174,7 @@ registerNodeDef("ed448_verify", {
     category: "asymmetric",
     description: "Verify a signature using an Ed448 public key.",
     defaultOutput: "utf8",
-    supportedFormats: ["utf8", "boolean"],
+    supportedFormats: ["utf8", "bool"],
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "signature", label: "Signature", connectable: true, acceptTypes: ["raw"] },
@@ -188,7 +188,7 @@ registerNodeDef("ed448_verify", {
     if (!pk) throw new Error("Public key is required for verification");
     const isValid = ed448.verify(sig, data, pk);
     const fmt = getField(node as GraphNode, "outputFormat", "utf8");
-    if (fmt === "boolean") return isValid;
+    if (fmt === "bool") return isValid;
     return utf8ToBytes(isValid ? "Valid" : "Invalid");
   },
 });
@@ -296,7 +296,7 @@ registerNodeDef("bls_verify", {
     category: "asymmetric",
     description: "Verify a BLS12-381 signature using a public key.",
     defaultOutput: "utf8",
-    supportedFormats: ["utf8", "boolean"],
+    supportedFormats: ["utf8", "bool"],
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "signature", label: "Signature", connectable: true, acceptTypes: ["raw"] },
@@ -313,7 +313,7 @@ registerNodeDef("bls_verify", {
     const pubKeyPoint = G2.Point.fromBytes(pkBytes);
     const isValid = bls.verify(sigPoint, hashPoint, pubKeyPoint);
     const fmt = getField(node as GraphNode, "outputFormat", "utf8");
-    if (fmt === "boolean") return isValid;
+    if (fmt === "bool") return isValid;
     return utf8ToBytes(isValid ? "Valid" : "Invalid");
   },
 });

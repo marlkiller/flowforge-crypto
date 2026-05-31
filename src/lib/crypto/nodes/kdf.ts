@@ -79,7 +79,7 @@ registerNodeDef("bcrypt", {
       if (!hashStr) throw new Error("Hash is required for verification");
       const match = bcrypt.compareSync(password, hashStr);
       const fmt = (node.data["outputFormat"] as string) || "utf8";
-      if (fmt === "boolean") return match;
+      if (fmt === "bool") return match;
       return utf8ToBytes(match ? "Valid" : "Invalid");
     }
 

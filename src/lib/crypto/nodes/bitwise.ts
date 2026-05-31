@@ -33,7 +33,7 @@ registerNodeDef("constantTimeCompare", {
     category: "string",
     description: "Timing-safe byte comparison. Outputs 'Match' or 'No Match'.",
     defaultOutput: "utf8",
-    supportedFormats: ["utf8", "boolean"],
+    supportedFormats: ["utf8", "bool"],
     inputs: [
       { id: "a", label: "Input A", connectable: true, acceptTypes: ["hex", "base64"] },
       { id: "b", label: "Input B", connectable: true, acceptTypes: ["hex", "base64"] },
@@ -45,12 +45,12 @@ registerNodeDef("constantTimeCompare", {
     const fmt = (node.data["outputFormat"] as string) || "utf8";
 
     if (a.length !== b.length) {
-      return fmt === "boolean" ? false : utf8ToBytes("No Match");
+      return fmt === "bool" ? false : utf8ToBytes("No Match");
     }
     let result = 0;
     for (let i = 0; i < a.length; i++) result |= a[i] ^ b[i];
     const match = result === 0;
-    return fmt === "boolean" ? match : utf8ToBytes(match ? "Match" : "No Match");
+    return fmt === "bool" ? match : utf8ToBytes(match ? "Match" : "No Match");
   },
 });
 

@@ -94,7 +94,7 @@ registerNodeDef("rsa_verify", {
 
     const isValid = await provider.verify(publicKeyBytes, signature, data, { hash });
     const fmt = getField(node, "outputFormat", "utf8");
-    if (fmt === "boolean") return isValid;
+    if (fmt === "bool") return isValid;
     return utf8ToBytes(isValid ? "Valid Signature" : "Invalid Signature");
   },
 });

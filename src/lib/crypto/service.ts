@@ -73,7 +73,7 @@ export function b58ToBytes(str: string): Uint8Array {
   return base58.decode(str);
 }
 
-export type DataFormat = "utf8" | "hex" | "base64" | "pem" | "base32" | "base58" | "boolean";
+export type DataFormat = "utf8" | "hex" | "base64" | "pem" | "base32" | "base58" | "bool";
 
 export function formatBytes(bytes: Uint8Array, fmt: DataFormat, label?: string): string {
   switch (fmt) {
@@ -89,7 +89,7 @@ export function formatBytes(bytes: Uint8Array, fmt: DataFormat, label?: string):
       return bytesToB32(bytes);
     case "base58":
       return bytesToB58(bytes);
-    case "boolean":
+    case "bool":
       return bytes.length > 0 && bytes[0] !== 0 ? "true" : "false";
   }
 }
@@ -103,7 +103,7 @@ export function parseBytes(text: string, fmt: DataFormat): any {
       return b32ToBytes(text);
     case "base58":
       return b58ToBytes(text);
-    case "boolean":
+    case "bool":
       return text.trim().toLowerCase() === "true" || text.trim() === "1";
     case "base64":
     case "pem":

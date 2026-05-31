@@ -168,7 +168,7 @@ export const RSA_VERIFY_META: NodeKindMeta = {
   category: "asymmetric",
   description: "Digital signature verification using a public key.",
   defaultOutput: "utf8",
-  supportedFormats: ["utf8", "boolean"],
+  supportedFormats: ["utf8", "bool"],
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
     {
@@ -250,7 +250,7 @@ export const SM2_VERIFY_META: NodeKindMeta = {
   category: "asymmetric",
   description: "Verify an SM2 signature using an SM2 public key.",
   defaultOutput: "utf8",
-  supportedFormats: ["utf8", "hex", "base64", "boolean"],
+  supportedFormats: ["utf8", "hex", "base64", "bool"],
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
     {
@@ -452,7 +452,7 @@ export const BCRYPT_META: NodeKindMeta = {
   category: "kdf",
   description: "Password hashing function (bcrypt). Output is $2b$ encoded hash string.",
   defaultOutput: "utf8",
-  supportedFormats: ["utf8", "boolean"],
+  supportedFormats: ["utf8", "bool"],
   inputs: [
     { id: "password", label: "Password", connectable: true, acceptTypes: ["utf8"] },
     { id: "salt", label: "Salt", connectable: true, acceptTypes: ["utf8"] },
@@ -632,7 +632,7 @@ export const ECDSA_VERIFY_META: NodeKindMeta = {
   category: "asymmetric",
   description: "Verify data signature using an ECDSA public key.",
   defaultOutput: "utf8",
-  supportedFormats: ["utf8", "boolean"],
+  supportedFormats: ["utf8", "bool"],
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
     {

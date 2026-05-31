@@ -51,7 +51,7 @@ function makeMacNode(
       category: "mac",
       description,
       defaultOutput: "hex" as DataFormat,
-      supportedFormats: ["utf8", "hex", "base64", "boolean"],
+      supportedFormats: ["utf8", "hex", "base64", "bool"],
       inputs: [
         { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
         {
@@ -100,7 +100,7 @@ function makeMacNode(
         if (!signature) throw new Error("Signature is required for verification");
         const isValid = await provider.verify(keyBytes, signature, data);
         const fmt = getField(node, "outputFormat", "utf8");
-        if (fmt === "boolean") return isValid;
+        if (fmt === "bool") return isValid;
         return utf8ToBytes(isValid ? "Valid" : "Invalid");
       } else {
         return provider.sign(keyBytes, data);
@@ -116,7 +116,7 @@ registerNodeDef("hmac", {
     category: "mac",
     description: "Keyed-hash message authentication using any supported hash function.",
     defaultOutput: "hex",
-    supportedFormats: ["utf8", "hex", "base64", "boolean"],
+    supportedFormats: ["utf8", "hex", "base64", "bool"],
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       {
@@ -174,7 +174,7 @@ registerNodeDef("hmac", {
       if (!signature) throw new Error("Signature is required for verification");
       const isValid = await provider.verify(keyBytes, signature, data);
       const fmt = getField(node, "outputFormat", "utf8");
-      if (fmt === "boolean") return isValid;
+      if (fmt === "bool") return isValid;
       return utf8ToBytes(isValid ? "Valid" : "Invalid");
     } else {
       return provider.sign(keyBytes, data);

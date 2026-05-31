@@ -8,7 +8,7 @@ registerNodeDef("input", {
     label: "Input",
     category: "io",
     description: "Source — parses text as UTF-8 / HEX / Base64 / Bool.",
-    supportedFormats: ["utf8", "hex", "base64", "boolean"],
+    supportedFormats: ["utf8", "hex", "base64", "bool"],
     inputs: [
       {
         id: "inputFormat",
@@ -18,7 +18,7 @@ registerNodeDef("input", {
           { label: "UTF-8", value: "utf8" },
           { label: "Hex", value: "hex" },
           { label: "Base64", value: "base64" },
-          { label: "Boolean", value: "boolean" },
+          { label: "Bool", value: "bool" },
         ],
         connectable: false,
       },
@@ -124,7 +124,7 @@ registerNodeDef("output", {
     label: "Output",
     category: "io",
     description: "Sink — displays bytes in chosen format.",
-    supportedFormats: ["utf8", "hex", "base64", "boolean"],
+    supportedFormats: ["utf8", "hex", "base64", "bool"],
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
   runner: (_, inputs) => inputs["data"] ?? inputs["default"] ?? new Uint8Array(0),

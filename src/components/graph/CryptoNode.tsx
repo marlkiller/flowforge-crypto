@@ -21,7 +21,7 @@ function getHandleStyle(types?: string[], isSource = false) {
   } else if (["cryptokey", "key", "privatekey", "publickey"].includes(type)) {
     color = isSource ? "!bg-fuchsia-600" : "!bg-fuchsia-500";
     shape = "rotate-45 !rounded-sm"; // Diamond
-  } else if (["boolean", "bool"].includes(type)) {
+  } else if (["bool"].includes(type)) {
     color = isSource ? "!bg-rose-500" : "!bg-rose-400";
     shape = "!rounded-sm"; // Square
   } else if (["json", "object"].includes(type)) {

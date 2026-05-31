@@ -49,7 +49,7 @@ export function formatAcceptType(type: string): string {
     utf8: "UTF8",
     base32: "B32",
     base58: "B58",
-    boolean: "BOOL",
+    bool: "BOOL",
   };
   return map[type] || type.toUpperCase();
 }
@@ -66,7 +66,7 @@ export interface NodeData extends Record<string, unknown> {
 export type GraphNode = Node<NodeData>;
 export type GraphEdge = Edge;
 
-export type DataType = DataFormat | "cryptokey" | "boolean" | "json" | "raw";
+export type DataType = DataFormat | "cryptokey" | "bool" | "json" | "raw";
 
 export interface DataValue {
   type: DataType;

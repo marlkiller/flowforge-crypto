@@ -55,7 +55,7 @@ registerNodeDef("ed_verify", {
     category: "asymmetric",
     description: "Verify data signature using an Ed25519 public key.",
     defaultOutput: "utf8",
-    supportedFormats: ["utf8", "boolean"],
+    supportedFormats: ["utf8", "bool"],
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       {
@@ -79,7 +79,7 @@ registerNodeDef("ed_verify", {
     if (!publicKeyBytes) throw new Error("Public Key is required for Ed25519 Verify");
     const isValid = ed25519.verify(signature, data, publicKeyBytes);
     const fmt = getField(node as GraphNode, "outputFormat", "utf8");
-    if (fmt === "boolean") return isValid;
+    if (fmt === "bool") return isValid;
     return utf8ToBytes(isValid ? "Valid" : "Invalid");
   },
 });
