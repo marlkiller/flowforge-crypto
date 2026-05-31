@@ -13,9 +13,12 @@ function validateKeyLength(key: Uint8Array) {
   }
 }
 
-function validateIvLength(iv: Uint8Array | undefined, reqLen: number) {
-  if (iv && iv.byteLength !== reqLen) {
-    throw new Error(`Invalid IV length: ${iv.byteLength} bytes. Required: ${reqLen} bytes.`);
+function validateIvLength(iv: Uint8Array | undefined, reqLen: number, mode?: string) {
+  if (iv) {
+    if (mode === "GCM" && (iv.byteLength === 12 || iv.byteLength === 16)) return;
+    if (iv.byteLength !== reqLen) {
+      throw new Error(`Invalid IV length: ${iv.byteLength} bytes. Required: ${reqLen} bytes.`);
+    }
   }
 }
 
@@ -142,7 +145,7 @@ registerNodeDef("aes", {
         type: "text",
         placeholder: "All modes = 32 hex chars",
         visible: (d) => (d["cipherMode"] as string) !== "ECB",
-        validate: validateHex(16),
+        validate: validateHex([12, 16]),
       },
       {
         id: "aad",
@@ -206,7 +209,7 @@ registerNodeDef("aes", {
     validateKeyLength(keyBytes);
 
     const iv = getParamBytes(node as GraphNode, inputs, "iv", false);
-    validateIvLength(iv, provider.defaultIvSize);
+    validateIvLength(iv, provider.defaultIvSize, cipherMode);
 
     const params: Record<string, unknown> | undefined =
       cipherMode === "GCM"

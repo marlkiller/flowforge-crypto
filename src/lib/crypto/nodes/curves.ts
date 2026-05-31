@@ -187,6 +187,27 @@ registerNodeDef("ed448_verify", {
   },
 });
 
+registerNodeDef("x448_keygen", {
+  meta: {
+    kind: "x448_keygen",
+    label: "X448 Key Gen",
+    category: "asymmetric",
+    description: "Generate a key pair for X448 Diffie-Hellman.",
+    outputs: [
+      { id: "privateKey", label: "Private Key" },
+      { id: "publicKey", label: "Public Key" },
+    ],
+  },
+  runner: async () => {
+    const priv = x448.utils.randomSecretKey();
+    const pub = x448.getPublicKey(priv);
+    return {
+      privateKey: priv,
+      publicKey: pub,
+    };
+  },
+});
+
 registerNodeDef("x448_derive", {
   meta: {
     kind: "x448_derive",

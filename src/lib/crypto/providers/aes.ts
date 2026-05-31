@@ -95,7 +95,7 @@ registerProvider(
   makeWebCryptoProvider(
     "AES-GCM",
     "AES-GCM",
-    16,
+    12,
     (iv, aad) => ({ name: "AES-GCM", iv, ...(aad ? { additionalData: aad } : {}) }) as Algorithm,
   ),
 );
