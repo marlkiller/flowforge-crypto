@@ -179,6 +179,25 @@ function InnerEditor() {
     graphStore.setViewport(viewport);
   }, []);
 
+  const onNodeFocus = useCallback(
+    (nodeId: string) => {
+      if (!rf) return;
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+
+      // Focus on the node
+      rf.setCenter(
+        node.position.x + (node.measured?.width ?? 0) / 2,
+        node.position.y + (node.measured?.height ?? 0) / 2,
+        { zoom: 1.2, duration: 400 },
+      );
+
+      // Select it
+      graphStore.setSelected(nodeId);
+    },
+    [rf, nodes],
+  );
+
   // Get selected edges based on selected node or directly selected edges
   const selectedEdgeIds = useMemo(() => {
     const ids = new Set<string>();
@@ -559,7 +578,12 @@ function InnerEditor() {
             </ReactFlow>
 
             {/* Execution Status Bar */}
-            <ExecutionStatus errorCount={errorCount} nodeCount={nodes.length} />
+            <ExecutionStatus
+              errorCount={errorCount}
+              nodeCount={nodes.length}
+              nodes={nodes}
+              onNodeFocus={onNodeFocus}
+            />
 
             {/* Execution Loading Overlay */}
             {execRunning && (
