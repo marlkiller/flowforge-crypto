@@ -480,7 +480,7 @@ function InnerEditor() {
                   const w = graphStore.getActive();
                   graphStore.setEdges(w.edges.map((e) => ({ ...e, type: next })));
                 }}
-                className="absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all"
+                className="graph-toolbar absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all"
                 title={
                   edgeType === "smoothstep"
                     ? "Switch to curved edges"
@@ -505,7 +505,7 @@ function InnerEditor() {
                   setTimeout(() => rf?.fitView({ padding: 0.3, duration: 200 }), 50);
                 }}
                 disabled={nodes.length === 0}
-                className="absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none"
+                className="graph-toolbar absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none"
                 title="Auto-layout nodes with Dagre"
                 aria-label="Auto-layout nodes with Dagre"
                 style={{ top: 12, right: 44 }}
@@ -513,7 +513,7 @@ function InnerEditor() {
                 <Wand className="w-4 h-4" />
               </button>
               <div
-                className="absolute z-10 flex flex-col items-end"
+                className="graph-toolbar absolute z-10 flex flex-col items-end"
                 style={{ top: 12, right: 108 }}
               >
                 <button
@@ -555,6 +555,7 @@ function InnerEditor() {
                               filter: (node: HTMLElement) => {
                                 const cls = node.className || "";
                                 if (typeof cls !== "string") return true;
+                                if (cls.includes("graph-toolbar")) return false;
                                 return !["minimap", "controls", "panel", "attribution"].some((e) =>
                                   cls.includes(`react-flow__${e}`),
                                 );
