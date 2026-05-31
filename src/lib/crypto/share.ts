@@ -58,11 +58,11 @@ function expandNode(m: any): GraphNode {
     const key = REV_MAP[k] || k;
     data[key] = v;
   });
-  if (!data.outputFormat) data.outputFormat = "hex";
+  if (!data.outputFormat && data.kind !== "note") data.outputFormat = "hex";
 
   return {
     id: m.i,
-    type: "crypto",
+    type: data.kind === "note" ? "note" : "crypto",
     position: { x: m.p[0], y: m.p[1] },
     data,
   } as GraphNode;
@@ -91,7 +91,9 @@ function expandEdge(m: any): GraphEdge {
 export function encodeWorkflows(workflows: Workflow[]): string {
   const minified = workflows.map((w) => ({
     n: w.name,
-    ns: w.nodes.filter((n) => n.data && NODE_KIND_META[n.data.kind]).map(minifyNode),
+    ns: w.nodes
+      .filter((n) => n.data && (NODE_KIND_META[n.data.kind] || n.type === "note"))
+      .map(minifyNode),
     es: w.edges.map(minifyEdge),
   }));
 
@@ -132,7 +134,9 @@ export function decodeWorkflows(encoded: string): SharedWorkflow[] {
     const results: SharedWorkflow[] = [];
     for (const item of list) {
       if (!item.nodes || !item.edges) continue;
-      const nodes = item.nodes.filter((n: any) => n.data && NODE_KIND_META[n.data.kind]);
+      const nodes = item.nodes.filter(
+        (n: any) => n.data && (NODE_KIND_META[n.data.kind] || n.type === "note"),
+      );
       if (nodes.length > 0) {
         results.push({ name: item.name || "Shared Workflow", nodes, edges: item.edges || [] });
       }

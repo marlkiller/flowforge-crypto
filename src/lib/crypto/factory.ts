@@ -23,12 +23,13 @@ export function makeNode(
   for (const f of formFields) {
     if (data[f.id] !== undefined) continue;
 
-    if (f.type === "select" && f.options?.length) {
-      data[f.id] = f.options[0].value;
+    if (f.type === "select" && f.options && f.options.length > 0) {
+      data[f.id] = f.options[0]?.value;
     } else if (f.defaultValue !== undefined) {
       data[f.id] = f.defaultValue;
     }
   }
 
-  return { id: newNodeId(), type: "crypto", position, data } as GraphNode;
+  const type = kind === "note" ? kind : "crypto";
+  return { id: newNodeId(), type, position, data } as GraphNode;
 }

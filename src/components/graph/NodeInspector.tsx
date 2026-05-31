@@ -131,35 +131,39 @@ export function NodeInspector({ node }: Props) {
               update={update}
             />
           ))}
-        <Section title="Output Format">
-          <FormatPicker
-            value={d.outputFormat ?? "utf8"}
-            onChange={(v) => update({ outputFormat: v })}
-            formats={getSupportedFormats(d.kind)}
-          />
-        </Section>
+        {meta.category !== "ui" && (
+          <>
+            <Section title="Output Format">
+              <FormatPicker
+                value={d.outputFormat ?? "utf8"}
+                onChange={(v) => update({ outputFormat: v })}
+                formats={getSupportedFormats(d.kind)}
+              />
+            </Section>
 
-        <Section title="Live Output">
-          {typeof d.outputBytesLen === "number" && (
-            <div className="text-[10px] font-medium text-muted-foreground mb-1.5 flex items-center justify-between">
-              <span>Size</span>
-              <span className="text-foreground bg-background px-1.5 py-0.5 rounded border border-border">
-                {d.outputBytesLen} bytes
-              </span>
-            </div>
-          )}
-          {d.error ? (
-            <pre className="mt-1 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive p-2.5 break-all whitespace-pre-wrap font-mono text-[11px] shadow-inner leading-relaxed">
-              {d.error}
-            </pre>
-          ) : (
-            <pre className="mt-1 rounded-lg bg-background border border-border text-foreground p-2.5 break-all whitespace-pre-wrap font-mono text-[11px] min-h-[80px] max-h-80 overflow-auto shadow-inner custom-scrollbar leading-relaxed">
-              {d.output || (
-                <span className="text-muted-foreground italic">Pipeline waiting to run...</span>
+            <Section title="Live Output">
+              {typeof d.outputBytesLen === "number" && (
+                <div className="text-[10px] font-medium text-muted-foreground mb-1.5 flex items-center justify-between">
+                  <span>Size</span>
+                  <span className="text-foreground bg-background px-1.5 py-0.5 rounded border border-border">
+                    {d.outputBytesLen} bytes
+                  </span>
+                </div>
               )}
-            </pre>
-          )}
-        </Section>
+              {d.error ? (
+                <pre className="mt-1 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive p-2.5 break-all whitespace-pre-wrap font-mono text-[11px] shadow-inner leading-relaxed">
+                  {d.error}
+                </pre>
+              ) : (
+                <pre className="mt-1 rounded-lg bg-background border border-border text-foreground p-2.5 break-all whitespace-pre-wrap font-mono text-[11px] min-h-[80px] max-h-80 overflow-auto shadow-inner custom-scrollbar leading-relaxed">
+                  {d.output || (
+                    <span className="text-muted-foreground italic">Pipeline waiting to run...</span>
+                  )}
+                </pre>
+              )}
+            </Section>
+          </>
+        )}
       </div>
     </aside>
   );
@@ -197,7 +201,7 @@ function InspectorField({
             {field.type === "textarea" ? (
               <textarea
                 className="w-full min-h-[90px] rounded-lg bg-background border border-border p-2.5 text-xs text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-y font-mono shadow-sm custom-scrollbar transition-all"
-                value={value || ""}
+                value={value ?? ""}
                 onChange={(e) => update({ [field.id]: e.target.value })}
                 placeholder={field.placeholder}
               />
@@ -205,7 +209,7 @@ function InspectorField({
               <div className="relative">
                 <select
                   className="w-full rounded-lg bg-background border border-border px-2.5 py-2 text-xs text-foreground font-medium outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm appearance-none cursor-pointer transition-all"
-                  value={value || field.options?.[0]?.value || ""}
+                  value={value ?? field.options?.[0]?.value ?? ""}
                   onChange={(e) => update({ [field.id]: e.target.value })}
                 >
                   {field.options?.map((opt) => (
@@ -222,7 +226,7 @@ function InspectorField({
               <input
                 type={field.type}
                 className="w-full rounded-lg bg-background border border-border px-2.5 py-2 text-xs text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono shadow-sm transition-all"
-                value={value || ""}
+                value={value ?? ""}
                 onChange={(e) => update({ [field.id]: e.target.value })}
                 placeholder={field.placeholder}
               />

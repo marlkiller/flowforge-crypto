@@ -308,7 +308,7 @@ function NodeField({
       ) : field.type === "textarea" ? (
         <textarea
           className={`nodrag w-full bg-background border rounded-md px-2.5 py-1.5 text-[10px] font-mono text-foreground shadow-sm outline-none focus:ring-1 transition-all resize-none min-h-[44px] custom-scrollbar placeholder:text-muted-foreground/50 ${error ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border focus:border-primary focus:ring-primary"}`}
-          value={value || ""}
+          value={value ?? ""}
           onChange={(e) => update({ [field.id]: e.target.value })}
           placeholder={field.placeholder}
           onClick={(e) => e.stopPropagation()}
@@ -316,7 +316,7 @@ function NodeField({
       ) : field.type === "select" ? (
         <select
           className={`nodrag w-full bg-background border rounded-md px-2.5 py-1.5 text-[11px] text-foreground shadow-sm outline-none focus:ring-1 transition-all font-medium appearance-none cursor-pointer ${error ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border focus:border-primary focus:ring-primary"}`}
-          value={value || field.options?.[0]?.value}
+          value={value ?? field.options?.[0]?.value}
           onChange={(e) => update({ [field.id]: e.target.value })}
           onClick={(e) => e.stopPropagation()}
         >
@@ -330,7 +330,7 @@ function NodeField({
         <input
           type={field.type}
           className={`nodrag w-full bg-background border rounded-md px-2.5 py-1.5 text-[11px] text-foreground shadow-sm outline-none focus:ring-1 font-mono transition-all placeholder:text-muted-foreground/50 ${error ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border focus:border-primary focus:ring-primary"}`}
-          value={value || ""}
+          value={value ?? ""}
           onChange={(e) => update({ [field.id]: e.target.value })}
           placeholder={field.placeholder}
           onClick={(e) => e.stopPropagation()}

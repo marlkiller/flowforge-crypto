@@ -66,6 +66,20 @@
   --color-graph-node-foreground: var(--graph-node-foreground);
   --color-graph-background: var(--graph-background);
   --color-graph-grid: var(--graph-grid);
+
+  /* Note Colors */
+  --color-note-yellow: var(--note-yellow-bg);
+  --color-note-yellow-foreground: var(--note-yellow-text);
+  --color-note-blue: var(--note-blue-bg);
+  --color-note-blue-foreground: var(--note-blue-text);
+  --color-note-green: var(--note-green-bg);
+  --color-note-green-foreground: var(--note-green-text);
+  --color-note-red: var(--note-red-bg);
+  --color-note-red-foreground: var(--note-red-text);
+  --color-note-purple: var(--note-purple-bg);
+  --color-note-purple-foreground: var(--note-purple-text);
+  --color-note-zinc: var(--note-zinc-bg);
+  --color-note-zinc-foreground: var(--note-zinc-text);
 }
 
 :root {
@@ -109,6 +123,20 @@
   --graph-node-foreground: oklch(0.129 0.042 264.695);
   --graph-background: oklch(1 0 0);
   --graph-grid: oklch(0.929 0.013 255.508 / 20%);
+
+  /* Note Colors - Light */
+  --note-yellow-bg: oklch(0.96 0.15 95);
+  --note-yellow-text: oklch(0.3 0.1 95);
+  --note-blue-bg: oklch(0.9 0.08 240);
+  --note-blue-text: oklch(0.3 0.1 240);
+  --note-green-bg: oklch(0.94 0.12 150);
+  --note-green-text: oklch(0.3 0.1 150);
+  --note-red-bg: oklch(0.92 0.1 25);
+  --note-red-text: oklch(0.3 0.1 25);
+  --note-purple-bg: oklch(0.92 0.08 280);
+  --note-purple-text: oklch(0.3 0.1 280);
+  --note-zinc-bg: oklch(0.96 0 0);
+  --note-zinc-text: oklch(0.2 0 0);
 }
 
 .dark {
@@ -151,6 +179,20 @@
   --graph-node-foreground: oklch(0.984 0.003 247.858);
   --graph-background: oklch(0.129 0.042 264.695);
   --graph-grid: oklch(1 0 0 / 10%);
+
+  /* Note Colors - Dark */
+  --note-yellow-bg: oklch(0.35 0.12 95 / 40%);
+  --note-yellow-text: oklch(0.9 0.1 95);
+  --note-blue-bg: oklch(0.35 0.1 240 / 40%);
+  --note-blue-text: oklch(0.9 0.08 240);
+  --note-green-bg: oklch(0.35 0.1 150 / 40%);
+  --note-green-text: oklch(0.9 0.08 150);
+  --note-red-bg: oklch(0.35 0.1 25 / 40%);
+  --note-red-text: oklch(0.9 0.08 25);
+  --note-purple-bg: oklch(0.35 0.1 280 / 40%);
+  --note-purple-text: oklch(0.9 0.08 280);
+  --note-zinc-bg: oklch(0.3 0 0 / 40%);
+  --note-zinc-text: oklch(0.9 0 0);
 }
 
 @layer base {

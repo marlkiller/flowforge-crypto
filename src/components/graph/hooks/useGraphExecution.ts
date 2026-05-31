@@ -120,28 +120,32 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
           if (entries.length === 1 && (entries[0][0] === "default" || entries[0][0] === "data")) {
             const dv = entries[0][1];
             output =
-              dv.value instanceof Uint8Array
+              dv && dv.value instanceof Uint8Array
                 ? formatBytes(dv.value, fmt, getLabel(entries[0][0]))
-                : String(dv.value);
-            if (dv.value instanceof Uint8Array) {
+                : dv
+                  ? String(dv.value)
+                  : "";
+            if (dv && dv.value instanceof Uint8Array) {
               outputBytesLen = dv.value.byteLength;
-            } else if (typeof dv.value === "boolean") {
+            } else if (dv && typeof dv.value === "boolean") {
               outputBytesLen = 1;
             }
           } else if (entries.length > 0) {
             output = entries
               .map(([k, dv]) => {
                 const val =
-                  dv.value instanceof Uint8Array
+                  dv && dv.value instanceof Uint8Array
                     ? formatBytes(dv.value, fmt, getLabel(k))
-                    : String(dv.value);
+                    : dv
+                      ? String(dv.value)
+                      : "";
                 return `${k.toUpperCase()}:\n${val}`;
               })
               .join("\n\n");
 
             const totalBytes = entries.reduce((acc, [_, dv]) => {
-              if (dv.value instanceof Uint8Array) return acc + dv.value.byteLength;
-              if (typeof dv.value === "boolean") return acc + 1;
+              if (dv && dv.value instanceof Uint8Array) return acc + dv.value.byteLength;
+              if (dv && typeof dv.value === "boolean") return acc + 1;
               return acc;
             }, 0);
             outputBytesLen = totalBytes;

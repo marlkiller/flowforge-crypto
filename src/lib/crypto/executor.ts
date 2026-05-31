@@ -166,6 +166,11 @@ export async function executeGraph(
       continue;
     }
 
+    const def = await loadNodeDef(node.data.kind);
+    if (def.meta.category === "ui") {
+      continue; // Skip UI-only nodes (notes, groups, etc.) from logic & logs
+    }
+
     if (encounteredError) {
       logs.push({
         nodeId: node.id,
@@ -211,7 +216,7 @@ export async function executeGraph(
 
       // For logging and backwards compatibility in UI:
       const firstOutput = Object.values(result)[0];
-      if (firstOutput.value instanceof Uint8Array) {
+      if (firstOutput && firstOutput.value instanceof Uint8Array) {
         log.outputBytes = firstOutput.value;
       }
       log.outputs = result;

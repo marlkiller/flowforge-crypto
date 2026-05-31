@@ -167,11 +167,36 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     chip: "bg-teal-500/15 text-teal-300 border-teal-500/40",
     dot: "bg-teal-400",
   },
+  ui: {
+    label: "UI",
+    icon: "MousePointer2",
+    accent: "text-zinc-300",
+    chip: "bg-zinc-500/15 text-zinc-300 border-zinc-500/40",
+    dot: "bg-zinc-400",
+  },
 };
 
 export function getActiveCategories(): string[] {
   const cats = new Set(Object.values(NODE_KIND_META).map((m) => m.category));
-  return Array.from(cats);
+  const order = [
+    "io",
+    "ui",
+    "string",
+    "encoding",
+    "hash",
+    "cipher",
+    "asymmetric",
+    "mac",
+    "kdf",
+    "entropy",
+    "protocol",
+    "legacy",
+    "pqc",
+    "analysis",
+  ];
+  const sorted = order.filter((c) => cats.has(c));
+  const others = Array.from(cats).filter((c) => !order.includes(c));
+  return [...sorted, ...others];
 }
 
 export function defaultOutputFormat(kind: string): DataFormat {

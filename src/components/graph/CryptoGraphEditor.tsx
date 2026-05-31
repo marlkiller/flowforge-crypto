@@ -21,6 +21,7 @@ import { toPng, toJpeg, toCanvas } from "html-to-image";
 import "@xyflow/react/dist/style.css";
 
 import { CryptoNode } from "./CryptoNode";
+import { NoteNode } from "./parts/NoteNode";
 import { NodeInspector } from "./NodeInspector";
 import { OutputConsole } from "./OutputConsole";
 import { graphStore, useGraphStore } from "./store";
@@ -51,7 +52,10 @@ import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
 
-const nodeTypes = { crypto: CryptoNode };
+const nodeTypes = {
+  crypto: CryptoNode,
+  note: NoteNode,
+};
 
 function InnerEditor() {
   const { theme } = useTheme();
