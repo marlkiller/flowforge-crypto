@@ -2,7 +2,7 @@ import { registerNodeDef } from "../registry";
 import type { GraphNode } from "../types";
 import { ed25519, x25519 } from "@noble/curves/ed25519.js";
 import { utf8ToBytes } from "../service";
-import { getParamBytes } from "../utils";
+import { getField, getParamBytes } from "../utils";
 
 registerNodeDef("ed_keygen", {
   meta: {

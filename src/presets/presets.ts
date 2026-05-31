@@ -1871,8 +1871,45 @@ export function getRsaFullSuitePreset(): WorkflowSeed {
     ],
   };
 }
+export function getRncryptorPreset(): WorkflowSeed {
+  const input = makeNode(
+    "input",
+    { x: 50, y: 150 },
+    { text: "Confidential message for RNCryptor.", label: "Message" },
+  );
+  const password = makeNode(
+    "input",
+    { x: 50, y: 300 },
+    { text: "rncryptor-password", label: "Password" },
+  );
+
+  const enc = makeNode("rncryptor_encrypt", { x: 450, y: 100 }, { label: "RNCryptor Encrypt" });
+  const dec = makeNode("rncryptor_decrypt", { x: 850, y: 100 }, { label: "RNCryptor Decrypt" });
+  const out = makeNode(
+    "output",
+    { x: 1250, y: 150 },
+    { label: "Decrypted Msg", outputFormat: "utf8" },
+  );
+
+  return {
+    name: "RNCryptor v3 Protocol",
+    nodes: [input, password, enc, dec, out],
+    edges: [
+      { id: "rn1", source: input.id, target: enc.id, targetHandle: "data", animated: true },
+      { id: "rn2", source: password.id, target: enc.id, targetHandle: "password", animated: true },
+      { id: "rn3", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
+      { id: "rn4", source: password.id, target: dec.id, targetHandle: "password", animated: true },
+      { id: "rn5", source: dec.id, target: out.id, animated: true },
+    ],
+  };
+}
 
 export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string }[] = [
+  {
+    label: "RNCryptor v3 Protocol",
+    seed: getRncryptorPreset(),
+    keywords: "rncryptor protocol aes-cbc pbkdf2 hmac educational",
+  },
   {
     label: "RSA Full Suite (Encrypt & Sign)",
     seed: getRsaFullSuitePreset(),

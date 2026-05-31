@@ -39,7 +39,7 @@ registerNodeDef("constantTimeCompare", {
       { id: "b", label: "Input B", connectable: true, acceptTypes: ["hex", "base64"] },
     ],
   },
-  runner: (_, inputs) => {
+  runner: (node, inputs) => {
     const a = inputs["a"] ?? new Uint8Array(0);
     const b = inputs["b"] ?? new Uint8Array(0);
     const fmt = (node.data["outputFormat"] as string) || "utf8";

@@ -1,6 +1,7 @@
 import { registerNodeDef } from "../registry";
 import { utf8ToBytes } from "../service";
 import { getField } from "../utils";
+import type { GraphNode } from "../types";
 import { ml_kem512, ml_kem768, ml_kem1024 } from "@noble/post-quantum/ml-kem.js";
 import { ml_dsa44, ml_dsa65, ml_dsa87 } from "@noble/post-quantum/ml-dsa.js";
 import {

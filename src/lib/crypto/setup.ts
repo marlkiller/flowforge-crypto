@@ -22,6 +22,7 @@ import "./nodes/shamir";
 import "./nodes/dh";
 import "./nodes/cert";
 import "./nodes/merkle";
+import "./nodes/rncryptor";
 
 // ─── Lazy Loading Nodes (Heavyweight or Bundled) ─────────────────
 import { registerLazyNode } from "./registry";
