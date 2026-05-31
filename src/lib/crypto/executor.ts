@@ -157,12 +157,12 @@ export async function executeGraph(
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
   // Execute nodes in order
-  let encounteredError = false;
+  const failedOrSkipped = new Set<string>();
   for (const id of order) {
     const node = nodeMap.get(id);
     if (!node) {
       errors.set(id, `Node "${id}" not found`);
-      encounteredError = true;
+      failedOrSkipped.add(id);
       continue;
     }
 
@@ -171,7 +171,18 @@ export async function executeGraph(
       continue; // Skip UI-only nodes (notes, groups, etc.) from logic & logs
     }
 
-    if (encounteredError) {
+    // Check if any upstream node failed or was skipped
+    const incoming = edgesByTarget.get(id) || [];
+    let upstreamFailed = false;
+    for (const edge of incoming) {
+      if (failedOrSkipped.has(edge.source)) {
+        upstreamFailed = true;
+        break;
+      }
+    }
+
+    if (upstreamFailed) {
+      failedOrSkipped.add(id);
       logs.push({
         nodeId: node.id,
         label: node.data.label,
@@ -186,7 +197,6 @@ export async function executeGraph(
     const nodeInputs: Record<string, DataValue> = {};
 
     // Collect inputs from connected edges (only from nodes that executed successfully)
-    const incoming = edgesByTarget.get(id) || [];
     for (const edge of incoming) {
       const sourceOutputs = outputs.get(edge.source);
       if (sourceOutputs) {
@@ -229,7 +239,7 @@ export async function executeGraph(
       log.error = execError.message;
       log.duration = performance.now() - start;
       logs.push(log);
-      encounteredError = true;
+      failedOrSkipped.add(id);
     }
   }
 

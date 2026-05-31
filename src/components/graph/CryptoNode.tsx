@@ -7,7 +7,7 @@ import { CategoryIcon } from "./parts/CategoryIcon";
 import { memo } from "react";
 import { graphStore } from "./store";
 
-function getHandleStyle(types?: string[], _isSource = false) {
+function getHandleStyle(types?: string[]) {
   const type = types?.[0]?.toLowerCase() || "raw";
   let colorClass = "handle-raw";
   let shapeClass = "";
@@ -88,7 +88,7 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`group min-w-[200px] max-w-[260px] rounded-xl border bg-card/90 backdrop-blur-sm shadow-lg transition-all duration-200 ${
+      className={`group min-w-[200px] max-w-[260px] rounded-xl border bg-card/90 backdrop-blur-sm shadow-lg transition-[border-color,box-shadow,transform] duration-200 ${
         hasError
           ? "border-destructive ring-4 ring-destructive/20 shadow-2xl z-10"
           : selected
@@ -132,9 +132,8 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
           </div>
         )}
 
-        {/* Multi-output handles */}
-        {visibleOutputs.length > 1 ||
-        (visibleOutputs.length === 1 && visibleOutputs[0].id !== "default") ? (
+        {/* Output handles */}
+        {visibleOutputs.length > 0 && (
           <div className="pt-2 border-t border-border/50 space-y-2">
             {visibleOutputs.map((output) => (
               <div key={output.id} className="relative h-5 flex items-center justify-end">
@@ -145,21 +144,15 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
                   type="source"
                   position={Position.Right}
                   id={output.id}
-                  className={`!-right-[22px] ${getHandleStyle([
+                  style={{ top: 10, right: -13 }}
+                  className={getHandleStyle([
                     output.type || d.outputFormat || meta.defaultOutput || "raw",
-                  ])}`}
+                  ])}
                 />
               </div>
             ))}
           </div>
-        ) : visibleOutputs.length === 1 ? (
-          <Handle
-            type="source"
-            position={Position.Right}
-            id="default"
-            className={getHandleStyle([d.outputFormat || meta.defaultOutput || "raw"])}
-          />
-        ) : null}
+        )}
 
         <div className="pt-1.5 border-t border-border/50">
           <div className="flex items-center justify-between mb-1.5">
@@ -218,7 +211,8 @@ function NodeField({
           type="target"
           position={Position.Left}
           id={field.id}
-          className={`!-left-[20px] top-2.5 ${getHandleStyle(field.acceptTypes)}`}
+          style={{ top: 10, left: -13 }}
+          className={getHandleStyle(field.acceptTypes)}
         />
       )}
 
@@ -227,7 +221,8 @@ function NodeField({
           type="source"
           position={Position.Right}
           id={sourceHandleId}
-          className={`!-right-[20px] top-2.5 ${getHandleStyle(undefined, true)}`}
+          style={{ top: 10, right: -13 }}
+          className={getHandleStyle(undefined)}
         />
       )}
 
@@ -301,7 +296,8 @@ function OrphanInput({ nodeId, input }: { nodeId: string; input: NodeInputMeta }
             type="target"
             position={Position.Left}
             id={input.id}
-            className={`!-left-[20px] top-2.5 ${getHandleStyle(input.acceptTypes)}`}
+            style={{ top: 8, left: -13 }}
+            className={getHandleStyle(input.acceptTypes)}
           />
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
             {input.label}

@@ -174,7 +174,7 @@ registerNodeDef("jwkConvert", {
         id: "keyData",
         label: "Key (PEM/JWK JSON)",
         connectable: true,
-        acceptTypes: ["utf8"],
+        acceptTypes: ["utf8", "pem", "raw"],
         type: "textarea",
         placeholder: "PEM public/private key or JWK JSON...",
       },
@@ -202,42 +202,44 @@ registerNodeDef("jwkConvert", {
       return `-----BEGIN ${label}-----\n${lines.join("\n")}\n-----END ${label}-----`;
     }
 
-    function rawInputText(): string {
-      const wireBytes = inputs["keyData"];
+    function getInputData(): { text?: string; bytes?: Uint8Array } {
+      const dv = inputs["__raw"]?.["keyData"];
+      if (dv) {
+        if (dv.value instanceof Uint8Array) return { bytes: dv.value };
+        return { text: String(dv.value) };
+      }
       const fieldStr = getField(node, "keyData", "");
-      if (wireBytes && wireBytes.length > 0) return bytesToUtf8(wireBytes).trim();
-      if (fieldStr?.trim()) return fieldStr.trim();
+      if (fieldStr?.trim()) return { text: fieldStr.trim() };
       throw new Error("Key data is required");
     }
 
-    function rawDerToPem(): string {
-      const wireBytes = inputs["keyData"]!;
-      return derBytesToPem(wireBytes, "PUBLIC KEY");
-    }
+    const { text, bytes } = getInputData();
 
     if (direction === "pemToJwk") {
-      let text: string;
-      const wireBytes = inputs["keyData"];
-      if (wireBytes && wireBytes.length > 0) {
-        text = bytesToUtf8(wireBytes).trim();
-      } else {
-        const fieldStr = getField(node, "keyData", "");
-        if (!fieldStr?.trim()) throw new Error("Key data is required");
-        text = fieldStr.trim();
-      }
-
-      const beginIdx = text.indexOf("-----BEGIN ");
       let pem: string;
-      if (beginIdx !== -1) {
-        pem = text.slice(beginIdx);
-      } else if (wireBytes && wireBytes.length > 0) {
-        pem = rawDerToPem();
+      if (text) {
+        const beginIdx = text.indexOf("-----BEGIN ");
+        if (beginIdx !== -1) {
+          pem = text.slice(beginIdx);
+        } else {
+          // Try to see if it's a raw base64 that we can wrap
+          try {
+            const b = b64ToBytes(text);
+            pem = derBytesToPem(b, "PUBLIC KEY");
+          } catch {
+            throw new Error("No valid PEM block or Base64 data found");
+          }
+        }
+      } else if (bytes) {
+        // We have binary bytes (likely DER)
+        // We don't know if it's SPKI or PKCS8, but we'll try both labels
+        pem = derBytesToPem(bytes, "PUBLIC KEY");
       } else {
-        throw new Error("No valid PEM block found in input");
+        throw new Error("Key data is required");
       }
 
       const errors: string[] = [];
-      const isPrivate = pem.includes("PRIVATE KEY");
+      const isPrivateInput = pem.includes("PRIVATE KEY");
       const baseAlgs = [
         "RS256",
         "PS256",
@@ -248,32 +250,57 @@ registerNodeDef("jwkConvert", {
         "RS512",
         "PS512",
         "ES512",
+        "RSA-OAEP",
+        "RSA-OAEP-256",
+        "RSA-OAEP-384",
+        "RSA-OAEP-512",
+        "RSA-PSS",
       ];
-      const algsToTry: Array<{ alg: string; private: boolean }> = [];
+
+      const algsToTry: Array<{ alg: string; isPrivate: boolean }> = [];
       for (const a of baseAlgs) {
-        algsToTry.push({ alg: a, private: isPrivate });
-        if (!isPrivate) algsToTry.push({ alg: a, private: true });
+        // If the PEM header says PRIVATE, try PKCS8 first.
+        // If it says PUBLIC, try SPKI first.
+        // But jose is picky, so if one fails, we might need to try the other label.
+        algsToTry.push({ alg: a, isPrivate: isPrivateInput });
+        algsToTry.push({ alg: a, isPrivate: !isPrivateInput });
       }
+
       let cryptoKey: any = null;
-      for (const { alg, private: usePkcs8 } of algsToTry) {
+      for (const { alg, isPrivate } of algsToTry) {
         try {
-          cryptoKey = usePkcs8 ? await jose.importPKCS8(pem, alg) : await jose.importSPKI(pem, alg);
+          // If we are switching from what the PEM says, we need to swap the PEM header/footer
+          let currentPem = pem;
+          if (isPrivate !== isPrivateInput) {
+            const oldLabel = isPrivateInput ? "PRIVATE KEY" : "PUBLIC KEY";
+            const newLabel = isPrivate ? "PRIVATE KEY" : "PUBLIC KEY";
+            currentPem = pem.replace(oldLabel, newLabel).replace(oldLabel, newLabel);
+          }
+
+          cryptoKey = isPrivate
+            ? await jose.importPKCS8(currentPem, alg)
+            : await jose.importSPKI(currentPem, alg);
           break;
         } catch (e: any) {
-          errors.push(`  ${usePkcs8 ? "PKCS8" : "SPKI"} ${alg}: ${e.message || e.code || e}`);
+          // skip
         }
       }
+
       if (!cryptoKey) {
-        throw new Error(`PEM to JWK failed — all attempts failed:\n${errors.join("\n")}`);
+        throw new Error(
+          "PEM to JWK failed — could not import key. Ensure the algorithm is supported and the format is correct (SPKI/PKCS8).",
+        );
       }
       const jwk = await jose.exportJWK(cryptoKey);
       return utf8ToBytes(JSON.stringify(jwk, null, 2));
     }
 
+    const rawText = text || (bytes ? bytesToUtf8(bytes) : "");
+
     if (direction === "jwkToPem") {
       let jwk: any;
       try {
-        jwk = JSON.parse(rawInputText());
+        jwk = JSON.parse(rawText);
       } catch {
         throw new Error("Invalid JWK JSON");
       }
@@ -289,7 +316,7 @@ registerNodeDef("jwkConvert", {
     if (direction === "analyzeJwk") {
       let jwk: any;
       try {
-        jwk = JSON.parse(rawInputText());
+        jwk = JSON.parse(rawText);
       } catch {
         throw new Error("Invalid JWK JSON");
       }

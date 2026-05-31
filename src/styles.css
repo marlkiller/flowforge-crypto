@@ -299,39 +299,66 @@
   background-color: var(--muted-foreground);
 }
 
-/* ReactFlow Handle Professional Styling */
+/* ── Handle Core ── */
 .react-flow__handle {
   width: 12px !important;
   height: 12px !important;
-  border: 2px solid var(--color-background) !important;
-  transition: transform 0.2s, background-color 0.2s;
+  border: 2px solid var(--color-background);
+  background-color: var(--color-handle-raw);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
   z-index: 20;
-  background-color: var(--color-handle-raw) !important; /* Default */
+}
+
+/* invisible extended hit area — anchor NEVER moves */
+.react-flow__handle::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
 }
 
 .react-flow__handle:hover {
-  transform: scale(1.25);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  z-index: 21;
 }
 
-/* Handle Types */
-.react-flow__handle.handle-raw { background-color: var(--color-handle-raw) !important; }
-.react-flow__handle.handle-string { background-color: var(--color-handle-string) !important; }
-.react-flow__handle.handle-hex { background-color: var(--color-handle-hex) !important; }
-.react-flow__handle.handle-cert { background-color: var(--color-handle-cert) !important; }
-.react-flow__handle.handle-key { background-color: var(--color-handle-key) !important; }
-.react-flow__handle.handle-bool { background-color: var(--color-handle-bool) !important; }
-.react-flow__handle.handle-json { background-color: var(--color-handle-json) !important; }
+/* ── Colors ── */
+.react-flow__handle.handle-raw     { background-color: var(--color-handle-raw); }
+.react-flow__handle.handle-string  { background-color: var(--color-handle-string); }
+.react-flow__handle.handle-hex     { background-color: var(--color-handle-hex); }
+.react-flow__handle.handle-cert    { background-color: var(--color-handle-cert); }
+.react-flow__handle.handle-key     { background-color: var(--color-handle-key); }
+.react-flow__handle.handle-bool    { background-color: var(--color-handle-bool); }
+.react-flow__handle.handle-json    { background-color: var(--color-handle-json); }
 
-/* Handle Shapes */
+/* ── Shapes ── */
 .react-flow__handle.handle-diamond {
-  transform: rotate(45deg) !important;
-  border-radius: 2px !important;
+  border-radius: 2px;
+  transform: translateY(-50%) rotate(45deg) !important;
 }
-.react-flow__handle.handle-diamond:hover {
-  transform: rotate(45deg) scale(1.25) !important;
-}
+
 .react-flow__handle.handle-square {
-  border-radius: 2px !important;
+  border-radius: 2px;
+}
+
+/* ── Connection feedback (anchor NEVER moves) ── */
+.react-flow__handle.connecting {
+  animation: handle-glow 1s ease-in-out infinite;
+}
+
+.react-flow__handle.connecting.valid {
+  border-color: var(--color-chart-2) !important;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-chart-2) 40%, transparent);
+}
+
+.react-flow__handle.connecting:not(.valid) {
+  border-color: var(--color-destructive) !important;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-destructive) 40%, transparent);
+}
+
+@keyframes handle-glow {
+  0%, 100% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-chart-2) 30%, transparent); }
+  50%      { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-chart-2) 15%, transparent); }
 }
 
 /* MiniMap Professional Styling */
