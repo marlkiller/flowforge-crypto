@@ -185,12 +185,14 @@ function InnerEditor() {
       const node = nodes.find((n) => n.id === nodeId);
       if (!node) return;
 
-      // Focus on the node
-      rf.setCenter(
-        node.position.x + (node.measured?.width ?? 0) / 2,
-        node.position.y + (node.measured?.height ?? 0) / 2,
-        { zoom: 1.2, duration: 400 },
-      );
+      // Focus on the node elegantly using fitView
+      rf.fitView({
+        nodes: [{ id: nodeId }],
+        duration: 400,
+        padding: 0.5,
+        minZoom: 1,
+        maxZoom: 1.2,
+      });
 
       // Select it
       graphStore.setSelected(nodeId);
@@ -389,6 +391,7 @@ function InnerEditor() {
               minZoom={0.1}
               maxZoom={2}
               elementsSelectable={true}
+              elevateNodesOnSelect={true}
               selectionOnDrag={interaction.selectionMode}
               panOnDrag={!interaction.selectionMode}
               connectionLineType={

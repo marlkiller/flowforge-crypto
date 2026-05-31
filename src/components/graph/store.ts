@@ -193,7 +193,15 @@ export const graphStore = {
   setViewport: (viewport: { x: number; y: number; zoom: number }) => patchActive({ viewport }),
   setNodes: (nodes: GraphNode[]) => patchActive({ nodes }),
   setEdges: (edges: GraphEdge[]) => patchActive({ edges }),
-  setSelected: (selectedNodeId: string | null) => patchActive({ selectedNodeId }),
+  setSelected: (selectedNodeId: string | null) => {
+    const w = active();
+    if (w.selectedNodeId === selectedNodeId) return;
+    const nextNodes = w.nodes.map((n) => ({
+      ...n,
+      selected: n.id === selectedNodeId,
+    }));
+    patchActive({ nodes: nextNodes, selectedNodeId });
+  },
   setEdgeSelected: (selectedEdgeId: string | null) => patchActive({ selectedEdgeId }),
   setActiveGraph: (g: { nodes: GraphNode[]; edges: GraphEdge[]; name?: string }) => {
     snapshot();
