@@ -2,36 +2,36 @@ import { Handle, Position, useNodeConnections, type NodeProps } from "@xyflow/re
 import { NODE_KIND_META, CATEGORY_META } from "@/lib/crypto/registry";
 import type { NodeData, NodeInputMeta } from "@/lib/crypto/types";
 import { formatAcceptType } from "@/lib/crypto/types";
-import { graphStore } from "./store";
-import { Upload, File as FileIcon, Link2 } from "lucide-react";
+import { File as FileIcon, Link2, ChevronDown } from "lucide-react";
 import { CategoryIcon } from "./parts/CategoryIcon";
-import { useEffect } from "react";
+import { memo } from "react";
+import { graphStore } from "./store";
 
-function getHandleStyle(types?: string[], isSource = false) {
+function getHandleStyle(types?: string[], _isSource = false) {
   const type = types?.[0]?.toLowerCase() || "raw";
-  let color = isSource ? "!bg-blue-500" : "!bg-blue-400"; // Default: Raw/Unknown
-  let shape = "rounded-full"; // Default: Circle
+  let colorClass = "handle-raw";
+  let shapeClass = "";
 
   if (["utf8", "string", "text"].includes(type)) {
-    color = isSource ? "!bg-emerald-500" : "!bg-emerald-400";
+    colorClass = "handle-string";
   } else if (["hex", "base64", "base32", "base58"].includes(type)) {
-    color = isSource ? "!bg-amber-500" : "!bg-amber-400";
+    colorClass = "handle-hex";
   } else if (["pem", "cert", "x509"].includes(type)) {
-    color = isSource ? "!bg-orange-500" : "!bg-orange-400";
+    colorClass = "handle-cert";
   } else if (["cryptokey", "key", "privatekey", "publickey"].includes(type)) {
-    color = isSource ? "!bg-fuchsia-600" : "!bg-fuchsia-500";
-    shape = "rotate-45 !rounded-sm"; // Diamond
+    colorClass = "handle-key";
+    shapeClass = "handle-diamond";
   } else if (["bool"].includes(type)) {
-    color = isSource ? "!bg-rose-500" : "!bg-rose-400";
-    shape = "!rounded-sm"; // Square
+    colorClass = "handle-bool";
+    shapeClass = "handle-square";
   } else if (["json", "object"].includes(type)) {
-    color = isSource ? "!bg-cyan-500" : "!bg-cyan-400";
+    colorClass = "handle-json";
   }
 
-  return `${color} ${shape}`;
+  return `${colorClass} ${shapeClass}`;
 }
 
-export function CryptoNode({ id, data, selected }: NodeProps) {
+export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
   const d = data as NodeData;
   const meta = NODE_KIND_META[d.kind];
 
@@ -72,20 +72,6 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
   const visibleOutputs = allOutputs.filter((output) => output.visible?.(d) ?? true);
   const visibleInputs = allInputs.filter((input) => input.visible?.(d) ?? true);
 
-  // Disconnect edges attached to handles that are no longer visible (must be before any return)
-  useEffect(() => {
-    if (!meta) return;
-    const wf = graphStore.getActive();
-    const visibleIds = new Set(visibleInputs.map((i) => i.id));
-    const keep = wf.edges.filter((e) => {
-      if (e.target !== id) return true;
-      return visibleIds.has(e.targetHandle || "data");
-    });
-    if (keep.length !== wf.edges.length) {
-      graphStore.setEdges(keep);
-    }
-  }, [d.cipherMode, d.kind, d.count, id, meta, visibleInputs]);
-
   if (!meta) {
     return (
       <div
@@ -97,17 +83,6 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
   }
 
   const update = (patch: Record<string, unknown>) => graphStore.updateNodeData(id, patch);
-
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const bytes = new Uint8Array(reader.result as ArrayBuffer);
-      update({ fileName: file.name, fileBytes: bytes });
-    };
-    reader.readAsArrayBuffer(file);
-  };
 
   const hasError = !!d.error;
 
@@ -150,29 +125,10 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
           );
         })}
 
-        {d.kind === "file" && (
-          <div className="space-y-1.5">
-            <label className="nodrag flex flex-col items-center justify-center w-full h-20 rounded-lg border-2 border-dashed border-border bg-background/50 hover:bg-accent hover:border-primary/50 cursor-pointer transition-all group/file">
-              <input
-                type="file"
-                className="hidden"
-                onChange={onFileChange}
-                onClick={(e) => e.stopPropagation()}
-              />
-              {d.fileName ? (
-                <div className="flex flex-col items-center gap-1.5 text-foreground px-2 text-center">
-                  <FileIcon className="w-5 h-5 text-primary" />
-                  <span className="text-[10px] font-medium line-clamp-1">
-                    {d["fileName"] as string}
-                  </span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover/file:text-foreground">
-                  <Upload className="w-5 h-5" />
-                  <span className="text-[10px] font-medium">Click to browse</span>
-                </div>
-              )}
-            </label>
+        {d.kind === "file" && d.fileName && (
+          <div className="flex items-center gap-2 p-2 rounded-lg border border-border bg-background shadow-sm text-foreground">
+            <FileIcon className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-[10px] font-medium truncate">{d["fileName"] as string}</span>
           </div>
         )}
 
@@ -189,10 +145,9 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
                   type="source"
                   position={Position.Right}
                   id={output.id}
-                  className={`!w-3.5 !h-3.5 !border-2 !border-background !-right-[22px] transition-transform hover:scale-125 z-20 ${getHandleStyle(
-                    [output.type || d.outputFormat || meta.defaultOutput || "raw"],
-                    true,
-                  )}`}
+                  className={`!-right-[22px] ${getHandleStyle([
+                    output.type || d.outputFormat || meta.defaultOutput || "raw",
+                  ])}`}
                 />
               </div>
             ))}
@@ -202,10 +157,7 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
             type="source"
             position={Position.Right}
             id="default"
-            className={`!w-3.5 !h-3.5 !border-2 !border-background transition-transform hover:scale-125 z-20 ${getHandleStyle(
-              [d.outputFormat || meta.defaultOutput || "raw"],
-              true,
-            )}`}
+            className={getHandleStyle([d.outputFormat || meta.defaultOutput || "raw"])}
           />
         ) : null}
 
@@ -237,7 +189,7 @@ export function CryptoNode({ id, data, selected }: NodeProps) {
       </div>
     </div>
   );
-}
+});
 
 function NodeField({
   nodeId,
@@ -266,9 +218,7 @@ function NodeField({
           type="target"
           position={Position.Left}
           id={field.id}
-          className={`!w-3 !h-3 !border-2 !border-background !-left-[20px] top-2.5 transition-transform hover:scale-125 z-20 ${getHandleStyle(
-            field.acceptTypes,
-          )}`}
+          className={`!-left-[20px] top-2.5 ${getHandleStyle(field.acceptTypes)}`}
         />
       )}
 
@@ -277,10 +227,7 @@ function NodeField({
           type="source"
           position={Position.Right}
           id={sourceHandleId}
-          className={`!w-3 !h-3 !border-2 !border-background !-right-[20px] top-2.5 transition-transform hover:scale-125 z-20 ${getHandleStyle(
-            undefined,
-            true,
-          )}`}
+          className={`!-right-[20px] top-2.5 ${getHandleStyle(undefined, true)}`}
         />
       )}
 
@@ -305,36 +252,38 @@ function NodeField({
         <div className="w-full bg-primary/5 border border-primary/20 rounded-md px-2.5 py-1.5 text-[10px] text-primary font-medium italic shadow-inner">
           Value linked to input
         </div>
-      ) : field.type === "textarea" ? (
-        <textarea
-          className={`nodrag w-full bg-background border rounded-md px-2.5 py-1.5 text-[10px] font-mono text-foreground shadow-sm outline-none focus:ring-1 transition-all resize-none min-h-[44px] custom-scrollbar placeholder:text-muted-foreground/50 ${error ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border focus:border-primary focus:ring-primary"}`}
-          value={value ?? ""}
-          onChange={(e) => update({ [field.id]: e.target.value })}
-          placeholder={field.placeholder}
-          onClick={(e) => e.stopPropagation()}
-        />
       ) : field.type === "select" ? (
-        <select
-          className={`nodrag w-full bg-background border rounded-md px-2.5 py-1.5 text-[11px] text-foreground shadow-sm outline-none focus:ring-1 transition-all font-medium appearance-none cursor-pointer ${error ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border focus:border-primary focus:ring-primary"}`}
-          value={value ?? field.options?.[0]?.value}
-          onChange={(e) => update({ [field.id]: e.target.value })}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {field.options?.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      ) : field.type ? (
+        <div className="relative group/select">
+          <select
+            className={`nodrag w-full bg-background/50 border rounded-md px-2.5 py-1 text-[10px] text-foreground shadow-sm outline-none focus:ring-1 transition-all font-medium appearance-none cursor-pointer ${error ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border hover:border-primary/30 focus:border-primary focus:ring-primary"}`}
+            value={value ?? field.options?.[0]?.value}
+            onChange={(e) => update({ [field.id]: e.target.value })}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {field.options?.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-muted-foreground pointer-events-none group-hover/select:text-primary transition-colors" />
+        </div>
+      ) : field.type === "text" || field.type === "number" ? (
         <input
           type={field.type}
-          className={`nodrag w-full bg-background border rounded-md px-2.5 py-1.5 text-[11px] text-foreground shadow-sm outline-none focus:ring-1 font-mono transition-all placeholder:text-muted-foreground/50 ${error ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border focus:border-primary focus:ring-primary"}`}
+          className={`nodrag w-full bg-background/50 border rounded-md px-2.5 py-1 text-[10px] text-foreground shadow-sm outline-none focus:ring-1 font-mono transition-all placeholder:text-muted-foreground/30 ${error ? "border-destructive focus:border-destructive focus:ring-destructive" : "border-border hover:border-primary/30 focus:border-primary focus:ring-primary"}`}
           value={value ?? ""}
           onChange={(e) => update({ [field.id]: e.target.value })}
           placeholder={field.placeholder}
           onClick={(e) => e.stopPropagation()}
         />
+      ) : field.type === "password" || field.type === "textarea" ? (
+        <div
+          className="w-full bg-muted/20 border border-dashed border-border rounded-md px-2.5 py-1 text-[9px] text-muted-foreground italic text-center cursor-help"
+          title="Sensitive or large content - edit in Properties Inspector"
+        >
+          Edit in Inspector
+        </div>
       ) : null}
     </div>
   );
@@ -352,9 +301,7 @@ function OrphanInput({ nodeId, input }: { nodeId: string; input: NodeInputMeta }
             type="target"
             position={Position.Left}
             id={input.id}
-            className={`!w-3 !h-3 !border-2 !border-background !-left-[20px] top-2.5 transition-transform hover:scale-125 z-20 ${getHandleStyle(
-              input.acceptTypes,
-            )}`}
+            className={`!-left-[20px] top-2.5 ${getHandleStyle(input.acceptTypes)}`}
           />
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
             {input.label}

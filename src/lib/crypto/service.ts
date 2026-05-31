@@ -9,6 +9,16 @@ const enc = new TextEncoder();
 const dec = new TextDecoder("utf-8", { fatal: false });
 
 /**
+ * Sanitizes a string for safe inclusion in an XML/SVG document.
+ * Removes control characters (0x00-0x1F) that are illegal in XML,
+ * except for white-space (tab, cr, lf).
+ */
+export function sanitizeXml(str: string): string {
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+}
+
+/**
  * Ensures a Uint8Array can be used as a BufferSource.
  * If it's a view into a larger buffer, we may need to slice it
  * if the underlying API doesn't respect offset/length.
@@ -54,7 +64,7 @@ export function utf8ToBytes(s: string): Uint8Array {
 }
 
 export function bytesToUtf8(b: Uint8Array): string {
-  return dec.decode(b);
+  return sanitizeXml(dec.decode(b));
 }
 
 export function bytesToB32(bytes: Uint8Array): string {

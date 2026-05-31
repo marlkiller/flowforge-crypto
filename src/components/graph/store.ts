@@ -194,13 +194,18 @@ export const graphStore = {
   setNodes: (nodes: GraphNode[]) => patchActive({ nodes }),
   setEdges: (edges: GraphEdge[]) => patchActive({ edges }),
   setSelected: (selectedNodeId: string | null) => {
+    patchActive({ selectedNodeId });
+  },
+
+  bringToFront: (id: string) => {
     const w = active();
-    if (w.selectedNodeId === selectedNodeId) return;
-    const nextNodes = w.nodes.map((n) => ({
-      ...n,
-      selected: n.id === selectedNodeId,
-    }));
-    patchActive({ nodes: nextNodes, selectedNodeId });
+    const idx = w.nodes.findIndex((n) => n.id === id);
+    if (idx === -1 || idx === w.nodes.length - 1) return;
+
+    const nextNodes = [...w.nodes];
+    const [node] = nextNodes.splice(idx, 1);
+    nextNodes.push(node);
+    patchActive({ nodes: nextNodes });
   },
   setEdgeSelected: (selectedEdgeId: string | null) => patchActive({ selectedEdgeId }),
   setActiveGraph: (g: { nodes: GraphNode[]; edges: GraphEdge[]; name?: string }) => {
@@ -211,9 +216,46 @@ export const graphStore = {
   updateNodeData: (id: string, patch: Record<string, unknown>) => {
     snapshot();
     const w = active();
-    patchActive({
-      nodes: w.nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n)),
-    });
+    const nextNodes = w.nodes.map((n) =>
+      n.id === id ? { ...n, data: { ...n.data, ...patch } } : n,
+    );
+
+    // Check if any edges need to be disconnected because handles became invisible
+    const updatedNode = nextNodes.find((n) => n.id === id);
+    if (updatedNode) {
+      const meta = NODE_KIND_META[updatedNode.data.kind];
+      if (meta) {
+        // Simple heuristic: if we have dynamic inputs (like in 'join'), or if visibility might have changed
+        let dynamicInputs = meta.inputs || [];
+        if (updatedNode.data.kind === "join") {
+          const count = parseInt((updatedNode.data["count"] as string) || "2", 10);
+          const staticInputs = dynamicInputs.filter(
+            (i) => i.id === "count" || i.id === "separator",
+          );
+          dynamicInputs = [...staticInputs];
+          for (let i = 1; i <= count; i++) {
+            dynamicInputs.push({ id: `in_${i}`, label: `Input ${i}`, connectable: true });
+          }
+        }
+        const visibleIds = new Set(
+          dynamicInputs
+            .filter((i) => i.visible?.(updatedNode.data) ?? true)
+            .map((i) => i.id || "data"),
+        );
+
+        const nextEdges = w.edges.filter((e) => {
+          if (e.target !== id) return true;
+          return visibleIds.has(e.targetHandle || "data");
+        });
+
+        if (nextEdges.length !== w.edges.length) {
+          patchActive({ nodes: nextNodes, edges: nextEdges });
+          return;
+        }
+      }
+    }
+
+    patchActive({ nodes: nextNodes });
   },
   removeNode: (id: string) => {
     snapshot();
@@ -338,6 +380,7 @@ export const graphStore = {
       ...state,
       workflows: [...state.workflows, ...workflows],
       activeId: workflows[workflows.length - 1].id,
+      graphKey: state.graphKey + 1,
     };
     emit();
     return workflows.length;

@@ -17,7 +17,7 @@ import {
   type Node as RFNode,
   type Viewport,
 } from "@xyflow/react";
-import { toPng, toJpeg, toCanvas } from "html-to-image";
+import { toPng } from "html-to-image";
 import "@xyflow/react/dist/style.css";
 
 import { CryptoNode } from "./CryptoNode";
@@ -51,6 +51,8 @@ import { Sidebar } from "./parts/Sidebar";
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
+
+import { toast } from "sonner";
 
 const nodeTypes = {
   crypto: CryptoNode,
@@ -105,9 +107,11 @@ function InnerEditor() {
     const cur = graphStore.getActive().nodes;
     graphStore.setNodes(applyNodeChanges(changes, cur) as GraphNode[]);
   }, []);
+
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
     graphStore.setEdges(applyEdgeChanges(changes, graphStore.getActive().edges));
   }, []);
+
   const onConnect = useCallback(
     (conn: Connection) => {
       graphStore.snapshot();
@@ -194,8 +198,15 @@ function InnerEditor() {
         maxZoom: 1.2,
       });
 
-      // Select it
+      // Select it and bring to front
+      graphStore.setNodes(
+        nodes.map((n) => ({
+          ...n,
+          selected: n.id === nodeId,
+        })),
+      );
       graphStore.setSelected(nodeId);
+      graphStore.bringToFront(nodeId);
     },
     [rf, nodes],
   );
@@ -218,6 +229,30 @@ function InnerEditor() {
   const edgesWithState = useMemo(() => {
     return edges.map((edge) => {
       const sourceNode = nodes.find((n) => n.id === edge.source);
+      const sourceMeta = sourceNode ? NODE_KIND_META[sourceNode.data.kind] : null;
+
+      let typeColor = "var(--color-graph-line)";
+      if (sourceMeta) {
+        let sourceType = "raw";
+        if (edge.sourceHandle && edge.sourceHandle !== "default") {
+          const outMeta = sourceMeta.outputs?.find((o) => o.id === edge.sourceHandle);
+          sourceType =
+            outMeta?.type || sourceNode!.data.outputFormat || sourceMeta.defaultOutput || "raw";
+        } else {
+          sourceType = sourceNode!.data.outputFormat || sourceMeta.defaultOutput || "raw";
+        }
+
+        const t = sourceType.toLowerCase();
+        if (["utf8", "string", "text"].includes(t)) typeColor = "var(--color-handle-string)";
+        else if (["hex", "base64", "base32", "base58"].includes(t))
+          typeColor = "var(--color-handle-hex)";
+        else if (["pem", "cert", "x509"].includes(t)) typeColor = "var(--color-handle-cert)";
+        else if (["cryptokey", "key", "privatekey", "publickey"].includes(t))
+          typeColor = "var(--color-handle-key)";
+        else if (["bool"].includes(t)) typeColor = "var(--color-handle-bool)";
+        else if (["json", "object"].includes(t)) typeColor = "var(--color-handle-json)";
+      }
+
       const hasError = !!sourceNode?.data.error;
       const isSelected = edge.selected || selectedEdgeIds.has(edge.id);
       return {
@@ -230,7 +265,7 @@ function InnerEditor() {
             ? "var(--color-graph-line-selected)"
             : hasError
               ? "var(--color-graph-line-error)"
-              : "var(--color-graph-line)",
+              : typeColor,
           strokeWidth: isSelected ? 3 : 2,
           transition: "stroke 0.2s, stroke-width 0.2s",
           ...(hasError ? { strokeDasharray: "5 5" } : {}),
@@ -239,13 +274,26 @@ function InnerEditor() {
     });
   }, [edges, nodes, selectedEdgeIds]);
 
+  // 4. Handle workflow switching (Stable instance model)
   useEffect(() => {
-    if (rf && nodes.length > 0) {
-      rf.fitView({ padding: 0.3 });
+    if (!rf) return;
+    if (active.viewport) {
+      rf.setViewport(active.viewport);
     }
-    // only run when graphKey bumps (template switch)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphKey]);
+  }, [activeId, rf]); // Stable length: 2
+
+  // 5. Handle major graph changes (Templates, Imports, Shared Links)
+  useEffect(() => {
+    if (!rf || nodes.length === 0) return;
+
+    // For new/imported graphs (indicated by graphKey bump), fit view
+    const t = setTimeout(() => {
+      rf.fitView({ padding: 0.3, duration: 200 });
+      // Ensure browser has stable dimensions
+      window.dispatchEvent(new Event("resize"));
+    }, 100);
+    return () => clearTimeout(t);
+  }, [graphKey, rf]); // Stable length: 2
 
   // Load saved plugins on startup
   useEffect(() => {
@@ -366,7 +414,6 @@ function InnerEditor() {
             onDragOver={interaction.onDragOver}
           >
             <ReactFlow
-              key={activeId}
               nodes={nodes}
               edges={edgesWithState}
               nodeTypes={nodeTypes}
@@ -379,6 +426,10 @@ function InnerEditor() {
               onContextMenu={interaction.onPaneContextMenu}
               onNodeClick={interaction.onNodeClick}
               onNodeContextMenu={interaction.onNodeContextMenu}
+              onNodeDragStart={(_e, node) => {
+                graphStore.snapshot();
+                graphStore.bringToFront(node.id);
+              }}
               onEdgeClick={interaction.onEdgeClick}
               onEdgeContextMenu={interaction.onEdgeContextMenu}
               onMoveEnd={onMoveEnd}
@@ -391,7 +442,9 @@ function InnerEditor() {
               minZoom={0.1}
               maxZoom={2}
               elementsSelectable={true}
-              elevateNodesOnSelect={true}
+              elevateNodesOnSelect={false}
+              snapToGrid={true}
+              snapGrid={[10, 10]}
               selectionOnDrag={interaction.selectionMode}
               panOnDrag={!interaction.selectionMode}
               connectionLineType={
@@ -404,7 +457,7 @@ function InnerEditor() {
                 animated: true,
                 style: { stroke: "var(--color-graph-line)", strokeWidth: 2 },
               }}
-              colorMode="light"
+              colorMode={theme === "dark" ? "dark" : "light"}
               proOptions={{ hideAttribution: true }}
             >
               <Background
@@ -487,57 +540,44 @@ function InnerEditor() {
                           if (!wrapperRef.current || !rf) return;
                           setScreenshotLoading(true);
                           const renderer = wrapperRef.current.querySelector(
-                            ".react-flow__renderer",
+                            ".react-flow",
                           ) as HTMLElement | null;
-                          if (!renderer) {
+                          if (!renderer || !rf) {
                             setScreenshotLoading(false);
                             return;
                           }
-                          const bgColor =
-                            getComputedStyle(document.body).backgroundColor || "#09090b";
-                          try {
-                            let dataUrl: string;
-                            if (fmt === "png") {
-                              dataUrl = await toPng(renderer, {
-                                backgroundColor: bgColor,
-                                pixelRatio: 3,
-                                cacheBust: true,
-                              });
-                            } else if (fmt === "jpeg") {
-                              dataUrl = await toJpeg(renderer, {
-                                backgroundColor: bgColor,
-                                pixelRatio: 3,
-                                quality: 0.92,
-                                cacheBust: true,
-                              });
-                            } else {
-                              const cvs = await toCanvas(renderer, {
-                                backgroundColor: bgColor,
-                                pixelRatio: 3,
-                                cacheBust: true,
-                              });
-                              dataUrl = await new Promise<string>((resolve) =>
-                                cvs.toBlob(
-                                  (b) => {
-                                    if (b) {
-                                      const u = URL.createObjectURL(b);
-                                      resolve(u);
-                                    } else resolve("");
-                                  },
-                                  "image/webp",
-                                  0.9,
-                                ),
+
+                          // Professional screenshot settings for React Flow
+                          const options = {
+                            backgroundColor:
+                              getComputedStyle(document.body).backgroundColor || "#09090b",
+                            pixelRatio: 3,
+                            skipFonts: false,
+                            style: {
+                              transform: "scale(1)",
+                            },
+                            // Exclude UI elements only
+                            filter: (node: HTMLElement) => {
+                              const cls = node.className || "";
+                              if (typeof cls !== "string") return true;
+                              return !["minimap", "controls", "panel", "attribution"].some((e) =>
+                                cls.includes(`react-flow__${e}`),
                               );
-                            }
+                            },
+                          };
+
+                          try {
+                            const dataUrl = await toPng(renderer, options);
                             if (!dataUrl) return;
                             const a = document.createElement("a");
                             a.href = dataUrl;
                             a.download = `flowforge-crypto-${Date.now()}.${fmt}`;
                             a.click();
-                            if (fmt === "webp")
-                              setTimeout(() => URL.revokeObjectURL(dataUrl), 1000);
                           } catch (e) {
-                            console.error("Screenshot failed", e);
+                            console.error("Screenshot failed:", e);
+                            toast.error(
+                              "Failed to generate screenshot. Please check console for details.",
+                            );
                           } finally {
                             setScreenshotLoading(false);
                           }
@@ -572,9 +612,12 @@ function InnerEditor() {
                   pannable
                   zoomable
                   bgColor="var(--graph-background)"
-                  nodeColor="var(--muted-foreground)"
-                  maskColor={theme === "dark" ? "rgba(0,0,0,0.82)" : "rgba(0,0,0,0.5)"}
-                  maskStrokeColor={theme === "dark" ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)"}
+                  maskColor="var(--minimap-mask)"
+                  maskStrokeColor="var(--minimap-mask-stroke)"
+                  nodeClassName={(node) => {
+                    const meta = NODE_KIND_META[node.data.kind];
+                    return meta ? `mm-${meta.category}` : "";
+                  }}
                   style={{ right: 12, bottom: 12 }}
                 />
               )}

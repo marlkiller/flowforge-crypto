@@ -12,10 +12,6 @@
  *
  * The :root and .dark blocks define the actual color values using oklch.
  * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
 @theme inline {
@@ -67,19 +63,34 @@
   --color-graph-background: var(--graph-background);
   --color-graph-grid: var(--graph-grid);
 
+  /* Handle Colors */
+  --color-handle-raw: var(--handle-raw);
+  --color-handle-string: var(--handle-string);
+  --color-handle-hex: var(--handle-hex);
+  --color-handle-cert: var(--handle-cert);
+  --color-handle-key: var(--handle-key);
+  --color-handle-bool: var(--handle-bool);
+  --color-handle-json: var(--handle-json);
+
   /* Note Colors */
   --color-note-yellow: var(--note-yellow-bg);
   --color-note-yellow-foreground: var(--note-yellow-text);
+  --color-note-yellow-border: var(--note-yellow-border);
   --color-note-blue: var(--note-blue-bg);
   --color-note-blue-foreground: var(--note-blue-text);
+  --color-note-blue-border: var(--note-blue-border);
   --color-note-green: var(--note-green-bg);
   --color-note-green-foreground: var(--note-green-text);
+  --color-note-green-border: var(--note-green-border);
   --color-note-red: var(--note-red-bg);
   --color-note-red-foreground: var(--note-red-text);
+  --color-note-red-border: var(--note-red-border);
   --color-note-purple: var(--note-purple-bg);
   --color-note-purple-foreground: var(--note-purple-text);
+  --color-note-purple-border: var(--note-purple-border);
   --color-note-zinc: var(--note-zinc-bg);
   --color-note-zinc-foreground: var(--note-zinc-text);
+  --color-note-zinc-border: var(--note-zinc-border);
 }
 
 :root {
@@ -124,19 +135,43 @@
   --graph-background: oklch(1 0 0);
   --graph-grid: oklch(0.929 0.013 255.508 / 20%);
 
+  /* MiniMap Colors */
+  --minimap-mask: rgba(0, 0, 0, 0.5);
+  --minimap-mask-stroke: rgba(0, 0, 0, 0.4);
+
+  /* Handle Colors - Light */
+  --handle-raw: oklch(0.607 0.162 231.356);
+  --handle-string: oklch(0.627 0.194 149.214);
+  --handle-hex: oklch(0.769 0.188 70.08);
+  --handle-cert: oklch(0.692 0.23 42.663);
+  --handle-key: oklch(0.516 0.209 303.69);
+  --handle-bool: oklch(0.609 0.219 14.65);
+  --handle-json: oklch(0.67 0.15 210);
+
   /* Note Colors - Light */
   --note-yellow-bg: oklch(0.96 0.15 95);
   --note-yellow-text: oklch(0.3 0.1 95);
+  --note-yellow-border: oklch(0.85 0.15 95);
+  
   --note-blue-bg: oklch(0.9 0.08 240);
   --note-blue-text: oklch(0.3 0.1 240);
+  --note-blue-border: oklch(0.8 0.1 240);
+  
   --note-green-bg: oklch(0.94 0.12 150);
   --note-green-text: oklch(0.3 0.1 150);
+  --note-green-border: oklch(0.8 0.15 150);
+  
   --note-red-bg: oklch(0.92 0.1 25);
   --note-red-text: oklch(0.3 0.1 25);
+  --note-red-border: oklch(0.85 0.1 25);
+  
   --note-purple-bg: oklch(0.92 0.08 280);
   --note-purple-text: oklch(0.3 0.1 280);
+  --note-purple-border: oklch(0.8 0.1 280);
+  
   --note-zinc-bg: oklch(0.96 0 0);
   --note-zinc-text: oklch(0.2 0 0);
+  --note-zinc-border: oklch(0.8 0 0);
 }
 
 .dark {
@@ -180,19 +215,43 @@
   --graph-background: oklch(0.129 0.042 264.695);
   --graph-grid: oklch(1 0 0 / 10%);
 
+  /* MiniMap Colors - Dark */
+  --minimap-mask: rgba(0, 0, 0, 0.82);
+  --minimap-mask-stroke: rgba(255, 255, 255, 0.35);
+
+  /* Handle Colors - Dark */
+  --handle-raw: oklch(0.488 0.243 264.376);
+  --handle-string: oklch(0.696 0.17 162.48);
+  --handle-hex: oklch(0.828 0.189 84.429);
+  --handle-cert: oklch(0.645 0.246 16.439);
+  --handle-key: oklch(0.627 0.265 303.9);
+  --handle-bool: oklch(0.704 0.191 22.216);
+  --handle-json: oklch(0.6 0.12 210);
+
   /* Note Colors - Dark */
-  --note-yellow-bg: oklch(0.35 0.12 95 / 40%);
+  --note-yellow-bg: oklch(0.35 0.12 95 / 80%);
   --note-yellow-text: oklch(0.9 0.1 95);
-  --note-blue-bg: oklch(0.35 0.1 240 / 40%);
+  --note-yellow-border: oklch(0.5 0.1 95 / 50%);
+  
+  --note-blue-bg: oklch(0.35 0.1 240 / 80%);
   --note-blue-text: oklch(0.9 0.08 240);
-  --note-green-bg: oklch(0.35 0.1 150 / 40%);
+  --note-blue-border: oklch(0.5 0.08 240 / 50%);
+  
+  --note-green-bg: oklch(0.35 0.1 150 / 80%);
   --note-green-text: oklch(0.9 0.08 150);
-  --note-red-bg: oklch(0.35 0.1 25 / 40%);
+  --note-green-border: oklch(0.5 0.08 150 / 50%);
+  
+  --note-red-bg: oklch(0.35 0.1 25 / 80%);
   --note-red-text: oklch(0.9 0.08 25);
-  --note-purple-bg: oklch(0.35 0.1 280 / 40%);
+  --note-red-border: oklch(0.5 0.08 25 / 50%);
+  
+  --note-purple-bg: oklch(0.35 0.1 280 / 80%);
   --note-purple-text: oklch(0.9 0.08 280);
-  --note-zinc-bg: oklch(0.3 0 0 / 40%);
+  --note-purple-border: oklch(0.5 0.08 280 / 50%);
+  
+  --note-zinc-bg: oklch(0.3 0 0 / 80%);
   --note-zinc-text: oklch(0.9 0 0);
+  --note-zinc-border: oklch(0.5 0 0 / 50%);
 }
 
 @layer base {
@@ -206,7 +265,7 @@
   }
 }
 
-/* ReactFlow Controls dark mode fix */
+/* ReactFlow Controls theme overrides */
 .dark .react-flow__controls {
   --xy-controls-button-background-color: oklch(0.208 0.042 265.755);
   --xy-controls-button-background-color-hover: oklch(0.279 0.041 260.031);
@@ -214,7 +273,6 @@
   --xy-controls-button-border-color: oklch(1 0 0 / 10%);
 }
 
-/* Light mode controls */
 .react-flow__controls {
   --xy-controls-button-background-color: oklch(1 0 0);
   --xy-controls-button-background-color-hover: oklch(0.968 0.007 247.896);
@@ -240,6 +298,89 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: var(--muted-foreground);
 }
+
+/* ReactFlow Handle Professional Styling */
+.react-flow__handle {
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid var(--color-background) !important;
+  transition: transform 0.2s, background-color 0.2s;
+  z-index: 20;
+  background-color: var(--color-handle-raw) !important; /* Default */
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.25);
+}
+
+/* Handle Types */
+.react-flow__handle.handle-raw { background-color: var(--color-handle-raw) !important; }
+.react-flow__handle.handle-string { background-color: var(--color-handle-string) !important; }
+.react-flow__handle.handle-hex { background-color: var(--color-handle-hex) !important; }
+.react-flow__handle.handle-cert { background-color: var(--color-handle-cert) !important; }
+.react-flow__handle.handle-key { background-color: var(--color-handle-key) !important; }
+.react-flow__handle.handle-bool { background-color: var(--color-handle-bool) !important; }
+.react-flow__handle.handle-json { background-color: var(--color-handle-json) !important; }
+
+/* Handle Shapes */
+.react-flow__handle.handle-diamond {
+  transform: rotate(45deg) !important;
+  border-radius: 2px !important;
+}
+.react-flow__handle.handle-diamond:hover {
+  transform: rotate(45deg) scale(1.25) !important;
+}
+.react-flow__handle.handle-square {
+  border-radius: 2px !important;
+}
+
+/* MiniMap Professional Styling */
+.react-flow__minimap {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  border: 1px solid var(--border) !important;
+}
+
+.react-flow__minimap-mask {
+  fill: var(--minimap-mask);
+  stroke: var(--minimap-mask-stroke);
+  stroke-width: 2;
+}
+
+/* Category-based node coloring in MiniMap */
+.react-flow__minimap-node {
+  fill: var(--color-handle-raw) !important; /* Default */
+  rx: 4; /* Rounded corners for nodes in minimap */
+  opacity: 0.2; /* Substantially lighter, matches node header vibe */
+  transition: opacity 0.2s, fill 0.2s, stroke 0.2s;
+  stroke: var(--background); /* Boundary stroke for overlapping nodes */
+  stroke-width: 1px;
+}
+
+.react-flow__minimap-node:hover {
+  opacity: 0.5;
+}
+
+.react-flow__minimap-node.selected {
+  opacity: 0.9 !important;
+  stroke: var(--primary) !important;
+  stroke-width: 2.5px !important;
+}
+
+.react-flow__minimap-node.mm-io { fill: var(--color-handle-raw) !important; }
+.react-flow__minimap-node.mm-string { fill: var(--color-handle-string) !important; }
+.react-flow__minimap-node.mm-encoding { fill: var(--color-handle-hex) !important; }
+.react-flow__minimap-node.mm-hash { fill: var(--color-handle-string) !important; }
+.react-flow__minimap-node.mm-cipher { fill: var(--color-handle-hex) !important; }
+.react-flow__minimap-node.mm-asymmetric { fill: var(--color-handle-key) !important; }
+.react-flow__minimap-node.mm-mac { fill: var(--color-handle-string) !important; }
+.react-flow__minimap-node.mm-kdf { fill: var(--color-handle-hex) !important; }
+.react-flow__minimap-node.mm-entropy { fill: var(--color-handle-hex) !important; }
+.react-flow__minimap-node.mm-protocol { fill: var(--color-handle-raw) !important; }
+.react-flow__minimap-node.mm-pqc { fill: var(--color-handle-key) !important; }
+.react-flow__minimap-node.mm-analysis { fill: var(--color-handle-string) !important; }
+.react-flow__minimap-node.mm-ui { fill: var(--muted-foreground) !important; opacity: 0.3; }
 
 /* ReactFlow canvas scrollbar */
 .react-flow__pane::-webkit-scrollbar {

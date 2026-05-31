@@ -135,6 +135,7 @@ export function useGraphInteraction(
   const onNodeClick = useCallback((event: React.MouseEvent, node: RFNode) => {
     event.stopPropagation();
     graphStore.setSelected(node.id);
+    graphStore.bringToFront(node.id);
     graphStore.setEdgeSelected(null);
     setContextMenu(null);
   }, []);
@@ -152,6 +153,7 @@ export function useGraphInteraction(
         nodeId: node.id,
       });
       graphStore.setSelected(node.id);
+      graphStore.bringToFront(node.id);
     },
     [wrapperRef],
   );
@@ -280,6 +282,7 @@ export function useGraphInteraction(
 
   const deleteEdge = useCallback(() => {
     if (!contextMenu?.edgeId) return;
+    graphStore.snapshot();
     graphStore.setEdges(graphStore.getActive().edges.filter((e) => e.id !== contextMenu.edgeId));
     setContextMenu(null);
   }, [contextMenu]);
