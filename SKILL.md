@@ -134,14 +134,14 @@ type NodeRunner = (
 
 Handles (ports) are styled based on the `DataType` defined in `acceptTypes` (inputs) or `type/outputFormat` (outputs).
 
-| Type | Color | Shape |
-| --- | --- | --- |
-| `raw` | Blue | Circle |
-| `utf8` / `string` | Green | Circle |
-| `hex` / `base64` | Yellow | Circle |
-| `cryptokey` | Fuchsia | Diamond |
-| `boolean` | Rose | Square |
-| `json` | Cyan | Circle |
+| Type              | Color   | Shape   |
+| ----------------- | ------- | ------- |
+| `raw`             | Blue    | Circle  |
+| `utf8` / `string` | Green   | Circle  |
+| `hex` / `base64`  | Yellow  | Circle  |
+| `cryptokey`       | Fuchsia | Diamond |
+| `boolean`         | Rose    | Square  |
+| `json`            | Cyan    | Circle  |
 
 ### Utilities
 
@@ -175,7 +175,7 @@ Handles (ports) are styled based on the `DataType` defined in `acceptTypes` (inp
 
 1. Add generator in `src/presets/presets.ts` using `makeNode()` + edges
 2. **Focus on Business Loops**: Templates are educational tools! Go beyond basic lifecycles. Ensure every flow is fully cyclical (if data is encrypted/signed by a sender, it MUST be decrypted/verified by a receiver in the same graph). Build composite workflows like "Hybrid Encryption (Digital Envelope)", "HTTPS Handshake", or "JWT Sign & Verify".
-3. Add explanatory `input` nodes or default text that helps the user understand *why* the data flows this way.
+3. Add explanatory `input` nodes or default text that helps the user understand _why_ the data flows this way.
 4. Add icon in `Sidebar.tsx` `PRESET_ICONS` map
 5. Add entry to `ALL_PRESETS` with `label`, `seed`, `keywords`
 6. Run `npm run typecheck`

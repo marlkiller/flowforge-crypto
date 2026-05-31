@@ -1871,44 +1871,330 @@ export function getRsaFullSuitePreset(): WorkflowSeed {
     ],
   };
 }
-export function getRncryptorPreset(): WorkflowSeed {
-  const input = makeNode(
+export function getRncryptorDeepDivePreset(): WorkflowSeed {
+  // --- HIGH-LEVEL PATH ---
+  const hiMsg = makeNode(
     "input",
-    { x: 50, y: 150 },
-    { text: "Confidential message for RNCryptor.", label: "Message" },
+    { x: 50, y: 50 },
+    { text: "Hi-level RNCryptor", label: "Message (Hi-Level)" },
   );
-  const password = makeNode(
+  const hiPwd = makeNode(
     "input",
-    { x: 50, y: 300 },
-    { text: "rncryptor-password", label: "Password" },
+    { x: 50, y: 200 },
+    { text: "hi-password", label: "Password (Hi-Level)" },
+  );
+  const hiEnc = makeNode("rncryptor_encrypt", { x: 400, y: 100 }, { label: "Standard Encrypt" });
+  const hiDec = makeNode("rncryptor_decrypt", { x: 750, y: 100 }, { label: "Standard Decrypt" });
+  const hiOut = makeNode(
+    "output",
+    { x: 1100, y: 100 },
+    { label: "Decrypted (Hi)", outputFormat: "utf8" },
   );
 
-  const enc = makeNode("rncryptor_encrypt", { x: 450, y: 100 }, { label: "RNCryptor Encrypt" });
-  const dec = makeNode("rncryptor_decrypt", { x: 850, y: 100 }, { label: "RNCryptor Decrypt" });
-  const out = makeNode(
+  // --- LOW-LEVEL PATH (Manual Composition) ---
+  const loMsg = makeNode(
+    "input",
+    { x: 50, y: 400 },
+    { text: "Manual logic RNCryptor", label: "Message (Low-Level)" },
+  );
+  const loPwd = makeNode(
+    "input",
+    { x: 50, y: 550 },
+    { text: "logic-password", label: "Password (Low-Level)" },
+  );
+
+  // Random Components (Sender)
+  const encSaltS = makeNode(
+    "random",
+    { x: 50, y: 700 },
+    { length: 8, label: "Sender: Gen Enc Salt" },
+  );
+  const hmacSaltS = makeNode(
+    "random",
+    { x: 50, y: 800 },
+    { length: 8, label: "Sender: Gen HMAC Salt" },
+  );
+  const ivS = makeNode("random", { x: 50, y: 900 }, { length: 16, label: "Sender: Gen IV" });
+
+  // KDF (Sender)
+  const kdfEncS = makeNode(
+    "pbkdf2",
+    { x: 400, y: 550 },
+    { iterations: 10000, length: 256, label: "Sender: Derive Enc Key" },
+  );
+  const kdfHmacS = makeNode(
+    "pbkdf2",
+    { x: 400, y: 750 },
+    { iterations: 10000, length: 256, label: "Sender: Derive HMAC Key" },
+  );
+
+  // Encrypt
+  const aesE = makeNode(
+    "aes",
+    { x: 750, y: 400 },
+    { action: "encrypt", cipherMode: "CBC", label: "AES-256-CBC Encrypt" },
+  );
+
+  // Packet assembly
+  const ver = makeNode(
+    "input",
+    { x: 750, y: 600 },
+    { text: "0301", inputFormat: "hex", label: "Ver/Opt (0301)" },
+  );
+  const joinBody = makeNode(
+    "join",
+    { x: 1100, y: 600 },
+    { count: 5, separator: "none", label: "Assemble Body (Hdr+CT)" },
+  );
+  const hmacS = makeNode(
+    "hmac",
+    { x: 1450, y: 600 },
+    { hash: "SHA-256", label: "HMAC-SHA256 Sign" },
+  );
+  const joinFinal = makeNode(
+    "join",
+    { x: 1800, y: 600 },
+    { count: 2, separator: "none", label: "Final RNCryptor Blob" },
+  );
+  const blobOut = makeNode(
     "output",
-    { x: 1250, y: 150 },
-    { label: "Decrypted Msg", outputFormat: "utf8" },
+    { x: 2150, y: 600 },
+    { label: "Encrypted Blob", outputFormat: "base64" },
+  );
+
+  // --- RECEIVER SIDE (LOW-LEVEL) ---
+
+  // Slicing
+  const sliceEncSalt = makeNode(
+    "slice",
+    { x: 2150, y: 850 },
+    { start: 2, end: 10, label: "Receiver: Extract Enc Salt" },
+  );
+  const sliceHmacSalt = makeNode(
+    "slice",
+    { x: 2150, y: 1000 },
+    { start: 10, end: 18, label: "Receiver: Extract HMAC Salt" },
+  );
+  const sliceIV = makeNode(
+    "slice",
+    { x: 1800, y: 850 },
+    { start: 18, end: 34, label: "Receiver: Extract IV" },
+  );
+  const sliceCT = makeNode(
+    "slice",
+    { x: 1800, y: 1000 },
+    { start: 34, end: -32, label: "Receiver: Extract Ciphertext" },
+  );
+  const sliceHMAC = makeNode(
+    "slice",
+    { x: 1800, y: 1150 },
+    { start: -32, label: "Receiver: Extract HMAC Sig" },
+  );
+  const sliceToVerify = makeNode(
+    "slice",
+    { x: 1800, y: 1300 },
+    { start: 0, end: -32, label: "Receiver: Extract Body for Verify" },
+  );
+
+  // KDF (Receiver)
+  const kdfEncR = makeNode(
+    "pbkdf2",
+    { x: 1450, y: 850 },
+    { iterations: 10000, length: 256, label: "Receiver: Derive Enc Key" },
+  );
+  const kdfHmacR = makeNode(
+    "pbkdf2",
+    { x: 1450, y: 1050 },
+    { iterations: 10000, length: 256, label: "Receiver: Derive HMAC Key" },
+  );
+
+  // Verify & Decrypt
+  const hmacV = makeNode(
+    "hmac",
+    { x: 1100, y: 1050 },
+    { action: "verify", hash: "SHA-256", label: "HMAC Verify" },
+  );
+  const validOut = makeNode(
+    "output",
+    { x: 800, y: 1150 },
+    { label: "Integrity Valid?", outputFormat: "boolean" },
+  );
+  const aesD = makeNode(
+    "aes",
+    { x: 1100, y: 850 },
+    { action: "decrypt", cipherMode: "CBC", label: "AES-256-CBC Decrypt" },
+  );
+  const loOut = makeNode(
+    "output",
+    { x: 800, y: 850 },
+    { label: "Decrypted (Low)", outputFormat: "utf8" },
   );
 
   return {
-    name: "RNCryptor v3 Protocol",
-    nodes: [input, password, enc, dec, out],
+    name: "RNCryptor v3 Deep Dive (Hi + Lo)",
+    nodes: [
+      hiMsg,
+      hiPwd,
+      hiEnc,
+      hiDec,
+      hiOut,
+      loMsg,
+      loPwd,
+      encSaltS,
+      hmacSaltS,
+      ivS,
+      kdfEncS,
+      kdfHmacS,
+      aesE,
+      ver,
+      joinBody,
+      hmacS,
+      joinFinal,
+      blobOut,
+      sliceEncSalt,
+      sliceHmacSalt,
+      sliceIV,
+      sliceCT,
+      sliceHMAC,
+      sliceToVerify,
+      kdfEncR,
+      kdfHmacR,
+      hmacV,
+      validOut,
+      aesD,
+      loOut,
+    ],
     edges: [
-      { id: "rn1", source: input.id, target: enc.id, targetHandle: "data", animated: true },
-      { id: "rn2", source: password.id, target: enc.id, targetHandle: "password", animated: true },
-      { id: "rn3", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
-      { id: "rn4", source: password.id, target: dec.id, targetHandle: "password", animated: true },
-      { id: "rn5", source: dec.id, target: out.id, animated: true },
+      // Hi-Level
+      { id: "h1", source: hiMsg.id, target: hiEnc.id, targetHandle: "data", animated: true },
+      { id: "h2", source: hiPwd.id, target: hiEnc.id, targetHandle: "password", animated: true },
+      { id: "h3", source: hiEnc.id, target: hiDec.id, targetHandle: "data", animated: true },
+      { id: "h4", source: hiPwd.id, target: hiDec.id, targetHandle: "password", animated: true },
+      { id: "h5", source: hiDec.id, target: hiOut.id, animated: true },
+      // Lo-Level Sender
+      { id: "ls1", source: loPwd.id, target: kdfEncS.id, targetHandle: "password", animated: true },
+      { id: "ls2", source: encSaltS.id, target: kdfEncS.id, targetHandle: "salt", animated: true },
+      {
+        id: "ls3",
+        source: loPwd.id,
+        target: kdfHmacS.id,
+        targetHandle: "password",
+        animated: true,
+      },
+      {
+        id: "ls4",
+        source: hmacSaltS.id,
+        target: kdfHmacS.id,
+        targetHandle: "salt",
+        animated: true,
+      },
+      { id: "ls5", source: loMsg.id, target: aesE.id, targetHandle: "data", animated: true },
+      { id: "ls6", source: kdfEncS.id, target: aesE.id, targetHandle: "key", animated: true },
+      { id: "ls7", source: ivS.id, target: aesE.id, targetHandle: "iv", animated: true },
+      { id: "ls8", source: ver.id, target: joinBody.id, targetHandle: "in_1", animated: true },
+      { id: "ls9", source: encSaltS.id, target: joinBody.id, targetHandle: "in_2", animated: true },
+      {
+        id: "ls10",
+        source: hmacSaltS.id,
+        target: joinBody.id,
+        targetHandle: "in_3",
+        animated: true,
+      },
+      { id: "ls11", source: ivS.id, target: joinBody.id, targetHandle: "in_4", animated: true },
+      { id: "ls12", source: aesE.id, target: joinBody.id, targetHandle: "in_5", animated: true },
+      { id: "ls13", source: joinBody.id, target: hmacS.id, targetHandle: "data", animated: true },
+      { id: "ls14", source: kdfHmacS.id, target: hmacS.id, targetHandle: "key", animated: true },
+      {
+        id: "ls15",
+        source: joinBody.id,
+        target: joinFinal.id,
+        targetHandle: "in_1",
+        animated: true,
+      },
+      { id: "ls16", source: hmacS.id, target: joinFinal.id, targetHandle: "in_2", animated: true },
+      { id: "ls17", source: joinFinal.id, target: blobOut.id, animated: true },
+      // Lo-Level Receiver
+      {
+        id: "lr1",
+        source: joinFinal.id,
+        target: sliceEncSalt.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      {
+        id: "lr2",
+        source: joinFinal.id,
+        target: sliceHmacSalt.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      { id: "lr3", source: joinFinal.id, target: sliceIV.id, targetHandle: "data", animated: true },
+      { id: "lr4", source: joinFinal.id, target: sliceCT.id, targetHandle: "data", animated: true },
+      {
+        id: "lr5",
+        source: joinFinal.id,
+        target: sliceHMAC.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      {
+        id: "lr6",
+        source: joinFinal.id,
+        target: sliceToVerify.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      { id: "lr7", source: loPwd.id, target: kdfEncR.id, targetHandle: "password", animated: true },
+      {
+        id: "lr8",
+        source: sliceEncSalt.id,
+        target: kdfEncR.id,
+        targetHandle: "salt",
+        animated: true,
+      },
+      {
+        id: "lr9",
+        source: loPwd.id,
+        target: kdfHmacR.id,
+        targetHandle: "password",
+        animated: true,
+      },
+      {
+        id: "lr10",
+        source: sliceHmacSalt.id,
+        target: kdfHmacR.id,
+        targetHandle: "salt",
+        animated: true,
+      },
+      {
+        id: "lr11",
+        source: sliceToVerify.id,
+        target: hmacV.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      {
+        id: "lr12",
+        source: sliceHMAC.id,
+        target: hmacV.id,
+        targetHandle: "signature",
+        animated: true,
+      },
+      { id: "lr13", source: kdfHmacR.id, target: hmacV.id, targetHandle: "key", animated: true },
+      { id: "lr14", source: hmacV.id, target: validOut.id, animated: true },
+      { id: "lr15", source: sliceCT.id, target: aesD.id, targetHandle: "data", animated: true },
+      { id: "lr16", source: kdfEncR.id, target: aesD.id, targetHandle: "key", animated: true },
+      { id: "lr17", source: sliceIV.id, target: aesD.id, targetHandle: "iv", animated: true },
+      { id: "lr18", source: aesD.id, target: loOut.id, animated: true },
     ],
   };
 }
 
 export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string }[] = [
   {
-    label: "RNCryptor v3 Protocol",
-    seed: getRncryptorPreset(),
-    keywords: "rncryptor protocol aes-cbc pbkdf2 hmac educational",
+    label: "RNCryptor v3 Deep Dive (Hi + Lo)",
+    seed: getRncryptorDeepDivePreset(),
+    keywords: "rncryptor protocol composition pbkdf2 aes hmac educational deep-dive",
   },
   {
     label: "RSA Full Suite (Encrypt & Sign)",

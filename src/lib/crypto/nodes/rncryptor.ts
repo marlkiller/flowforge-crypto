@@ -55,8 +55,8 @@ registerNodeDef("rncryptor_encrypt", {
     packetWithoutHmac.set(header, 0);
     packetWithoutHmac.set(ciphertext, header.length);
 
-    const mac = getProvider("HMAC") as MacProvider;
-    const hmacValue = await mac.sign(hmacKey, packetWithoutHmac, { hash: "SHA-256" });
+    const mac = getProvider("HMAC-SHA-256") as MacProvider;
+    const hmacValue = await mac.sign(hmacKey, packetWithoutHmac);
 
     const finalPacket = new Uint8Array(packetWithoutHmac.length + hmacValue.length);
     finalPacket.set(packetWithoutHmac, 0);
@@ -104,9 +104,9 @@ registerNodeDef("rncryptor_decrypt", {
     const expectedHmac = packet.slice(packet.length - 32);
 
     const hmacKey = await deriveKey(password, hmacSalt);
-    const mac = getProvider("HMAC") as MacProvider;
+    const mac = getProvider("HMAC-SHA-256") as MacProvider;
     const packetToVerify = packet.slice(0, packet.length - 32);
-    const isValid = await mac.verify(hmacKey, expectedHmac, packetToVerify, { hash: "SHA-256" });
+    const isValid = await mac.verify(hmacKey, expectedHmac, packetToVerify);
 
     if (!isValid) {
       throw new Error(
