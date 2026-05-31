@@ -242,7 +242,6 @@ registerNodeDef("jwkConvert", {
         throw new Error("Key data is required");
       }
 
-      const errors: string[] = [];
       const isPrivateInput = pem.includes("PRIVATE KEY");
       const baseAlgs = [
         "RS256",
@@ -285,7 +284,7 @@ registerNodeDef("jwkConvert", {
             ? await jose.importPKCS8(currentPem, alg)
             : await jose.importSPKI(currentPem, alg);
           break;
-        } catch (e: any) {
+        } catch {
           // skip
         }
       }

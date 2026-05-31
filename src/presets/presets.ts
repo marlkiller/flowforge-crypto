@@ -764,7 +764,13 @@ export function getSecp256k1EcdhPreset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "e5", source: aliceDerive.id, target: sharedA.id, targetHandle: "data", animated: true },
+      {
+        id: "e5",
+        source: aliceDerive.id,
+        target: sharedA.id,
+        targetHandle: "data",
+        animated: true,
+      },
       { id: "e6", source: bobDerive.id, target: sharedB.id, targetHandle: "data", animated: true },
     ],
   };
@@ -994,7 +1000,13 @@ export function getDhPreset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "d5", source: aliceDerive.id, target: sharedA.id, targetHandle: "data", animated: true },
+      {
+        id: "d5",
+        source: aliceDerive.id,
+        target: sharedA.id,
+        targetHandle: "data",
+        animated: true,
+      },
       { id: "d6", source: bobDerive.id, target: sharedB.id, targetHandle: "data", animated: true },
     ],
   };
@@ -1083,8 +1095,20 @@ export function getEcbDetectPreset(): WorkflowSeed {
       { id: "e1", source: input.id, target: ecbEnc.id, targetHandle: "data", animated: true },
       { id: "e2", source: key.id, target: ecbEnc.id, targetHandle: "key", animated: true },
       { id: "e3", source: ecbEnc.id, target: ecbDetect.id, targetHandle: "data", animated: true },
-      { id: "e4", source: ecbDetect.id, target: ecbResult.id, targetHandle: "data", animated: true },
-      { id: "e5", source: ecbEnc.id, target: ecbCipherOut.id, targetHandle: "data", animated: true },
+      {
+        id: "e4",
+        source: ecbDetect.id,
+        target: ecbResult.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      {
+        id: "e5",
+        source: ecbEnc.id,
+        target: ecbCipherOut.id,
+        targetHandle: "data",
+        animated: true,
+      },
       { id: "e6", source: key.id, target: ecbDec.id, targetHandle: "key", animated: true },
       { id: "e7", source: ecbEnc.id, target: ecbDec.id, targetHandle: "data", animated: true },
       { id: "e8", source: ecbDec.id, target: decOut.id, targetHandle: "data", animated: true },
@@ -1125,7 +1149,14 @@ export function getShamirPreset(): WorkflowSeed {
         animated: true,
       },
       { id: "sh3", source: join.id, target: out.id, targetHandle: "data", animated: true },
-      { id: "sh4", source: split.id, target: sharesOut.id, sourceHandle: "shares", targetHandle: "data", animated: true },
+      {
+        id: "sh4",
+        source: split.id,
+        target: sharesOut.id,
+        sourceHandle: "shares",
+        targetHandle: "data",
+        animated: true,
+      },
     ],
   };
 }
@@ -1490,8 +1521,22 @@ export function getMerklePreset(): WorkflowSeed {
     nodes: [input, tree, rootOut, treeOut],
     edges: [
       { id: "m1", source: input.id, target: tree.id, targetHandle: "data", animated: true },
-      { id: "m2", source: tree.id, target: rootOut.id, sourceHandle: "root", targetHandle: "data", animated: true },
-      { id: "m3", source: tree.id, target: treeOut.id, sourceHandle: "tree", targetHandle: "data", animated: true },
+      {
+        id: "m2",
+        source: tree.id,
+        target: rootOut.id,
+        sourceHandle: "root",
+        targetHandle: "data",
+        animated: true,
+      },
+      {
+        id: "m3",
+        source: tree.id,
+        target: treeOut.id,
+        sourceHandle: "tree",
+        targetHandle: "data",
+        animated: true,
+      },
     ],
   };
 }
@@ -1605,7 +1650,13 @@ export function getHybridEncryptionPreset(): WorkflowSeed {
         animated: true,
       },
 
-      { id: "h6", source: rsaEncKey.id, target: outEncKey.id, targetHandle: "data", animated: true },
+      {
+        id: "h6",
+        source: rsaEncKey.id,
+        target: outEncKey.id,
+        targetHandle: "data",
+        animated: true,
+      },
 
       {
         id: "h7",
@@ -2114,7 +2165,13 @@ export function getRncryptorDeepDivePreset(): WorkflowSeed {
         animated: true,
       },
       { id: "ls16", source: hmacS.id, target: joinFinal.id, targetHandle: "in_2", animated: true },
-      { id: "ls17", source: joinFinal.id, target: blobOut.id, targetHandle: "data", animated: true },
+      {
+        id: "ls17",
+        source: joinFinal.id,
+        target: blobOut.id,
+        targetHandle: "data",
+        animated: true,
+      },
       // Lo-Level Receiver
       {
         id: "lr1",
