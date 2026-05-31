@@ -73,7 +73,7 @@ export function b58ToBytes(str: string): Uint8Array {
   return base58.decode(str);
 }
 
-export type DataFormat = "utf8" | "hex" | "base64" | "pem" | "base32" | "base58";
+export type DataFormat = "utf8" | "hex" | "base64" | "pem" | "base32" | "base58" | "boolean";
 
 export function formatBytes(bytes: Uint8Array, fmt: DataFormat, label?: string): string {
   switch (fmt) {
@@ -89,10 +89,11 @@ export function formatBytes(bytes: Uint8Array, fmt: DataFormat, label?: string):
       return bytesToB32(bytes);
     case "base58":
       return bytesToB58(bytes);
+    case "boolean":
+      return bytes.length > 0 && bytes[0] !== 0 ? "true" : "false";
   }
 }
-
-export function parseBytes(text: string, fmt: DataFormat): Uint8Array {
+export function parseBytes(text: string, fmt: DataFormat): any {
   switch (fmt) {
     case "utf8":
       return utf8ToBytes(text);
@@ -102,6 +103,8 @@ export function parseBytes(text: string, fmt: DataFormat): Uint8Array {
       return b32ToBytes(text);
     case "base58":
       return b58ToBytes(text);
+    case "boolean":
+      return text.trim().toLowerCase() === "true" || text.trim() === "1";
     case "base64":
     case "pem":
       // For PEM, we just want to extract the base64 part.

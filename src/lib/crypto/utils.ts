@@ -1,5 +1,4 @@
 import {
-  utf8ToBytes,
   b64ToBytes,
   hexToBytes,
   getProvider,
@@ -16,10 +15,8 @@ export function getProviderHash(name: string): (data: Uint8Array) => Promise<Uin
   return (data: Uint8Array) => provider.digest(data);
 }
 
-export function parseAs(text: string, fmt: DataFormat): Uint8Array {
-  if (fmt === "utf8") return utf8ToBytes(text);
-  if (fmt === "base64") return b64ToBytes(text);
-  return hexToBytes(text);
+export function parseAs(text: string, fmt: DataFormat): any {
+  return parseBytes(text, fmt);
 }
 
 export function safeDecode(fn: () => Uint8Array, msg: string): Uint8Array {
@@ -98,7 +95,11 @@ export function getParamBytes(
       if (dv.value.length > 0) return dv.value;
       if (required) return dv.value;
     }
-    // Case B: It's a string from a Typed node (e.g. Hex node outputting a string)
+    // Case B: It's a boolean (convert to 1B)
+    if (typeof dv.value === "boolean") {
+      return new Uint8Array([dv.value ? 1 : 0]);
+    }
+    // Case C: It's a string from a Typed node (e.g. Hex node outputting a string)
     if (typeof dv.value === "string") {
       try {
         return parseBytes(dv.value, dv.type as DataFormat);

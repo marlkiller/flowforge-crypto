@@ -46,6 +46,8 @@ registerNodeDef("ecdsa_verify", {
 
     const key = await CryptoService.importECKey("spki", publicKeyBytes, "ECDSA", curve, ["verify"]);
     const isValid = await CryptoService.verify({ name: "ECDSA", hash }, key, signature, data);
+    const fmt = getField(node, "outputFormat", "utf8");
+    if (fmt === "boolean") return isValid;
     return utf8ToBytes(isValid ? "Valid" : "Invalid");
   },
 });

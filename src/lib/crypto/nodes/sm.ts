@@ -52,6 +52,8 @@ registerNodeDef("sm2_verify", {
       bytesToHex(publicKeyBytes),
       { hash: true, der: false },
     );
+    const fmt = (node.data["outputFormat"] as string) || "utf8";
+    if (fmt === "boolean") return isValid;
     return utf8ToBytes(isValid ? "Valid" : "Invalid");
   },
 });

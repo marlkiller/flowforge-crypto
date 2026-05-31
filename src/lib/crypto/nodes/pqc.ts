@@ -232,6 +232,7 @@ registerNodeDef("ml_dsa_verify", {
     category: "pqc",
     description: "Verify an ML-DSA signature using a public key.",
     defaultOutput: "utf8",
+    supportedFormats: ["utf8", "boolean"],
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "signature", label: "Signature", connectable: true, acceptTypes: ["raw"] },
@@ -259,6 +260,8 @@ registerNodeDef("ml_dsa_verify", {
     const pubKey = inputs["publicKey"] ?? new Uint8Array(0);
     if (pubKey.length === 0) throw new Error("Public key is required for ML-DSA verification");
     const isValid = dsa.verify(sig, data, pubKey);
+    const fmt = getField(node as GraphNode, "outputFormat", "utf8");
+    if (fmt === "boolean") return isValid;
     return utf8ToBytes(isValid ? "Valid" : "Invalid");
   },
 });
@@ -332,6 +335,7 @@ registerNodeDef("slh_dsa_verify", {
     category: "pqc",
     description: "Verify an SLH-DSA signature using a public key.",
     defaultOutput: "utf8",
+    supportedFormats: ["utf8", "boolean"],
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "signature", label: "Signature", connectable: true, acceptTypes: ["raw"] },
@@ -355,6 +359,8 @@ registerNodeDef("slh_dsa_verify", {
     const pubKey = inputs["publicKey"] ?? new Uint8Array(0);
     if (pubKey.length === 0) throw new Error("Public key is required for SLH-DSA verification");
     const isValid = dsa.verify(sig, data, pubKey);
+    const fmt = getField(node as GraphNode, "outputFormat", "utf8");
+    if (fmt === "boolean") return isValid;
     return utf8ToBytes(isValid ? "Valid" : "Invalid");
   },
 });

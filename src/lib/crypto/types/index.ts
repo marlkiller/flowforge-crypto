@@ -49,6 +49,7 @@ export function formatAcceptType(type: string): string {
     utf8: "UTF8",
     base32: "B32",
     base58: "B58",
+    boolean: "BOOL",
   };
   return map[type] || type.toUpperCase();
 }
@@ -96,11 +97,20 @@ export type NodeRunner = (
   node: GraphNode,
   inputs: Record<string, any>,
 ) =>
-  | Promise<DataValue | Record<string, DataValue> | Uint8Array | Record<string, Uint8Array>>
+  | Promise<
+      | DataValue
+      | Record<string, DataValue>
+      | Uint8Array
+      | Record<string, Uint8Array>
+      | boolean
+      | Record<string, boolean>
+    >
   | DataValue
   | Record<string, DataValue>
   | Uint8Array
-  | Record<string, Uint8Array>;
+  | Record<string, Uint8Array>
+  | boolean
+  | Record<string, boolean>;
 
 export interface NodeDef {
   meta: NodeKindMeta;

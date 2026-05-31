@@ -98,6 +98,7 @@ registerNodeDef("merkleProof", {
     category: "hash",
     description: "Verify a Merkle proof: given leaf, proof siblings, and root, verify inclusion.",
     defaultOutput: "utf8",
+    supportedFormats: ["utf8", "boolean"],
     inputs: [
       { id: "leaf", label: "Leaf Data", connectable: true, acceptTypes: ["raw"] },
       {
@@ -164,6 +165,8 @@ registerNodeDef("merkleProof", {
     }
 
     const match = bytesToHex(computed) === bytesToHex(expectedRoot);
+    const fmt = (node.data["outputFormat"] as string) || "utf8";
+    if (fmt === "boolean") return match;
     return utf8ToBytes(match ? "Proof valid ✓" : "Proof invalid ✗");
   },
 });

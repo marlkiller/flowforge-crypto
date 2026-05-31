@@ -80,7 +80,13 @@ export async function executeNode(
       return { type, value: val };
     };
 
-    if (result instanceof Uint8Array || (result && "type" in (result as any))) {
+    if (
+      result instanceof Uint8Array ||
+      (result !== null &&
+        typeof result === "object" &&
+        "type" in (result as Record<string, unknown>)) ||
+      typeof result === "boolean"
+    ) {
       return { default: wrap(result) };
     }
 

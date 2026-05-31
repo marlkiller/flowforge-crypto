@@ -104,7 +104,7 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
         const fmt = n.data.outputFormat ?? "utf8";
 
         let output = "";
-        let outputBytesLen = 0;
+        let outputBytesLen: number | undefined = undefined;
 
         if (outputs) {
           const entries = Object.entries(outputs);
@@ -123,7 +123,11 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
               dv.value instanceof Uint8Array
                 ? formatBytes(dv.value, fmt, getLabel(entries[0][0]))
                 : String(dv.value);
-            outputBytesLen = dv.value instanceof Uint8Array ? dv.value.byteLength : 0;
+            if (dv.value instanceof Uint8Array) {
+              outputBytesLen = dv.value.byteLength;
+            } else if (typeof dv.value === "boolean") {
+              outputBytesLen = 1;
+            }
           } else if (entries.length > 0) {
             output = entries
               .map(([k, dv]) => {
@@ -134,10 +138,13 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
                 return `${k.toUpperCase()}:\n${val}`;
               })
               .join("\n\n");
-            outputBytesLen = entries.reduce(
-              (acc, [_, dv]) => acc + (dv.value instanceof Uint8Array ? dv.value.byteLength : 0),
-              0,
-            );
+
+            const totalBytes = entries.reduce((acc, [_, dv]) => {
+              if (dv.value instanceof Uint8Array) return acc + dv.value.byteLength;
+              if (typeof dv.value === "boolean") return acc + 1;
+              return acc;
+            }, 0);
+            outputBytesLen = totalBytes;
           }
         }
 

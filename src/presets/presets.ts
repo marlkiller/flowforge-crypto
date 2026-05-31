@@ -814,8 +814,16 @@ export function getEd448Preset(): WorkflowSeed {
 }
 
 export function getX448Preset(): WorkflowSeed {
-  const aliceKey = makeNode("x448_keygen", { x: 50, y: 50 }, { label: "Alice X448 Key Gen", outputFormat: "hex" });
-  const bobKey = makeNode("x448_keygen", { x: 50, y: 250 }, { label: "Bob X448 Key Gen", outputFormat: "hex" });
+  const aliceKey = makeNode(
+    "x448_keygen",
+    { x: 50, y: 50 },
+    { label: "Alice X448 Key Gen", outputFormat: "hex" },
+  );
+  const bobKey = makeNode(
+    "x448_keygen",
+    { x: 50, y: 250 },
+    { label: "Bob X448 Key Gen", outputFormat: "hex" },
+  );
   const aliceX = makeNode("x448_derive", { x: 400, y: 50 }, { label: "Alice X448" });
   const bobX = makeNode("x448_derive", { x: 400, y: 250 }, { label: "Bob X448" });
   const sharedA = makeNode(
@@ -1433,7 +1441,11 @@ export function getSalsa20Preset(): WorkflowSeed {
   );
   const enc = makeNode("salsa20", { x: 400, y: 50 }, { label: "Salsa20 Encrypt" });
   const dec = makeNode("salsa20", { x: 750, y: 50 }, { label: "Salsa20 Decrypt" });
-  const out = makeNode("output", { x: 1100, y: 150 }, { label: "Decrypted Output", outputFormat: "utf8" });
+  const out = makeNode(
+    "output",
+    { x: 1100, y: 150 },
+    { label: "Decrypted Output", outputFormat: "utf8" },
+  );
 
   return {
     name: "Salsa20 Stream Cipher",
@@ -1504,116 +1516,304 @@ export function getSshKeyPreset(): WorkflowSeed {
   };
 }
 
-
 export function getHybridEncryptionPreset(): WorkflowSeed {
-  const inputData = makeNode("input", { x: 50, y: 50 }, { text: "Highly sensitive corporate data.", label: "Plaintext Data" });
-  const aesKeyGen = makeNode("random", { x: 50, y: 200 }, { length: 32, label: "Generate AES Key (256-bit)" });
-  const aesIvGen = makeNode("random", { x: 50, y: 350 }, { length: 16, label: "Generate AES IV (128-bit)" });
-  
-  const aesEnc = makeNode("aes", { x: 400, y: 50 }, { action: "encrypt", cipherMode: "CBC", label: "AES Encrypt Data" });
-  
-  const bobRsaKey = makeNode("rsa_keygen", { x: 50, y: 550 }, { algorithm: "RSA-OAEP", label: "Bob's RSA Keys" });
-  const rsaEncKey = makeNode("rsa", { x: 400, y: 200 }, { action: "encrypt", label: "RSA Encrypt AES Key" });
-  
-  const rsaDecKey = makeNode("rsa", { x: 750, y: 200 }, { action: "decrypt", label: "RSA Decrypt AES Key" });
-  const aesDec = makeNode("aes", { x: 1100, y: 50 }, { action: "decrypt", cipherMode: "CBC", label: "AES Decrypt Data" });
-  
+  const inputData = makeNode(
+    "input",
+    { x: 50, y: 50 },
+    { text: "Highly sensitive corporate data.", label: "Plaintext Data" },
+  );
+  const aesKeyGen = makeNode(
+    "random",
+    { x: 50, y: 200 },
+    { length: 32, label: "Generate AES Key (256-bit)" },
+  );
+  const aesIvGen = makeNode(
+    "random",
+    { x: 50, y: 350 },
+    { length: 16, label: "Generate AES IV (128-bit)" },
+  );
+
+  const aesEnc = makeNode(
+    "aes",
+    { x: 400, y: 50 },
+    { action: "encrypt", cipherMode: "CBC", label: "AES Encrypt Data" },
+  );
+
+  const bobRsaKey = makeNode(
+    "rsa_keygen",
+    { x: 50, y: 550 },
+    { algorithm: "RSA-OAEP", label: "Bob's RSA Keys" },
+  );
+  const rsaEncKey = makeNode(
+    "rsa",
+    { x: 400, y: 200 },
+    { action: "encrypt", label: "RSA Encrypt AES Key" },
+  );
+
+  const rsaDecKey = makeNode(
+    "rsa",
+    { x: 750, y: 200 },
+    { action: "decrypt", label: "RSA Decrypt AES Key" },
+  );
+  const aesDec = makeNode(
+    "aes",
+    { x: 1100, y: 50 },
+    { action: "decrypt", cipherMode: "CBC", label: "AES Decrypt Data" },
+  );
+
   const outData = makeNode("output", { x: 1450, y: 50 }, { label: "Recovered Data" });
-  const outEncKey = makeNode("output", { x: 750, y: 350 }, { label: "Encrypted AES Key", outputFormat: "base64" });
+  const outEncKey = makeNode(
+    "output",
+    { x: 750, y: 350 },
+    { label: "Encrypted AES Key", outputFormat: "base64" },
+  );
 
   return {
     name: "Hybrid Encryption (Digital Envelope)",
-    nodes: [inputData, aesKeyGen, aesIvGen, aesEnc, bobRsaKey, rsaEncKey, rsaDecKey, aesDec, outData, outEncKey],
+    nodes: [
+      inputData,
+      aesKeyGen,
+      aesIvGen,
+      aesEnc,
+      bobRsaKey,
+      rsaEncKey,
+      rsaDecKey,
+      aesDec,
+      outData,
+      outEncKey,
+    ],
     edges: [
       { id: "h1", source: inputData.id, target: aesEnc.id, targetHandle: "data", animated: true },
       { id: "h2", source: aesKeyGen.id, target: aesEnc.id, targetHandle: "key", animated: true },
       { id: "h3", source: aesIvGen.id, target: aesEnc.id, targetHandle: "iv", animated: true },
-      
-      { id: "h4", source: aesKeyGen.id, target: rsaEncKey.id, targetHandle: "data", animated: true },
-      { id: "h5", source: bobRsaKey.id, target: rsaEncKey.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
-      
+
+      {
+        id: "h4",
+        source: aesKeyGen.id,
+        target: rsaEncKey.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      {
+        id: "h5",
+        source: bobRsaKey.id,
+        target: rsaEncKey.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
+
       { id: "h6", source: rsaEncKey.id, target: outEncKey.id, animated: true },
-      
-      { id: "h7", source: rsaEncKey.id, target: rsaDecKey.id, targetHandle: "data", animated: true },
-      { id: "h8", source: bobRsaKey.id, target: rsaDecKey.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      
+
+      {
+        id: "h7",
+        source: rsaEncKey.id,
+        target: rsaDecKey.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      {
+        id: "h8",
+        source: bobRsaKey.id,
+        target: rsaDecKey.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+
       { id: "h9", source: aesEnc.id, target: aesDec.id, targetHandle: "data", animated: true },
       { id: "h10", source: rsaDecKey.id, target: aesDec.id, targetHandle: "key", animated: true },
       { id: "h11", source: aesIvGen.id, target: aesDec.id, targetHandle: "iv", animated: true },
-      
+
       { id: "h12", source: aesDec.id, target: outData.id, animated: true },
-    ]
+    ],
   };
 }
 
 export function getHttpsHandshakePreset(): WorkflowSeed {
-  const clientKey = makeNode("ec_keygen", { x: 50, y: 50 }, { algorithm: "ECDH", namedCurve: "P-256", label: "Client ECDH Key" });
-  const serverKey = makeNode("ec_keygen", { x: 50, y: 250 }, { algorithm: "ECDH", namedCurve: "P-256", label: "Server ECDH Key" });
+  const clientKey = makeNode(
+    "ec_keygen",
+    { x: 50, y: 50 },
+    { algorithm: "ECDH", namedCurve: "P-256", label: "Client ECDH Key" },
+  );
+  const serverKey = makeNode(
+    "ec_keygen",
+    { x: 50, y: 250 },
+    { algorithm: "ECDH", namedCurve: "P-256", label: "Server ECDH Key" },
+  );
 
   const clientDerive = makeNode("ecdh", { x: 400, y: 50 }, { label: "Client Derive" });
   const serverDerive = makeNode("ecdh", { x: 400, y: 250 }, { label: "Server Derive" });
-  
-  const hkdf = makeNode("hkdf", { x: 750, y: 50 }, { hash: "SHA-256", length: 256, label: "Client HKDF (Session Key)" });
-  const serverHkdf = makeNode("hkdf", { x: 750, y: 250 }, { hash: "SHA-256", length: 256, label: "Server HKDF (Session Key)" });
-  
-  const salt = makeNode("input", { x: 400, y: 400 }, { text: "handshake-salt", label: "Handshake Salt" });
-  const info = makeNode("input", { x: 400, y: 500 }, { text: "tls13 client in", label: "HKDF Info" });
-  
-  const requestData = makeNode("input", { x: 750, y: 400 }, { text: "GET / HTTP/1.1\nHost: flowforge.crypto", label: "HTTP Request" });
-  const iv = makeNode("random", { x: 750, y: 500 }, { length: 12, label: "IV (12 bytes for GCM)" });
-  
-  const aesEnc = makeNode("aes", { x: 1100, y: 50 }, { action: "encrypt", cipherMode: "GCM", label: "AES-GCM (Client Send)" });
-  const outCipher = makeNode("output", { x: 1450, y: 50 }, { label: "Encrypted HTTP Request", outputFormat: "hex" });
 
-  const aesDec = makeNode("aes", { x: 1100, y: 250 }, { action: "decrypt", cipherMode: "GCM", label: "AES-GCM (Server Receive)" });
+  const hkdf = makeNode(
+    "hkdf",
+    { x: 750, y: 50 },
+    { hash: "SHA-256", length: 256, label: "Client HKDF (Session Key)" },
+  );
+  const serverHkdf = makeNode(
+    "hkdf",
+    { x: 750, y: 250 },
+    { hash: "SHA-256", length: 256, label: "Server HKDF (Session Key)" },
+  );
+
+  const salt = makeNode(
+    "input",
+    { x: 400, y: 400 },
+    { text: "handshake-salt", label: "Handshake Salt" },
+  );
+  const info = makeNode(
+    "input",
+    { x: 400, y: 500 },
+    { text: "tls13 client in", label: "HKDF Info" },
+  );
+
+  const requestData = makeNode(
+    "input",
+    { x: 750, y: 400 },
+    { text: "GET / HTTP/1.1\nHost: flowforge.crypto", label: "HTTP Request" },
+  );
+  const iv = makeNode("random", { x: 750, y: 500 }, { length: 12, label: "IV (12 bytes for GCM)" });
+
+  const aesEnc = makeNode(
+    "aes",
+    { x: 1100, y: 50 },
+    { action: "encrypt", cipherMode: "GCM", label: "AES-GCM (Client Send)" },
+  );
+  const outCipher = makeNode(
+    "output",
+    { x: 1450, y: 50 },
+    { label: "Encrypted HTTP Request", outputFormat: "hex" },
+  );
+
+  const aesDec = makeNode(
+    "aes",
+    { x: 1100, y: 250 },
+    { action: "decrypt", cipherMode: "GCM", label: "AES-GCM (Server Receive)" },
+  );
   const outData = makeNode("output", { x: 1450, y: 250 }, { label: "Decrypted Data (Server)" });
 
   return {
     name: "HTTPS Handshake Simulation",
-    nodes: [clientKey, serverKey, clientDerive, serverDerive, hkdf, serverHkdf, salt, info, requestData, iv, aesEnc, outCipher, aesDec, outData],
+    nodes: [
+      clientKey,
+      serverKey,
+      clientDerive,
+      serverDerive,
+      hkdf,
+      serverHkdf,
+      salt,
+      info,
+      requestData,
+      iv,
+      aesEnc,
+      outCipher,
+      aesDec,
+      outData,
+    ],
     edges: [
-      { id: "t1", source: clientKey.id, target: clientDerive.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      { id: "t2", source: serverKey.id, target: clientDerive.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
-      
-      { id: "t3", source: serverKey.id, target: serverDerive.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
-      { id: "t4", source: clientKey.id, target: serverDerive.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
-      
+      {
+        id: "t1",
+        source: clientKey.id,
+        target: clientDerive.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+      {
+        id: "t2",
+        source: serverKey.id,
+        target: clientDerive.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
+
+      {
+        id: "t3",
+        source: serverKey.id,
+        target: serverDerive.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
+      {
+        id: "t4",
+        source: clientKey.id,
+        target: serverDerive.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
+
       { id: "t5", source: clientDerive.id, target: hkdf.id, targetHandle: "ikm", animated: true },
       { id: "t6", source: salt.id, target: hkdf.id, targetHandle: "salt", animated: true },
       { id: "t7", source: info.id, target: hkdf.id, targetHandle: "info", animated: true },
-      
-      { id: "t5s", source: serverDerive.id, target: serverHkdf.id, targetHandle: "ikm", animated: true },
+
+      {
+        id: "t5s",
+        source: serverDerive.id,
+        target: serverHkdf.id,
+        targetHandle: "ikm",
+        animated: true,
+      },
       { id: "t6s", source: salt.id, target: serverHkdf.id, targetHandle: "salt", animated: true },
       { id: "t7s", source: info.id, target: serverHkdf.id, targetHandle: "info", animated: true },
-      
+
       { id: "t8", source: hkdf.id, target: aesEnc.id, targetHandle: "key", animated: true },
       { id: "t9", source: requestData.id, target: aesEnc.id, targetHandle: "data", animated: true },
       { id: "t10", source: iv.id, target: aesEnc.id, targetHandle: "iv", animated: true },
-      
+
       { id: "t11", source: aesEnc.id, target: outCipher.id, animated: true },
-      
+
       { id: "t12", source: serverHkdf.id, target: aesDec.id, targetHandle: "key", animated: true },
       { id: "t13", source: aesEnc.id, target: aesDec.id, targetHandle: "data", animated: true },
       { id: "t14", source: iv.id, target: aesDec.id, targetHandle: "iv", animated: true },
-      
+
       { id: "t15", source: aesDec.id, target: outData.id, animated: true },
-    ]
+    ],
   };
 }
 
-
 export function getRsaFullSuitePreset(): WorkflowSeed {
-  const keyGen = makeNode("rsa_keygen", { x: 50, y: 150 }, { algorithm: "RSA-OAEP", label: "RSA Master Keys" });
-  const input = makeNode("input", { x: 50, y: 350 }, { text: "hello world - full rsa suite", label: "Message" });
+  const keyGen = makeNode(
+    "rsa_keygen",
+    { x: 50, y: 150 },
+    { algorithm: "RSA-OAEP", label: "RSA Master Keys" },
+  );
+  const input = makeNode(
+    "input",
+    { x: 50, y: 350 },
+    { text: "hello world - full rsa suite", label: "Message" },
+  );
 
   // Encryption Path (Top)
-  const rsaEnc = makeNode("rsa", { x: 450, y: 50 }, { action: "encrypt", scheme: "RSA-OAEP", label: "RSA Encrypt" });
-  const rsaDec = makeNode("rsa", { x: 850, y: 50 }, { action: "decrypt", scheme: "RSA-OAEP", label: "RSA Decrypt" });
-  const outEnc = makeNode("output", { x: 1250, y: 50 }, { label: "Decrypted Msg", outputFormat: "utf8" });
+  const rsaEnc = makeNode(
+    "rsa",
+    { x: 450, y: 50 },
+    { action: "encrypt", scheme: "RSA-OAEP", label: "RSA Encrypt" },
+  );
+  const rsaDec = makeNode(
+    "rsa",
+    { x: 850, y: 50 },
+    { action: "decrypt", scheme: "RSA-OAEP", label: "RSA Decrypt" },
+  );
+  const outEnc = makeNode(
+    "output",
+    { x: 1250, y: 50 },
+    { label: "Decrypted Msg", outputFormat: "utf8" },
+  );
 
   // Signature Path (Bottom)
-  const rsaSign = makeNode("rsa_sign", { x: 450, y: 250 }, { algorithm: "RSASSA-PKCS1-v1_5", hash: "SHA-256", label: "RSA Sign" });
-  const rsaVerify = makeNode("rsa_verify", { x: 850, y: 250 }, { algorithm: "RSASSA-PKCS1-v1_5", hash: "SHA-256", label: "RSA Verify" });
+  const rsaSign = makeNode(
+    "rsa_sign",
+    { x: 450, y: 250 },
+    { algorithm: "RSASSA-PKCS1-v1_5", hash: "SHA-256", label: "RSA Sign" },
+  );
+  const rsaVerify = makeNode(
+    "rsa_verify",
+    { x: 850, y: 250 },
+    { algorithm: "RSASSA-PKCS1-v1_5", hash: "SHA-256", label: "RSA Verify" },
+  );
   const outSign = makeNode("output", { x: 1250, y: 250 }, { label: "Verify Result" });
 
   return {
@@ -1622,25 +1822,63 @@ export function getRsaFullSuitePreset(): WorkflowSeed {
     edges: [
       // Encryption logic
       { id: "f1", source: input.id, target: rsaEnc.id, targetHandle: "data", animated: true },
-      { id: "f2", source: keyGen.id, target: rsaEnc.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "f2",
+        source: keyGen.id,
+        target: rsaEnc.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "f3", source: rsaEnc.id, target: rsaDec.id, targetHandle: "data", animated: true },
-      { id: "f4", source: keyGen.id, target: rsaDec.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
+      {
+        id: "f4",
+        source: keyGen.id,
+        target: rsaDec.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
       { id: "f5", source: rsaDec.id, target: outEnc.id, animated: true },
 
       // Signature logic
       { id: "f6", source: input.id, target: rsaSign.id, targetHandle: "data", animated: true },
-      { id: "f7", source: keyGen.id, target: rsaSign.id, sourceHandle: "privateKey", targetHandle: "privateKey", animated: true },
+      {
+        id: "f7",
+        source: keyGen.id,
+        target: rsaSign.id,
+        sourceHandle: "privateKey",
+        targetHandle: "privateKey",
+        animated: true,
+      },
       { id: "f8", source: input.id, target: rsaVerify.id, targetHandle: "data", animated: true },
-      { id: "f9", source: rsaSign.id, target: rsaVerify.id, targetHandle: "signature", animated: true },
-      { id: "f10", source: keyGen.id, target: rsaVerify.id, sourceHandle: "publicKey", targetHandle: "publicKey", animated: true },
+      {
+        id: "f9",
+        source: rsaSign.id,
+        target: rsaVerify.id,
+        targetHandle: "signature",
+        animated: true,
+      },
+      {
+        id: "f10",
+        source: keyGen.id,
+        target: rsaVerify.id,
+        sourceHandle: "publicKey",
+        targetHandle: "publicKey",
+        animated: true,
+      },
       { id: "f11", source: rsaVerify.id, target: outSign.id, animated: true },
     ],
   };
 }
 
 export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string }[] = [
-  { label: "RSA Full Suite (Encrypt & Sign)", seed: getRsaFullSuitePreset(), keywords: "rsa encrypt decrypt sign verify asymmetric" },
-  
+  {
+    label: "RSA Full Suite (Encrypt & Sign)",
+    seed: getRsaFullSuitePreset(),
+    keywords: "rsa encrypt decrypt sign verify asymmetric",
+  },
+
   {
     label: "AES-GCM Encrypt/Decrypt",
     seed: getAesGcmPreset(),
@@ -1792,5 +2030,4 @@ export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string 
     seed: getHttpsHandshakePreset(),
     keywords: "https handshake tls ecdh hkdf aes gcm",
   },
-  
 ];
