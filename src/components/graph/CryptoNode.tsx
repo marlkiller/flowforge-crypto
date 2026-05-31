@@ -88,7 +88,7 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div
-      className={`group min-w-[200px] max-w-[260px] rounded-xl border bg-card/90 backdrop-blur-sm shadow-lg transition-[border-color,box-shadow,transform] duration-200 ${
+      className={`group min-w-[200px] max-w-[260px] rounded-xl border bg-card shadow-lg transition-[border-color,box-shadow,transform] duration-200 ${
         hasError
           ? "border-destructive ring-4 ring-destructive/20 shadow-2xl z-10"
           : selected
