@@ -46,7 +46,7 @@ export function getAesGcmPreset(): WorkflowSeed {
       { id: "p4", source: aesEnc.id, target: aesDec.id, targetHandle: "data", animated: true },
       { id: "p5", source: srcKey.id, target: aesDec.id, targetHandle: "key", animated: true },
       { id: "p6", source: srcIv.id, target: aesDec.id, targetHandle: "iv", animated: true },
-      { id: "p7", source: aesDec.id, target: out.id, animated: true },
+      { id: "p7", source: aesDec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -83,7 +83,7 @@ export function getJwtPreset(): WorkflowSeed {
       { id: "p2", source: secret.id, target: jwtSign.id, targetHandle: "key", animated: true },
       { id: "p3", source: jwtSign.id, target: jwtVerify.id, targetHandle: "token", animated: true },
       { id: "p4", source: secret.id, target: jwtVerify.id, targetHandle: "key", animated: true },
-      { id: "p5", source: jwtVerify.id, target: out.id, animated: true },
+      { id: "p5", source: jwtVerify.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -127,12 +127,12 @@ export function getHashSuitePreset(): WorkflowSeed {
       { id: "h4", source: input.id, target: sm3.id, targetHandle: "data", animated: true },
       { id: "h5", source: input.id, target: sha224.id, targetHandle: "data", animated: true },
       { id: "h6", source: input.id, target: sha3224.id, targetHandle: "data", animated: true },
-      { id: "h7", source: sha224.id, target: out1.id, animated: true },
-      { id: "h8", source: sha256.id, target: out2.id, animated: true },
-      { id: "h9", source: sha3224.id, target: out3.id, animated: true },
-      { id: "h10", source: sha3256.id, target: out4.id, animated: true },
-      { id: "h11", source: blake3.id, target: out5.id, animated: true },
-      { id: "h12", source: sm3.id, target: out6.id, animated: true },
+      { id: "h7", source: sha224.id, target: out1.id, targetHandle: "data", animated: true },
+      { id: "h8", source: sha256.id, target: out2.id, targetHandle: "data", animated: true },
+      { id: "h9", source: sha3224.id, target: out3.id, targetHandle: "data", animated: true },
+      { id: "h10", source: sha3256.id, target: out4.id, targetHandle: "data", animated: true },
+      { id: "h11", source: blake3.id, target: out5.id, targetHandle: "data", animated: true },
+      { id: "h12", source: sm3.id, target: out6.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -179,7 +179,7 @@ export function getEcdsaPreset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "e6", source: verify.id, target: out.id, animated: true },
+      { id: "e6", source: verify.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -214,7 +214,7 @@ export function getHmacPreset(): WorkflowSeed {
         targetHandle: "signature",
         animated: true,
       },
-      { id: "h6", source: hmacVerify.id, target: out.id, animated: true },
+      { id: "h6", source: hmacVerify.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -256,7 +256,7 @@ export function getKdfAesPreset(): WorkflowSeed {
       { id: "k4", source: pbkdf2.id, target: aesDec.id, targetHandle: "key", animated: true },
       { id: "k5", source: data.id, target: aesEnc.id, targetHandle: "data", animated: true },
       { id: "k6", source: aesEnc.id, target: aesDec.id, targetHandle: "data", animated: true },
-      { id: "k7", source: aesDec.id, target: out.id, animated: true },
+      { id: "k7", source: aesDec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -305,7 +305,7 @@ export function getAesCbcPreset(): WorkflowSeed {
       { id: "p4", source: aesEnc.id, target: aesDec.id, targetHandle: "data", animated: true },
       { id: "p5", source: srcKey.id, target: aesDec.id, targetHandle: "key", animated: true },
       { id: "p6", source: srcIv.id, target: aesDec.id, targetHandle: "iv", animated: true },
-      { id: "p7", source: aesDec.id, target: out.id, animated: true },
+      { id: "p7", source: aesDec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -340,7 +340,7 @@ export function getEd25519Preset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "e6", source: verify.id, target: out.id, animated: true },
+      { id: "e6", source: verify.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -389,7 +389,7 @@ export function getChaCha20Preset(): WorkflowSeed {
       { id: "c4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
       { id: "c5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
       { id: "c6", source: srcNonce.id, target: dec.id, targetHandle: "iv", animated: true },
-      { id: "c7", source: dec.id, target: out.id, animated: true },
+      { id: "c7", source: dec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -420,7 +420,7 @@ export function getArgon2Preset(): WorkflowSeed {
         animated: true,
       },
       { id: "a2", source: salt.id, target: argon2.id, targetHandle: "salt", animated: true },
-      { id: "a3", source: argon2.id, target: out.id, animated: true },
+      { id: "a3", source: argon2.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -445,7 +445,7 @@ export function getTOTPPreset(): WorkflowSeed {
     edges: [
       { id: "t1", source: secret.id, target: b32Decode.id, targetHandle: "data", animated: true },
       { id: "t2", source: b32Decode.id, target: totp.id, targetHandle: "secret", animated: true },
-      { id: "t3", source: totp.id, target: out.id, animated: true },
+      { id: "t3", source: totp.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -525,14 +525,16 @@ export function getMlKemPreset(): WorkflowSeed {
         source: bobEncaps.id,
         target: sigOut.id,
         sourceHandle: "ciphertext",
+        targetHandle: "data",
         animated: true,
       },
-      { id: "k5", source: aliceDecaps.id, target: ssA.id, animated: true },
+      { id: "k5", source: aliceDecaps.id, target: ssA.id, targetHandle: "data", animated: true },
       {
         id: "k6",
         source: bobEncaps.id,
         target: ssB.id,
         sourceHandle: "sharedSecret",
+        targetHandle: "data",
         animated: true,
       },
       {
@@ -542,7 +544,7 @@ export function getMlKemPreset(): WorkflowSeed {
         sourceHandle: "publicKey",
         animated: true,
       },
-      { id: "k8", source: hexPub.id, target: pubOut.id, animated: true },
+      { id: "k8", source: hexPub.id, target: pubOut.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -598,8 +600,8 @@ export function getMlDsaPreset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "d6", source: sign.id, target: sigOut.id, animated: true },
-      { id: "d7", source: verify.id, target: result.id, animated: true },
+      { id: "d6", source: sign.id, target: sigOut.id, targetHandle: "data", animated: true },
+      { id: "d7", source: verify.id, target: result.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -655,8 +657,8 @@ export function getSlhDsaPreset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "h6", source: sign.id, target: sigOut.id, animated: true },
-      { id: "h7", source: verify.id, target: result.id, animated: true },
+      { id: "h6", source: sign.id, target: sigOut.id, targetHandle: "data", animated: true },
+      { id: "h7", source: verify.id, target: result.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -704,8 +706,8 @@ export function getSecp256k1Preset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "s6", source: sign.id, target: sigOut.id, animated: true },
-      { id: "s7", source: verify.id, target: result.id, animated: true },
+      { id: "s6", source: sign.id, target: sigOut.id, targetHandle: "data", animated: true },
+      { id: "s7", source: verify.id, target: result.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -762,8 +764,8 @@ export function getSecp256k1EcdhPreset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "e5", source: aliceDerive.id, target: sharedA.id, animated: true },
-      { id: "e6", source: bobDerive.id, target: sharedB.id, animated: true },
+      { id: "e5", source: aliceDerive.id, target: sharedA.id, targetHandle: "data", animated: true },
+      { id: "e6", source: bobDerive.id, target: sharedB.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -807,8 +809,8 @@ export function getEd448Preset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "e6", source: sign.id, target: sigOut.id, animated: true },
-      { id: "e7", source: verify.id, target: result.id, animated: true },
+      { id: "e6", source: sign.id, target: sigOut.id, targetHandle: "data", animated: true },
+      { id: "e7", source: verify.id, target: result.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -873,8 +875,8 @@ export function getX448Preset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "x5", source: aliceX.id, target: sharedA.id, animated: true },
-      { id: "x6", source: bobX.id, target: sharedB.id, animated: true },
+      { id: "x5", source: aliceX.id, target: sharedA.id, targetHandle: "data", animated: true },
+      { id: "x6", source: bobX.id, target: sharedB.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -918,8 +920,8 @@ export function getBlsPreset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "b6", source: sign.id, target: sigOut.id, animated: true },
-      { id: "b7", source: verify.id, target: result.id, animated: true },
+      { id: "b6", source: sign.id, target: sigOut.id, targetHandle: "data", animated: true },
+      { id: "b7", source: verify.id, target: result.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -992,8 +994,8 @@ export function getDhPreset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "d5", source: aliceDerive.id, target: sharedA.id, animated: true },
-      { id: "d6", source: bobDerive.id, target: sharedB.id, animated: true },
+      { id: "d5", source: aliceDerive.id, target: sharedA.id, targetHandle: "data", animated: true },
+      { id: "d6", source: bobDerive.id, target: sharedB.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1022,8 +1024,8 @@ export function getFreqAnalysisPreset(): WorkflowSeed {
     edges: [
       { id: "f1", source: input.id, target: freq.id, targetHandle: "data", animated: true },
       { id: "f2", source: input.id, target: entropy.id, targetHandle: "data", animated: true },
-      { id: "f3", source: freq.id, target: out1.id, animated: true },
-      { id: "f4", source: entropy.id, target: out2.id, animated: true },
+      { id: "f3", source: freq.id, target: out1.id, targetHandle: "data", animated: true },
+      { id: "f4", source: entropy.id, target: out2.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1081,11 +1083,11 @@ export function getEcbDetectPreset(): WorkflowSeed {
       { id: "e1", source: input.id, target: ecbEnc.id, targetHandle: "data", animated: true },
       { id: "e2", source: key.id, target: ecbEnc.id, targetHandle: "key", animated: true },
       { id: "e3", source: ecbEnc.id, target: ecbDetect.id, targetHandle: "data", animated: true },
-      { id: "e4", source: ecbDetect.id, target: ecbResult.id, animated: true },
-      { id: "e5", source: ecbEnc.id, target: ecbCipherOut.id, animated: true },
+      { id: "e4", source: ecbDetect.id, target: ecbResult.id, targetHandle: "data", animated: true },
+      { id: "e5", source: ecbEnc.id, target: ecbCipherOut.id, targetHandle: "data", animated: true },
       { id: "e6", source: key.id, target: ecbDec.id, targetHandle: "key", animated: true },
       { id: "e7", source: ecbEnc.id, target: ecbDec.id, targetHandle: "data", animated: true },
-      { id: "e8", source: ecbDec.id, target: decOut.id, animated: true },
+      { id: "e8", source: ecbDec.id, target: decOut.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1122,8 +1124,8 @@ export function getShamirPreset(): WorkflowSeed {
         targetHandle: "shares",
         animated: true,
       },
-      { id: "sh3", source: join.id, target: out.id, animated: true },
-      { id: "sh4", source: split.id, target: sharesOut.id, sourceHandle: "shares", animated: true },
+      { id: "sh3", source: join.id, target: out.id, targetHandle: "data", animated: true },
+      { id: "sh4", source: split.id, target: sharesOut.id, sourceHandle: "shares", targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1155,7 +1157,7 @@ H2izKz/oiSZcnJIFWwx0lNSNbN8WunR/L+AjUIEmzoGLn3RDXzT6OxbnKgZvJ9wW
     nodes: [pemInput, parse, out],
     edges: [
       { id: "x1", source: pemInput.id, target: parse.id, targetHandle: "pem", animated: true },
-      { id: "x2", source: parse.id, target: out.id, animated: true },
+      { id: "x2", source: parse.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1195,7 +1197,7 @@ twIDAQAB
         targetHandle: "keyData",
         animated: true,
       },
-      { id: "j2", source: convert.id, target: out.id, animated: true },
+      { id: "j2", source: convert.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1244,7 +1246,7 @@ export function getTwofishPreset(): WorkflowSeed {
       { id: "t4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
       { id: "t5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
       { id: "t6", source: srcIv.id, target: dec.id, targetHandle: "iv", animated: true },
-      { id: "t7", source: dec.id, target: out.id, animated: true },
+      { id: "t7", source: dec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1293,7 +1295,7 @@ export function getBlowfishPreset(): WorkflowSeed {
       { id: "b4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
       { id: "b5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
       { id: "b6", source: srcIv.id, target: dec.id, targetHandle: "iv", animated: true },
-      { id: "b7", source: dec.id, target: out.id, animated: true },
+      { id: "b7", source: dec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1322,7 +1324,7 @@ export function getRc4Preset(): WorkflowSeed {
       { id: "r2", source: srcKey.id, target: enc.id, targetHandle: "key", animated: true },
       { id: "r3", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
       { id: "r4", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
-      { id: "r5", source: dec.id, target: out.id, animated: true },
+      { id: "r5", source: dec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1363,7 +1365,7 @@ export function getRabbitPreset(): WorkflowSeed {
       { id: "r4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
       { id: "r5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
       { id: "r6", source: srcIv.id, target: dec.id, targetHandle: "iv", animated: true },
-      { id: "r7", source: dec.id, target: out.id, animated: true },
+      { id: "r7", source: dec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1412,7 +1414,7 @@ export function getXSalsa20Preset(): WorkflowSeed {
       { id: "x4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
       { id: "x5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
       { id: "x6", source: srcNonce.id, target: dec.id, targetHandle: "iv", animated: true },
-      { id: "x7", source: dec.id, target: out.id, animated: true },
+      { id: "x7", source: dec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1457,7 +1459,7 @@ export function getSalsa20Preset(): WorkflowSeed {
       { id: "s4", source: enc.id, target: dec.id, targetHandle: "data", animated: true },
       { id: "s5", source: srcKey.id, target: dec.id, targetHandle: "key", animated: true },
       { id: "s6", source: srcNonce.id, target: dec.id, targetHandle: "iv", animated: true },
-      { id: "s7", source: dec.id, target: out.id, animated: true },
+      { id: "s7", source: dec.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1488,8 +1490,8 @@ export function getMerklePreset(): WorkflowSeed {
     nodes: [input, tree, rootOut, treeOut],
     edges: [
       { id: "m1", source: input.id, target: tree.id, targetHandle: "data", animated: true },
-      { id: "m2", source: tree.id, target: rootOut.id, sourceHandle: "root", animated: true },
-      { id: "m3", source: tree.id, target: treeOut.id, sourceHandle: "tree", animated: true },
+      { id: "m2", source: tree.id, target: rootOut.id, sourceHandle: "root", targetHandle: "data", animated: true },
+      { id: "m3", source: tree.id, target: treeOut.id, sourceHandle: "tree", targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1511,7 +1513,7 @@ export function getSshKeyPreset(): WorkflowSeed {
     nodes: [sshInput, parse, out],
     edges: [
       { id: "p1", source: sshInput.id, target: parse.id, targetHandle: "keyData", animated: true },
-      { id: "p2", source: parse.id, target: out.id, animated: true },
+      { id: "p2", source: parse.id, target: out.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1603,7 +1605,7 @@ export function getHybridEncryptionPreset(): WorkflowSeed {
         animated: true,
       },
 
-      { id: "h6", source: rsaEncKey.id, target: outEncKey.id, animated: true },
+      { id: "h6", source: rsaEncKey.id, target: outEncKey.id, targetHandle: "data", animated: true },
 
       {
         id: "h7",
@@ -1625,7 +1627,7 @@ export function getHybridEncryptionPreset(): WorkflowSeed {
       { id: "h10", source: rsaDecKey.id, target: aesDec.id, targetHandle: "key", animated: true },
       { id: "h11", source: aesIvGen.id, target: aesDec.id, targetHandle: "iv", animated: true },
 
-      { id: "h12", source: aesDec.id, target: outData.id, animated: true },
+      { id: "h12", source: aesDec.id, target: outData.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1763,13 +1765,13 @@ export function getHttpsHandshakePreset(): WorkflowSeed {
       { id: "t9", source: requestData.id, target: aesEnc.id, targetHandle: "data", animated: true },
       { id: "t10", source: iv.id, target: aesEnc.id, targetHandle: "iv", animated: true },
 
-      { id: "t11", source: aesEnc.id, target: outCipher.id, animated: true },
+      { id: "t11", source: aesEnc.id, target: outCipher.id, targetHandle: "data", animated: true },
 
       { id: "t12", source: serverHkdf.id, target: aesDec.id, targetHandle: "key", animated: true },
       { id: "t13", source: aesEnc.id, target: aesDec.id, targetHandle: "data", animated: true },
       { id: "t14", source: iv.id, target: aesDec.id, targetHandle: "iv", animated: true },
 
-      { id: "t15", source: aesDec.id, target: outData.id, animated: true },
+      { id: "t15", source: aesDec.id, target: outData.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -1839,7 +1841,7 @@ export function getRsaFullSuitePreset(): WorkflowSeed {
         targetHandle: "privateKey",
         animated: true,
       },
-      { id: "f5", source: rsaDec.id, target: outEnc.id, animated: true },
+      { id: "f5", source: rsaDec.id, target: outEnc.id, targetHandle: "data", animated: true },
 
       // Signature logic
       { id: "f6", source: input.id, target: rsaSign.id, targetHandle: "data", animated: true },
@@ -1867,7 +1869,7 @@ export function getRsaFullSuitePreset(): WorkflowSeed {
         targetHandle: "publicKey",
         animated: true,
       },
-      { id: "f11", source: rsaVerify.id, target: outSign.id, animated: true },
+      { id: "f11", source: rsaVerify.id, target: outSign.id, targetHandle: "data", animated: true },
     ],
   };
 }
@@ -2070,7 +2072,7 @@ export function getRncryptorDeepDivePreset(): WorkflowSeed {
       { id: "h2", source: hiPwd.id, target: hiEnc.id, targetHandle: "password", animated: true },
       { id: "h3", source: hiEnc.id, target: hiDec.id, targetHandle: "data", animated: true },
       { id: "h4", source: hiPwd.id, target: hiDec.id, targetHandle: "password", animated: true },
-      { id: "h5", source: hiDec.id, target: hiOut.id, animated: true },
+      { id: "h5", source: hiDec.id, target: hiOut.id, targetHandle: "data", animated: true },
       // Lo-Level Sender
       { id: "ls1", source: loPwd.id, target: kdfEncS.id, targetHandle: "password", animated: true },
       { id: "ls2", source: encSaltS.id, target: kdfEncS.id, targetHandle: "salt", animated: true },
@@ -2112,7 +2114,7 @@ export function getRncryptorDeepDivePreset(): WorkflowSeed {
         animated: true,
       },
       { id: "ls16", source: hmacS.id, target: joinFinal.id, targetHandle: "in_2", animated: true },
-      { id: "ls17", source: joinFinal.id, target: blobOut.id, animated: true },
+      { id: "ls17", source: joinFinal.id, target: blobOut.id, targetHandle: "data", animated: true },
       // Lo-Level Receiver
       {
         id: "lr1",
@@ -2181,7 +2183,7 @@ export function getRncryptorDeepDivePreset(): WorkflowSeed {
         animated: true,
       },
       { id: "lr13", source: kdfHmacR.id, target: hmacV.id, targetHandle: "key", animated: true },
-      { id: "lr14", source: hmacV.id, target: validOut.id, animated: true },
+      { id: "lr14", source: hmacV.id, target: validOut.id, targetHandle: "data", animated: true },
       { id: "lr15", source: sliceCT.id, target: aesD.id, targetHandle: "data", animated: true },
       { id: "lr16", source: kdfEncR.id, target: aesD.id, targetHandle: "key", animated: true },
       { id: "lr17", source: sliceIV.id, target: aesD.id, targetHandle: "iv", animated: true },

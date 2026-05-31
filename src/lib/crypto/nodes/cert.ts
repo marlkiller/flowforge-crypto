@@ -205,7 +205,11 @@ registerNodeDef("jwkConvert", {
     function getInputData(): { text?: string; bytes?: Uint8Array } {
       const dv = inputs["__raw"]?.["keyData"];
       if (dv) {
-        if (dv.value instanceof Uint8Array) return { bytes: dv.value };
+        if (dv.value instanceof Uint8Array) {
+          const str = bytesToUtf8(dv.value).trim();
+          if (str.startsWith("-----BEGIN ") || str.startsWith("{")) return { text: str };
+          return { bytes: dv.value };
+        }
         return { text: String(dv.value) };
       }
       const fieldStr = getField(node, "keyData", "");

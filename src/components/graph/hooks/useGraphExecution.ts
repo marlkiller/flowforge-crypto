@@ -179,18 +179,20 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
     const summary = {
       activeId,
       pluginUrls: graphStore.getAllPluginUrls(),
-      nodes: nodes.map((n) => {
-        const meta = NODE_KIND_META[n.data.kind];
-        const config: Record<string, any> = { k: n.data.kind, f: n.data.outputFormat };
-        if (meta?.inputs) {
-          for (const input of meta.inputs) {
-            if (input.type != null) {
-              config[input.id] = n.data[input.id];
+      nodes: [...nodes]
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((n) => {
+          const meta = NODE_KIND_META[n.data.kind];
+          const config: Record<string, any> = { k: n.data.kind, f: n.data.outputFormat };
+          if (meta?.inputs) {
+            for (const input of meta.inputs) {
+              if (input.type != null) {
+                config[input.id] = n.data[input.id];
+              }
             }
           }
-        }
-        return { id: n.id, c: config };
-      }),
+          return { id: n.id, c: config };
+        }),
       edges: edges.map((e) => ({
         s: e.source,
         t: e.target,
