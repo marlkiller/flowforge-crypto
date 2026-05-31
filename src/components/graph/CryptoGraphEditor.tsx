@@ -259,6 +259,7 @@ function InnerEditor() {
         ...edge,
         selected: isSelected,
         animated: !hasError,
+        zIndex: isSelected ? 100 : undefined,
         style: {
           ...edge.style,
           stroke: isSelected
