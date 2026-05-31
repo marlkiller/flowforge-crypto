@@ -17,7 +17,7 @@ import {
   type Node as RFNode,
   type Viewport,
 } from "@xyflow/react";
-import { toPng } from "html-to-image";
+import { toCanvas } from "html-to-image";
 import "@xyflow/react/dist/style.css";
 
 import { CryptoNode } from "./CryptoNode";
@@ -80,7 +80,7 @@ function InnerEditor() {
   const [edgeType, setEdgeType] = useState<"smoothstep" | "default">("smoothstep");
   const [screenshotFormat, setScreenshotFormat] = useState<"png" | "jpeg" | "webp">("png");
   const [showFormatPicker, setShowFormatPicker] = useState(false);
-  const [screenshotLoading, setScreenshotLoading] = useState(false);
+  const [isShutterActive, setIsShutterActive] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [rf, setRf] = useState<ReactFlowInstance | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -409,7 +409,7 @@ function InnerEditor() {
         <div className="flex-1 relative overflow-hidden">
           <div
             ref={wrapperRef}
-            className="absolute inset-0 z-0"
+            className={`absolute inset-0 z-0 ${isShutterActive ? "shutter-active" : ""}`}
             onDrop={interaction.onDrop}
             onDragOver={interaction.onDragOver}
           >
@@ -518,19 +518,15 @@ function InnerEditor() {
               >
                 <button
                   onClick={() => setShowFormatPicker((v) => !v)}
-                  disabled={nodes.length === 0 || screenshotLoading}
+                  disabled={nodes.length === 0}
                   className="flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none"
                   title={`Export screenshot (${screenshotFormat.toUpperCase()})`}
                   aria-label={`Export screenshot as ${screenshotFormat.toUpperCase()}`}
                 >
-                  {screenshotLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Camera className="w-4 h-4" />
-                  )}
+                  <Camera className="w-4 h-4" />
                 </button>
                 {showFormatPicker && (
-                  <div className="absolute top-full right-0 mt-1 flex flex-col rounded-md border bg-card shadow-md overflow-hidden">
+                  <div className="absolute top-full right-0 mt-1 flex flex-col rounded-md border bg-card shadow-md overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
                     {(["png", "jpeg", "webp"] as const).map((fmt) => (
                       <button
                         key={fmt}
@@ -538,53 +534,65 @@ function InnerEditor() {
                           setScreenshotFormat(fmt);
                           setShowFormatPicker(false);
                           if (!wrapperRef.current || !rf) return;
-                          setScreenshotLoading(true);
+
                           const renderer = wrapperRef.current.querySelector(
                             ".react-flow",
                           ) as HTMLElement | null;
-                          if (!renderer || !rf) {
-                            setScreenshotLoading(false);
-                            return;
-                          }
+                          if (!renderer) return;
 
-                          // Professional screenshot settings for React Flow
-                          const options = {
-                            backgroundColor:
-                              getComputedStyle(document.body).backgroundColor || "#09090b",
-                            pixelRatio: 3,
-                            skipFonts: false,
-                            style: {
-                              transform: "scale(1)",
-                            },
-                            // Exclude UI elements only
-                            filter: (node: HTMLElement) => {
-                              const cls = node.className || "";
-                              if (typeof cls !== "string") return true;
-                              return !["minimap", "controls", "panel", "attribution"].some((e) =>
-                                cls.includes(`react-flow__${e}`),
-                              );
-                            },
-                          };
+                          const capture = async () => {
+                            // 1. Shutter Flash (CSS GPU Animation)
+                            setIsShutterActive(true);
+                            // 2. Breath for 150ms to let animations start
+                            await new Promise((r) => setTimeout(r, 150));
 
-                          try {
-                            const dataUrl = await toPng(renderer, options);
-                            if (!dataUrl) return;
+                            const options = {
+                              backgroundColor:
+                                getComputedStyle(document.body).backgroundColor || "#09090b",
+                              pixelRatio: 4, // Ultra-HD resolution
+                              skipFonts: false,
+                              style: { transform: "scale(1)" },
+                              filter: (node: HTMLElement) => {
+                                const cls = node.className || "";
+                                if (typeof cls !== "string") return true;
+                                return !["minimap", "controls", "panel", "attribution"].some((e) =>
+                                  cls.includes(`react-flow__${e}`),
+                                );
+                              },
+                            };
+
+                            // Use toCanvas -> toBlob for better stability and performance at high pixelRatio
+                            const canvas = await toCanvas(renderer, options);
+                            const blob = await new Promise<Blob | null>((resolve) =>
+                              canvas.toBlob(
+                                resolve,
+                                `image/${fmt === "jpeg" ? "jpeg" : fmt}`,
+                                fmt === "png" ? undefined : 0.95,
+                              ),
+                            );
+
+                            if (!blob) throw new Error("Capture failed");
+                            const dataUrl = URL.createObjectURL(blob);
+
                             const a = document.createElement("a");
                             a.href = dataUrl;
                             a.download = `flowforge-crypto-${Date.now()}.${fmt}`;
                             a.click();
-                          } catch (e) {
-                            console.error("Screenshot failed:", e);
-                            toast.error(
-                              "Failed to generate screenshot. Please check console for details.",
-                            );
-                          } finally {
-                            setScreenshotLoading(false);
-                          }
+
+                            // Cleanup
+                            setTimeout(() => URL.revokeObjectURL(dataUrl), 2000);
+                            setIsShutterActive(false);
+                          };
+
+                          toast.promise(capture(), {
+                            loading: `Capturing ${fmt.toUpperCase()}...`,
+                            success: "Snapshot exported successfully!",
+                            error: "Capture failed. Try a different format.",
+                          });
                         }}
-                        className={`px-3 py-1.5 text-xs text-left whitespace-nowrap hover:bg-accent transition-all ${fmt === screenshotFormat ? "bg-accent font-medium" : ""}`}
+                        className={`px-3 py-1.5 text-[11px] text-left whitespace-nowrap hover:bg-accent transition-all ${fmt === screenshotFormat ? "bg-accent font-bold text-primary" : "text-muted-foreground"}`}
                       >
-                        {fmt === "png" ? "PNG" : fmt === "jpeg" ? "JPEG" : "WebP"}
+                        {fmt.toUpperCase()}
                       </button>
                     ))}
                   </div>
