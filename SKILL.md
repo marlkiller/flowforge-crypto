@@ -82,7 +82,7 @@ interface NodeKindMeta {
   description: string; // tooltip
   defaultOutput?: "utf8" | "hex" | "base64" | "pem" | "base32" | "base58";
   inputs?: NodeInputMeta[]; // all ports + form controls
-  outputs?: { id: string; label: string; visible?: (data) => boolean }[];
+  outputs?: { id: string; label: string; type?: DataType; visible?: (data) => boolean }[];
 }
 
 interface NodeInputMeta {
@@ -119,12 +119,29 @@ interface NodeInputMeta {
 ```typescript
 type NodeRunner = (
   node: GraphNode, // use getField(node, "fieldId") to read field values
-  inputs: Record<string, Uint8Array>, // keyed by input port id, empty array if not connected
+  inputs: Record<string, any>, // Values are auto-unwrapped to Uint8Array/string via Proxy
 ) =>
-  | Promise<Uint8Array | Record<string, Uint8Array>> // single output or named outputs
+  | Promise<DataValue | Record<string, DataValue> | Uint8Array | Record<string, Uint8Array>>
+  | DataValue
+  | Record<string, DataValue>
   | Uint8Array
-  | Record<string, Uint8Array>; // sync version also allowed
+  | Record<string, Uint8Array>;
 ```
+
+**Backward Compatibility**: The `inputs` object is a Proxy. Accessing `inputs["id"]` will return the raw `Uint8Array` (or string/boolean) value. To access the full container (e.g. to check the incoming type), use `inputs.__raw["id"]`.
+
+### Data Types & Port Styles
+
+Handles (ports) are styled based on the `DataType` defined in `acceptTypes` (inputs) or `type/outputFormat` (outputs).
+
+| Type | Color | Shape |
+| --- | --- | --- |
+| `raw` | Blue | Circle |
+| `utf8` / `string` | Green | Circle |
+| `hex` / `base64` | Yellow | Circle |
+| `cryptokey` | Fuchsia | Diamond |
+| `boolean` | Rose | Square |
+| `json` | Cyan | Circle |
 
 ### Utilities
 
