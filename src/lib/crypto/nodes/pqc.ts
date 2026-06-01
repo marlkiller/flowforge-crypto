@@ -283,14 +283,14 @@ registerNodeDef("slh_dsa_keygen", {
         id: "parameterSet",
         label: "Parameter Set",
         type: "select",
-        defaultValue: "SLH-DSA-SHAKE-128s",
+        defaultValue: "SLH-DSA-SHAKE-128f",
         options: Object.keys(SLHDSA_VARIANTS).map((k) => ({ label: k, value: k })),
         connectable: false,
       },
     ],
   },
   runner: async (node) => {
-    const variant = getField(node, "parameterSet", "SLH-DSA-SHAKE-128s");
+    const variant = getField(node, "parameterSet", "SLH-DSA-SHAKE-128f");
     const dsa = SLHDSA_VARIANTS[variant];
     if (!dsa) throw new Error(`Unknown SLH-DSA variant: ${variant}`);
     const keys = dsa.keygen();
@@ -312,14 +312,14 @@ registerNodeDef("slh_dsa_sign", {
         id: "parameterSet",
         label: "Parameter Set",
         type: "select",
-        defaultValue: "SLH-DSA-SHAKE-128s",
+        defaultValue: "SLH-DSA-SHAKE-128f",
         options: Object.keys(SLHDSA_VARIANTS).map((k) => ({ label: k, value: k })),
         connectable: false,
       },
     ],
   },
   runner: async (node, inputs) => {
-    const variant = getField(node, "parameterSet", "SLH-DSA-SHAKE-128s");
+    const variant = getField(node, "parameterSet", "SLH-DSA-SHAKE-128f");
     const dsa = SLHDSA_VARIANTS[variant];
     if (!dsa) throw new Error(`Unknown SLH-DSA variant: ${variant}`);
     const data = inputs["data"] ?? new Uint8Array(0);
@@ -345,14 +345,14 @@ registerNodeDef("slh_dsa_verify", {
         id: "parameterSet",
         label: "Parameter Set",
         type: "select",
-        defaultValue: "SLH-DSA-SHAKE-128s",
+        defaultValue: "SLH-DSA-SHAKE-128f",
         options: Object.keys(SLHDSA_VARIANTS).map((k) => ({ label: k, value: k })),
         connectable: false,
       },
     ],
   },
   runner: async (node, inputs) => {
-    const variant = getField(node, "parameterSet", "SLH-DSA-SHAKE-128s");
+    const variant = getField(node, "parameterSet", "SLH-DSA-SHAKE-128f");
     const dsa = SLHDSA_VARIANTS[variant];
     if (!dsa) throw new Error(`Unknown SLH-DSA variant: ${variant}`);
     const data = inputs["data"] ?? new Uint8Array(0);

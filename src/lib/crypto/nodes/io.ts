@@ -1,6 +1,7 @@
 import { registerNodeDef } from "../registry";
 import { getField, getNumberField, parseAs } from "../utils";
-import { utf8ToBytes, type DataFormat } from "../service";
+import { utf8ToBytes, bytesToUtf8 } from "../service";
+import type { DataFormat } from "../service";
 
 registerNodeDef("input", {
   meta: {
@@ -8,6 +9,7 @@ registerNodeDef("input", {
     label: "Input",
     category: "io",
     description: "Source — parses text as UTF-8 / HEX / Base64 / Bool.",
+    defaultOutput: "utf8",
     supportedFormats: ["utf8", "hex", "base64", "bool"],
     inputs: [
       {
@@ -125,6 +127,7 @@ registerNodeDef("output", {
     label: "Output",
     category: "io",
     description: "Sink — displays bytes in chosen format.",
+    defaultOutput: "utf8",
     supportedFormats: ["utf8", "hex", "base64", "bool"],
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
@@ -161,5 +164,69 @@ registerNodeDef("slice", {
     }
     const end = parseInt(endStr, 10);
     return data.slice(start, end);
+  },
+});
+
+registerNodeDef("template", {
+  meta: {
+    kind: "template",
+    label: "Template",
+    category: "io",
+    description: "Format a string by replacing {in_1}, {in_2}, ... with wired inputs.",
+    defaultOutput: "utf8",
+    inputs: [
+      { id: "template", label: "Template", type: "textarea", defaultValue: "", connectable: false },
+      { id: "count", label: "Inputs", type: "number", defaultValue: 2, connectable: false },
+    ],
+  },
+  runner: (node, inputs) => {
+    const template = getField(node, "template", "");
+    const count = getNumberField(node, "count", 2);
+    let result = template;
+    for (let i = 1; i <= count; i++) {
+      const key = `in_${i}`;
+      const val = inputs[key];
+      if (val && val instanceof Uint8Array && val.length > 0) {
+        result = result.replace(new RegExp(`\\{${key}\\}`, "g"), bytesToUtf8(val));
+      }
+    }
+    return utf8ToBytes(result);
+  },
+});
+
+registerNodeDef("timestamp", {
+  meta: {
+    kind: "timestamp",
+    label: "Timestamp",
+    category: "io",
+    description: "Generate current timestamp as ISO 8601 string or Unix epoch seconds.",
+    defaultOutput: "utf8",
+    inputs: [
+      {
+        id: "format",
+        label: "Format",
+        type: "select",
+        defaultValue: "iso",
+        options: [
+          { label: "ISO 8601", value: "iso" },
+          { label: "Unix Seconds", value: "unix" },
+          { label: "Unix Milliseconds", value: "unixMs" },
+        ],
+        connectable: false,
+      },
+    ],
+  },
+  runner: (node) => {
+    const format = getField(node, "format", "iso");
+    const now = Date.now();
+    switch (format) {
+      case "unix":
+        return utf8ToBytes(String(Math.floor(now / 1000)));
+      case "unixMs":
+        return utf8ToBytes(String(now));
+      case "iso":
+      default:
+        return utf8ToBytes(new Date(now).toISOString());
+    }
   },
 });

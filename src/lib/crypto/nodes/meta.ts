@@ -519,11 +519,23 @@ export const BLAKE2B_META = makeHashMeta(
   "BLAKE2B",
   "BLAKE2b hash (optimized for 64-bit platforms).",
 );
-export const BLAKE2S_META = makeHashMeta(
-  "blake2s",
-  "BLAKE2S",
-  "BLAKE2s hash (optimized for 8/32-bit platforms).",
-);
+export const BLAKE2S_META: NodeKindMeta = {
+  kind: "blake2s",
+  label: "BLAKE2S",
+  category: "hash",
+  description: "BLAKE2s hash (optimized for 8/32-bit platforms). Supports variable output length.",
+  defaultOutput: "hex",
+  inputs: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    {
+      id: "outputLength",
+      label: "Output Length",
+      type: "number",
+      defaultValue: 32,
+      connectable: false,
+    },
+  ],
+};
 export const BLAKE3_META = makeHashMeta(
   "blake3",
   "BLAKE3",

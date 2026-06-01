@@ -49,6 +49,7 @@ import { ExecutionStatus } from "./parts/ExecutionStatus";
 import { WorkflowTab } from "./parts/WorkflowTab";
 import { GraphDialogs } from "./parts/GraphDialogs";
 import { Sidebar } from "./parts/Sidebar";
+import { PromptDialog } from "./parts/PromptDialog";
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
@@ -88,6 +89,7 @@ function InnerEditor() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
+  const [promptDialogOpen, setPromptDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -412,6 +414,7 @@ function InnerEditor() {
           leftPanelOpen={leftPanelOpen}
           setLeftPanelOpen={setLeftPanelOpen}
           setPluginDialogOpen={setPluginDialogOpen}
+          setPromptDialogOpen={setPromptDialogOpen}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           collapsedCats={collapsedCats}
@@ -440,6 +443,7 @@ function InnerEditor() {
               leftPanelOpen={true}
               setLeftPanelOpen={() => {}}
               setPluginDialogOpen={setPluginDialogOpen}
+              setPromptDialogOpen={setPromptDialogOpen}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               collapsedCats={collapsedCats}
@@ -989,6 +993,7 @@ function InnerEditor() {
       />
 
       <PluginManager open={pluginDialogOpen} onOpenChange={setPluginDialogOpen} />
+      <PromptDialog open={promptDialogOpen} onOpenChange={setPromptDialogOpen} />
     </div>
   );
 }

@@ -59,9 +59,10 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
   let dynamicInputs = meta?.inputs || [];
   const dynamicOutputs = meta?.outputs || [];
 
-  if (d.kind === "join") {
+  if (d.kind === "join" || d.kind === "template") {
     const count = parseInt((d["count"] as string) || "2", 10);
-    const staticInputs = dynamicInputs.filter((i) => i.id === "count" || i.id === "separator");
+    const staticIds = d.kind === "join" ? ["count", "separator"] : ["count", "template"];
+    const staticInputs = dynamicInputs.filter((i) => staticIds.includes(i.id));
     dynamicInputs = [...staticInputs];
     for (let i = 1; i <= count; i++) {
       dynamicInputs.push({ id: `in_${i}`, label: `Input ${i}`, connectable: true });
@@ -135,7 +136,7 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
           );
         })}
 
-        {d.kind === "file" && d.fileName && (
+        {d.kind === "file" && Boolean(d.fileName) && (
           <div className="flex items-center gap-2 p-2 rounded-lg border border-border bg-background shadow-sm text-foreground">
             <FileIcon className="w-4 h-4 text-primary shrink-0" />
             <span className="text-[10px] font-medium truncate">{d["fileName"] as string}</span>

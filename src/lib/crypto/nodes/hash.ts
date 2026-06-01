@@ -24,15 +24,28 @@ import {
   SHA0_META,
 } from "./meta";
 
-function makeHashNode(algo: string, meta: NodeKindMeta): NodeDef {
+function makeHashNode(
+  algo: string,
+  meta: NodeKindMeta,
+  getOptions?: (node: GraphNode) => Record<string, unknown>,
+): NodeDef {
   return {
     meta,
-    runner: (_: GraphNode, inputs: Record<string, Uint8Array>) => {
+    runner: (node: GraphNode, inputs: Record<string, Uint8Array>) => {
       const provider = getProvider(algo) as HashProvider;
       if (!provider) throw new Error(`Hash provider for ${algo} not found`);
-      return provider.digest(inputs["data"] ?? new Uint8Array(0));
+      const opts = getOptions?.(node);
+      return opts
+        ? provider.digest(inputs["data"] ?? new Uint8Array(0), opts)
+        : provider.digest(inputs["data"] ?? new Uint8Array(0));
     },
   };
+}
+
+function blake2sOptions(node: GraphNode): Record<string, unknown> {
+  const val = node.data["outputLength"];
+  const dkLen = typeof val === "number" ? val : parseInt(String(val ?? "32"), 10);
+  return { dkLen: isNaN(dkLen) ? 32 : dkLen };
 }
 
 registerNodeDef("sha1", makeHashNode("SHA-1", SHA1_META));
@@ -47,7 +60,7 @@ registerNodeDef("sha3384", makeHashNode("SHA3-384", SHA3384_META));
 registerNodeDef("sha3512", makeHashNode("SHA3-512", SHA3512_META));
 registerNodeDef("keccak256", makeHashNode("Keccak-256", KECCAK256_META));
 registerNodeDef("blake2b", makeHashNode("BLAKE2b", BLAKE2B_META));
-registerNodeDef("blake2s", makeHashNode("BLAKE2s", BLAKE2S_META));
+registerNodeDef("blake2s", makeHashNode("BLAKE2s", BLAKE2S_META, blake2sOptions));
 registerNodeDef("blake3", makeHashNode("BLAKE3", BLAKE3_META));
 registerNodeDef("ripemd160", makeHashNode("RIPEMD-160", RIPEMD160_META));
 registerNodeDef("shake128", makeHashNode("SHAKE128", SHAKE128_META));

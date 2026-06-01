@@ -33,6 +33,7 @@ registerNodeDef("base64", {
     label: "Base64",
     category: "encoding",
     description: "Base64 encode / decode.",
+    defaultOutput: "utf8",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       ...baseEncodingFields,
@@ -52,6 +53,7 @@ registerNodeDef("hex", {
     label: "Hex",
     category: "encoding",
     description: "Hex encode / decode.",
+    defaultOutput: "utf8",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       ...baseEncodingFields,
@@ -71,6 +73,7 @@ registerNodeDef("url", {
     label: "URL",
     category: "encoding",
     description: "URL component encode / decode.",
+    defaultOutput: "utf8",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       ...baseEncodingFields,
@@ -93,6 +96,7 @@ registerNodeDef("base32", {
     label: "Base32",
     category: "encoding",
     description: "Base32 encode / decode (RFC 4648).",
+    defaultOutput: "utf8",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       ...baseEncodingFields,
@@ -112,6 +116,7 @@ registerNodeDef("base58", {
     label: "Base58",
     category: "encoding",
     description: "Base58 encode / decode (Bitcoin alphabet).",
+    defaultOutput: "utf8",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       ...baseEncodingFields,

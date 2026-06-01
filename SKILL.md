@@ -68,18 +68,7 @@ The `meta: NodeKindMeta` object defines what appears in the UI. There is no sepa
 interface NodeKindMeta {
   kind: string; // unique id, e.g. "aes", "sha256"
   label: string; // display name
-  category:
-    | "cipher"
-    | "hash"
-    | "io"
-    | "string"
-    | "encoding"
-    | "asymmetric"
-    | "mac"
-    | "kdf"
-    | "entropy"
-    | "protocol"
-    | "legacy";
+  category: string; // see CATEGORY_META in registry.ts — actual values: io, ui, string, encoding, hash, cipher, asymmetric, mac, kdf, entropy, protocol, legacy, pqc, analysis
   description: string; // tooltip
   defaultOutput?: "utf8" | "hex" | "base64" | "pem" | "base32" | "base58";
   inputs?: NodeInputMeta[]; // all ports + form controls
@@ -128,6 +117,8 @@ type NodeRunner = (
   | Uint8Array
   | Record<string, Uint8Array>;
 ```
+
+Visual-only nodes (note, group) can use `() => ({})` as a no-op runner — they produce no output.
 
 **Backward Compatibility**: The `inputs` object is a Proxy. Accessing `inputs["id"]` will return the raw `Uint8Array` (or string/bool) value. To access the full container (e.g. to check the incoming type), use `inputs.__raw["id"]`.
 

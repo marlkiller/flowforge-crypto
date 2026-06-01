@@ -23,6 +23,7 @@ import {
   Archive,
   GitBranch,
   Layers,
+  FileText,
 } from "lucide-react";
 import { getActiveCategories, CATEGORY_META, NODE_KIND_META } from "@/lib/crypto/registry";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -132,6 +133,7 @@ interface SidebarProps {
   leftPanelOpen: boolean;
   setLeftPanelOpen: (open: boolean) => void;
   setPluginDialogOpen: (open: boolean) => void;
+  setPromptDialogOpen: (open: boolean) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   collapsedCats: Set<string>;
@@ -146,6 +148,7 @@ export function Sidebar({
   leftPanelOpen,
   setLeftPanelOpen,
   setPluginDialogOpen,
+  setPromptDialogOpen,
   searchQuery,
   setSearchQuery,
   collapsedCats,
@@ -296,6 +299,13 @@ export function Sidebar({
             </div>
             <div className="flex gap-1 justify-center">
               <TemplateMenuButton />
+              <button
+                onClick={() => setPromptDialogOpen(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-accent text-[9px] font-bold uppercase tracking-wider transition-all"
+                title="Generate LLM Prompt"
+              >
+                <FileText className="w-3 h-3" /> Prompt
+              </button>
               <button
                 onClick={() => graphStore.setActiveGraph({ nodes: [], edges: [] })}
                 className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-destructive/5 hover:border-destructive/30 text-[9px] font-bold uppercase tracking-wider transition-all"

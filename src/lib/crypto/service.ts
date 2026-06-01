@@ -136,7 +136,7 @@ export function parseBytes(text: string, fmt: DataFormat): any {
 export interface HashProvider {
   type: "hash";
   name: string;
-  digest(data: Uint8Array): Promise<Uint8Array>;
+  digest(data: Uint8Array, options?: Record<string, unknown>): Promise<Uint8Array>;
 }
 
 export interface CipherProvider {

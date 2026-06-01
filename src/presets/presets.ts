@@ -615,17 +615,17 @@ export function getSlhDsaPreset(): WorkflowSeed {
   const keyGen = makeNode(
     "slh_dsa_keygen",
     { x: 50, y: 50 },
-    { parameterSet: "SLH-DSA-SHAKE-128s", label: "SLH-DSA Key Gen" },
+    { parameterSet: "SLH-DSA-SHAKE-128f", label: "SLH-DSA Key Gen" },
   );
   const sign = makeNode(
     "slh_dsa_sign",
     { x: 450, y: 50 },
-    { parameterSet: "SLH-DSA-SHAKE-128s", label: "SLH-DSA Sign" },
+    { parameterSet: "SLH-DSA-SHAKE-128f", label: "SLH-DSA Sign" },
   );
   const verify = makeNode(
     "slh_dsa_verify",
     { x: 850, y: 50 },
-    { parameterSet: "SLH-DSA-SHAKE-128s", label: "SLH-DSA Verify" },
+    { parameterSet: "SLH-DSA-SHAKE-128f", label: "SLH-DSA Verify" },
   );
   const sigOut = makeNode(
     "output",
