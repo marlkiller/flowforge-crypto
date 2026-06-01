@@ -1,4 +1,4 @@
-import type { NodeDef, NodeKindMeta } from "./types";
+import type { NodeCategory, NodeDef, NodeKindMeta } from "./types";
 import type { DataFormat } from "./service";
 
 // ─── Live Registry ─────────────────────────────────────────────
@@ -109,6 +109,14 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     dot: "bg-orange-500",
     color: "#f97316",
   },
+  checksum: {
+    label: "Checksums",
+    icon: "Hash",
+    accent: "text-yellow-300",
+    chip: "bg-yellow-500/15 text-yellow-300 border-yellow-500/40",
+    dot: "bg-yellow-400",
+    color: "#facc15",
+  },
   hash: {
     label: "Hash",
     icon: "Hash",
@@ -125,15 +133,15 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     dot: "bg-rose-400",
     color: "#fb7185",
   },
-  pki: {
-    label: "PKI & Encrypt",
+  "public-key": {
+    label: "Public-Key",
     icon: "FileKey",
     accent: "text-indigo-300",
     chip: "bg-indigo-500/15 text-indigo-300 border-indigo-500/40",
     dot: "bg-indigo-400",
     color: "#818cf8",
   },
-  sign: {
+  signature: {
     label: "Signatures",
     icon: "PenTool",
     accent: "text-violet-300",
@@ -141,7 +149,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     dot: "bg-violet-400",
     color: "#a78bfa",
   },
-  kex: {
+  "key-exchange": {
     label: "Key Exchange",
     icon: "ArrowRightLeft",
     accent: "text-fuchsia-300",
@@ -181,6 +189,22 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     dot: "bg-blue-400",
     color: "#60a5fa",
   },
+  "secret-sharing": {
+    label: "Secret Sharing",
+    icon: "Split",
+    accent: "text-slate-300",
+    chip: "bg-slate-500/15 text-slate-300 border-slate-500/40",
+    dot: "bg-slate-400",
+    color: "#94a3b8",
+  },
+  certificate: {
+    label: "Certificates",
+    icon: "BadgeCheck",
+    accent: "text-green-300",
+    chip: "bg-green-500/15 text-green-300 border-green-500/40",
+    dot: "bg-green-400",
+    color: "#4ade80",
+  },
   pqc: {
     label: "Post-Quantum",
     icon: "Atom",
@@ -207,22 +231,46 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
   },
 };
 
+export const SECURITY_META: Record<
+  NonNullable<NodeKindMeta["security"]>,
+  { label: string; className: string; title: string }
+> = {
+  caution: {
+    label: "Caution",
+    className: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+    title: "Use with care; review parameters before production use.",
+  },
+  deprecated: {
+    label: "Deprecated",
+    className: "border-orange-500/40 bg-orange-500/10 text-orange-300",
+    title: "Deprecated for modern security-sensitive use.",
+  },
+  insecure: {
+    label: "Weak",
+    className: "border-destructive/50 bg-destructive/10 text-destructive",
+    title: "Cryptographically weak or unsafe for production security.",
+  },
+};
+
 export function getActiveCategories(): string[] {
   const cats = new Set(Object.values(NODE_KIND_META).map((m) => m.category));
-  const order = [
+  const order: NodeCategory[] = [
     "io",
     "ui",
     "data",
     "encoding",
     "format",
+    "checksum",
     "hash",
     "cipher",
-    "pki",
-    "sign",
-    "kex",
+    "public-key",
+    "signature",
+    "key-exchange",
     "mac",
     "kdf",
     "protocol",
+    "secret-sharing",
+    "certificate",
     "entropy",
     "analysis",
     "pqc",

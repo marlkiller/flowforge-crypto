@@ -24,7 +24,12 @@ import {
   GitBranch,
   Layers,
 } from "lucide-react";
-import { getActiveCategories, CATEGORY_META, NODE_KIND_META } from "@/lib/crypto/registry";
+import {
+  getActiveCategories,
+  CATEGORY_META,
+  NODE_KIND_META,
+  SECURITY_META,
+} from "@/lib/crypto/registry";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CategoryIcon } from "./CategoryIcon";
 import { graphStore } from "../store";
@@ -251,20 +256,30 @@ export function Sidebar({
                   </button>
                   {!isCatCollapsed && (
                     <div className="flex flex-col gap-0.5 ml-3.5 border-l border-border/50 pl-3 my-1">
-                      {kinds.map((k) => (
-                        <div
-                          key={k.kind}
-                          draggable
-                          onDragStart={(e) => onDragStart(e, k.kind)}
-                          title={k.description}
-                          className="group/item flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-accent/80 cursor-grab active:cursor-grabbing text-[11px] transition-all"
-                        >
-                          <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 group-hover/item:text-muted-foreground/80 transition-colors" />
-                          <span className="font-medium text-muted-foreground group-hover/item:text-foreground transition-colors">
-                            {k.label}
-                          </span>
-                        </div>
-                      ))}
+                      {kinds.map((k) => {
+                        const security = k.security ? SECURITY_META[k.security] : null;
+                        return (
+                          <div
+                            key={k.kind}
+                            draggable
+                            onDragStart={(e) => onDragStart(e, k.kind)}
+                            title={security ? `${k.description} ${security.title}` : k.description}
+                            className="group/item flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-accent/80 cursor-grab active:cursor-grabbing text-[11px] transition-all"
+                          >
+                            <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 group-hover/item:text-muted-foreground/80 transition-colors shrink-0" />
+                            <span className="font-medium text-muted-foreground group-hover/item:text-foreground transition-colors truncate min-w-0">
+                              {k.label}
+                            </span>
+                            {security && (
+                              <span
+                                className={`ml-auto shrink-0 rounded border px-1 py-0 text-[8px] font-bold uppercase leading-3 ${security.className}`}
+                              >
+                                {security.label}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

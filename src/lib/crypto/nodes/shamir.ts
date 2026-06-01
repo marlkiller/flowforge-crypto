@@ -72,7 +72,7 @@ registerNodeDef("shamirSplit", {
   meta: {
     kind: "shamirSplit",
     label: "Shamir Split",
-    category: "protocol",
+    category: "secret-sharing",
     description: "Split a secret into shares using Shamir's Secret Sharing over GF(257).",
     defaultOutput: "utf8",
     outputs: [{ id: "shares", label: "All Shares (JSON)" }],
@@ -124,7 +124,7 @@ registerNodeDef("shamirJoin", {
   meta: {
     kind: "shamirJoin",
     label: "Shamir Join",
-    category: "protocol",
+    category: "secret-sharing",
     description: "Reconstruct a secret from Shamir shares (JSON format).",
     defaultOutput: "utf8",
     inputs: [

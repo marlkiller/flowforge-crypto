@@ -23,7 +23,7 @@ export const nodeDef = {
     // Change this ID to create a new type of node
     kind: "my_custom_node", 
     label: "My Custom Node",
-    category: "string",
+    category: "data",
     description: "A node created in the browser",
     inputs: [{ id: "data", label: "Input" }],
   },

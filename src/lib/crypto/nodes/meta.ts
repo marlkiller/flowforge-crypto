@@ -4,7 +4,7 @@ import type { DataFormat } from "../service";
 export const RSA_KEYGEN_META: NodeKindMeta = {
   kind: "rsa_keygen",
   label: "RSA Key Gen",
-  category: "pki",
+  category: "public-key",
   description: "Generate an RSA key pair.",
   defaultOutput: "pem",
   supportedFormats: ["pem", "base64", "hex", "utf8"],
@@ -56,7 +56,7 @@ export const RSA_KEYGEN_META: NodeKindMeta = {
 export const RSA_META: NodeKindMeta = {
   kind: "rsa",
   label: "RSA",
-  category: "pki",
+  category: "public-key",
   description: "RSA encrypt/decrypt. Supports RSA-OAEP, RSAES-PKCS1-V1_5, RAW.",
   defaultOutput: "base64",
   inputs: [
@@ -122,7 +122,7 @@ export const RSA_META: NodeKindMeta = {
 export const RSA_SIGN_META: NodeKindMeta = {
   kind: "rsa_sign",
   label: "RSA Sign",
-  category: "sign",
+  category: "signature",
   description: "Digital signature generation using a private key.",
   defaultOutput: "base64",
   inputs: [
@@ -165,7 +165,7 @@ export const RSA_SIGN_META: NodeKindMeta = {
 export const RSA_VERIFY_META: NodeKindMeta = {
   kind: "rsa_verify",
   label: "RSA Verify",
-  category: "sign",
+  category: "signature",
   description: "Digital signature verification using a public key.",
   defaultOutput: "utf8",
   supportedFormats: ["utf8", "bool"],
@@ -215,7 +215,7 @@ export const RSA_VERIFY_META: NodeKindMeta = {
 export const SM2_KEYGEN_META: NodeKindMeta = {
   kind: "sm2_keygen",
   label: "SM2 Key Gen",
-  category: "pki",
+  category: "public-key",
   description:
     "Generate an SM2 key pair (Chinese national elliptic curve standard, GB/T 32918-2016).",
   defaultOutput: "hex",
@@ -228,7 +228,7 @@ export const SM2_KEYGEN_META: NodeKindMeta = {
 export const SM2_SIGN_META: NodeKindMeta = {
   kind: "sm2_sign",
   label: "SM2 Sign",
-  category: "sign",
+  category: "signature",
   description: "Sign data using an SM2 private key (SM2 signature with SM3 hash).",
   defaultOutput: "hex",
   inputs: [
@@ -247,7 +247,7 @@ export const SM2_SIGN_META: NodeKindMeta = {
 export const SM2_VERIFY_META: NodeKindMeta = {
   kind: "sm2_verify",
   label: "SM2 Verify",
-  category: "sign",
+  category: "signature",
   description: "Verify an SM2 signature using an SM2 public key.",
   defaultOutput: "utf8",
   supportedFormats: ["utf8", "hex", "base64", "bool"],
@@ -271,7 +271,7 @@ export const SM2_VERIFY_META: NodeKindMeta = {
 export const SM2_ENCRYPT_META: NodeKindMeta = {
   kind: "sm2_encrypt",
   label: "SM2 Encrypt",
-  category: "pki",
+  category: "public-key",
   description: "Encrypt data using an SM2 public key.",
   defaultOutput: "hex",
   inputs: [
@@ -283,7 +283,7 @@ export const SM2_ENCRYPT_META: NodeKindMeta = {
 export const SM2_DECRYPT_META: NodeKindMeta = {
   kind: "sm2_decrypt",
   label: "SM2 Decrypt",
-  category: "pki",
+  category: "public-key",
   description: "Decrypt data using an SM2 private key.",
   defaultOutput: "utf8",
   inputs: [
@@ -480,12 +480,18 @@ export const BCRYPT_META: NodeKindMeta = {
   ],
 };
 
-function makeHashMeta(kind: string, label: string, description: string): NodeKindMeta {
+function makeHashMeta(
+  kind: string,
+  label: string,
+  description: string,
+  security?: NodeKindMeta["security"],
+): NodeKindMeta {
   return {
     kind,
     label,
     category: "hash",
     description,
+    security,
     defaultOutput: "hex" as DataFormat,
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   };
@@ -501,11 +507,21 @@ export const SHA3224_META = makeHashMeta(
   "SHA3-224",
   "SHA3-224 digest (Keccak-based, 224-bit output).",
 );
-export const SHA1_META = makeHashMeta("sha1", "SHA-1", "SHA-1 digest.");
+export const SHA1_META = makeHashMeta(
+  "sha1",
+  "SHA-1",
+  "SHA-1 digest. Deprecated for collision-resistant use.",
+  "deprecated",
+);
 export const SHA256_META = makeHashMeta("sha256", "SHA-256", "SHA-256 digest.");
 export const SHA384_META = makeHashMeta("sha384", "SHA-384", "SHA-384 digest.");
 export const SHA512_META = makeHashMeta("sha512", "SHA-512", "SHA-512 digest.");
-export const MD5_META = makeHashMeta("md5", "MD5", "Legacy MD5 digest.");
+export const MD5_META = makeHashMeta(
+  "md5",
+  "MD5",
+  "MD5 digest. Cryptographically broken for collision-resistant use.",
+  "insecure",
+);
 export const SHA3256_META = makeHashMeta("sha3256", "SHA3-256", "SHA3-256 digest.");
 export const SHA3384_META = makeHashMeta("sha3384", "SHA3-384", "SHA3-384 digest.");
 export const SHA3512_META = makeHashMeta("sha3512", "SHA3-512", "SHA3-512 digest.");
@@ -558,12 +574,17 @@ export const WHIRLPOOL_META = makeHashMeta(
   "Whirlpool",
   "Whirlpool cryptographic hash (ISO/IEC 10118-3).",
 );
-export const SHA0_META = makeHashMeta("sha0", "SHA-0", "Legacy SHA-0 hash function.");
+export const SHA0_META = makeHashMeta(
+  "sha0",
+  "SHA-0",
+  "SHA-0 hash function. Cryptographically broken.",
+  "insecure",
+);
 
 export const EC_KEYGEN_META: NodeKindMeta = {
   kind: "ec_keygen",
   label: "EC Key Gen",
-  category: "pki",
+  category: "public-key",
   description: "Generate an Elliptic Curve key pair.",
   defaultOutput: "pem",
   outputs: [
@@ -600,7 +621,7 @@ export const EC_KEYGEN_META: NodeKindMeta = {
 export const ECDSA_SIGN_META: NodeKindMeta = {
   kind: "ecdsa_sign",
   label: "ECDSA Sign",
-  category: "sign",
+  category: "signature",
   description: "Sign data using an ECDSA private key.",
   defaultOutput: "base64",
   inputs: [
@@ -641,7 +662,7 @@ export const ECDSA_SIGN_META: NodeKindMeta = {
 export const ECDSA_VERIFY_META: NodeKindMeta = {
   kind: "ecdsa_verify",
   label: "ECDSA Verify",
-  category: "sign",
+  category: "signature",
   description: "Verify data signature using an ECDSA public key.",
   defaultOutput: "utf8",
   supportedFormats: ["utf8", "bool"],
@@ -689,7 +710,7 @@ export const ECDSA_VERIFY_META: NodeKindMeta = {
 export const ECDH_META: NodeKindMeta = {
   kind: "ecdh",
   label: "ECDH Derive",
-  category: "kex",
+  category: "key-exchange",
   description: "Derive bits using ECDH (Elliptic Curve Diffie-Hellman).",
   defaultOutput: "hex",
   inputs: [

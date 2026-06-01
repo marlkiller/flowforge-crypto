@@ -1,7 +1,26 @@
 import type { Edge, Node } from "@xyflow/react";
 import type { DataFormat } from "../service";
 
-export type NodeCategory = string;
+export type NodeCategory =
+  | "io"
+  | "ui"
+  | "data"
+  | "encoding"
+  | "format"
+  | "checksum"
+  | "hash"
+  | "cipher"
+  | "public-key"
+  | "signature"
+  | "key-exchange"
+  | "mac"
+  | "kdf"
+  | "entropy"
+  | "protocol"
+  | "secret-sharing"
+  | "certificate"
+  | "pqc"
+  | "analysis";
 
 export type NodeKind = string;
 
@@ -33,6 +52,7 @@ export interface NodeKindMeta {
   label: string;
   category: NodeCategory;
   description: string;
+  security?: "deprecated" | "insecure" | "caution";
   defaultOutput?: DataFormat;
   supportedFormats?: DataFormat[];
   inputs?: NodeInputMeta[];

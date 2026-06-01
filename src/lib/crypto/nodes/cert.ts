@@ -7,7 +7,7 @@ registerNodeDef("x509Parse", {
   meta: {
     kind: "x509Parse",
     label: "X.509 Parse",
-    category: "protocol",
+    category: "certificate",
     description: "Parse an X.509 certificate in PEM format and display its fields.",
     defaultOutput: "utf8",
     inputs: [
@@ -347,7 +347,7 @@ registerNodeDef("sshKeyParse", {
   meta: {
     kind: "sshKeyParse",
     label: "SSH Key Parse",
-    category: "protocol",
+    category: "format",
     description: "Parse an SSH public key (authorized_keys format) and display its details.",
     defaultOutput: "utf8",
     inputs: [

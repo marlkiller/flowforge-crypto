@@ -8,7 +8,7 @@ registerNodeDef("ed_keygen", {
   meta: {
     kind: "ed_keygen",
     label: "Ed25519 Key Gen",
-    category: "pki",
+    category: "public-key",
     description: "Generate an Ed25519 key pair (modern Edwards-curve DSA).",
     defaultOutput: "pem",
     outputs: [
@@ -27,7 +27,7 @@ registerNodeDef("ed_sign", {
   meta: {
     kind: "ed_sign",
     label: "Ed25519 Sign",
-    category: "sign",
+    category: "signature",
     description: "Sign data using an Ed25519 private key.",
     defaultOutput: "base64",
     inputs: [
@@ -52,7 +52,7 @@ registerNodeDef("ed_verify", {
   meta: {
     kind: "ed_verify",
     label: "Ed25519 Verify",
-    category: "sign",
+    category: "signature",
     description: "Verify data signature using an Ed25519 public key.",
     defaultOutput: "utf8",
     supportedFormats: ["utf8", "bool"],
@@ -88,7 +88,7 @@ registerNodeDef("x25519_derive", {
   meta: {
     kind: "x25519_derive",
     label: "X25519 Derive",
-    category: "kex",
+    category: "key-exchange",
     description: "Derive shared secret using X25519 Diffie-Hellman key agreement.",
     defaultOutput: "hex",
     inputs: [

@@ -11,7 +11,6 @@ Visual crypto pipeline editor built with TanStack Start + React 19 + React Flow 
 | `npm run lint`        | ESLint                                              |
 | `npm run format`      | Prettier                                            |
 | `npm run build`       | Production build                                    |
-| `npm run sync-prompt` | Regenerate WORKFLOW_GEN_PROMPT.md from source nodes |
 
 ## Quick Start — Add a New Node
 
@@ -23,7 +22,7 @@ registerNodeDef("rot13", {
   meta: {
     kind: "rot13",
     label: "ROT13",
-    category: "string",
+    category: "data",
     description: "Apply ROT13 substitution.",
     defaultOutput: "utf8",
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
@@ -68,7 +67,7 @@ The `meta: NodeKindMeta` object defines what appears in the UI. There is no sepa
 interface NodeKindMeta {
   kind: string; // unique id, e.g. "aes", "sha256"
   label: string; // display name
-  category: string; // see CATEGORY_META in registry.ts — actual values: io, ui, string, encoding, hash, cipher, asymmetric, mac, kdf, entropy, protocol, legacy, pqc, analysis
+  category: string; // see CATEGORY_META in registry.ts — actual values: io, ui, data, encoding, format, checksum, hash, cipher, public-key, signature, key-exchange, mac, kdf, entropy, protocol, secret-sharing, certificate, pqc, analysis
   description: string; // tooltip
   defaultOutput?: "utf8" | "hex" | "base64" | "pem" | "base32" | "base58";
   inputs?: NodeInputMeta[]; // all ports + form controls
@@ -183,7 +182,7 @@ registerNodeDef("xor", {
   meta: {
     kind: "xor",
     label: "XOR",
-    category: "string",
+    category: "analysis",
     description: "Byte-wise XOR of two inputs.",
     defaultOutput: "hex",
     inputs: [

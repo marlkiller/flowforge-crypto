@@ -1,5 +1,5 @@
 import { Handle, Position, useNodeConnections, type NodeProps } from "@xyflow/react";
-import { NODE_KIND_META, CATEGORY_META } from "@/lib/crypto/registry";
+import { NODE_KIND_META, CATEGORY_META, SECURITY_META } from "@/lib/crypto/registry";
 import type { NodeData, NodeInputMeta } from "@/lib/crypto/types";
 import { formatAcceptType } from "@/lib/crypto/types";
 import { File as FileIcon, Link2, ChevronDown } from "lucide-react";
@@ -96,6 +96,7 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
   const update = (patch: Record<string, unknown>) => graphStore.updateNodeData(id, patch);
 
   const hasError = !!d.error;
+  const security = meta.security ? SECURITY_META[meta.security] : null;
 
   return (
     <div
@@ -111,10 +112,20 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
         className={`flex items-center justify-between px-3 py-2 rounded-t-xl border-b border-border/50 bg-muted/30 overflow-hidden ${cat!.chip}`}
       >
         <span className="text-sm font-bold text-foreground truncate min-w-0 flex-1">{d.label}</span>
-        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider opacity-80 px-2 py-0.5 rounded-full bg-background/50 border border-border/50 flex-shrink-0">
-          <CategoryIcon name={cat!.icon} className="w-3 h-3" />
-          {cat!.label}
-        </span>
+        <div className="flex items-center gap-1 flex-shrink-0 min-w-0">
+          {security && (
+            <span
+              title={security.title}
+              className={`rounded border px-1 py-0 text-[8px] font-bold uppercase leading-3 ${security.className}`}
+            >
+              {security.label}
+            </span>
+          )}
+          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider opacity-80 px-2 py-0.5 rounded-full bg-background/50 border border-border/50">
+            <CategoryIcon name={cat!.icon} className="w-3 h-3" />
+            {cat!.label}
+          </span>
+        </div>
       </div>
 
       <div className="p-3 space-y-2 text-[11px] relative">

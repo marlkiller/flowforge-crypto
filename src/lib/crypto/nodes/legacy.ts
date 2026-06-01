@@ -11,6 +11,7 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
       label,
       category: "cipher",
       description: `${label} legacy encryption (INSECURE).`,
+      security: "insecure",
       defaultOutput: "hex" as DataFormat,
       inputs: [
         { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
@@ -85,6 +86,7 @@ function makeStreamCipherNode(kind: string, label: string, algo: string, hasIv: 
       label,
       category: "cipher",
       description: `${label} stream cipher.`,
+      security: kind === "rc4" ? "insecure" : "deprecated",
       defaultOutput: "hex" as DataFormat,
       inputs: [
         { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
@@ -153,6 +155,7 @@ function makeBlowfishNode(): NodeDef {
       label: "Blowfish",
       category: "cipher",
       description: "Blowfish block cipher (64-bit block, 32-448 bit key).",
+      security: "deprecated",
       defaultOutput: "hex" as DataFormat,
       inputs: [
         { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },

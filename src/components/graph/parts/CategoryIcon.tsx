@@ -17,6 +17,8 @@ import {
   ArrowRightLeft,
   MousePointer2,
   Braces,
+  Split,
+  BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,6 +41,8 @@ const iconMap: Record<string, LucideIcon> = {
   ArrowRightLeft,
   MousePointer2,
   Braces,
+  Split,
+  BadgeCheck,
 };
 
 interface Props {

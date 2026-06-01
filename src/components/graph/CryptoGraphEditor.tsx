@@ -704,7 +704,7 @@ function InnerEditor() {
                   maskColor="var(--minimap-mask)"
                   maskStrokeColor="var(--minimap-mask-stroke)"
                   nodeClassName={(node) => {
-                    const meta = NODE_KIND_META[node.data.kind];
+                    const meta = NODE_KIND_META[String(node.data.kind)];
                     return meta ? `mm-${meta.category}` : "";
                   }}
                   style={{ right: 12, bottom: 12 }}

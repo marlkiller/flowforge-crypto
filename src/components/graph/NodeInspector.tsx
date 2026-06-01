@@ -1,6 +1,11 @@
 import { useNodeConnections } from "@xyflow/react";
 import { graphStore } from "./store";
-import { NODE_KIND_META, CATEGORY_META, getSupportedFormats } from "@/lib/crypto/registry";
+import {
+  NODE_KIND_META,
+  CATEGORY_META,
+  SECURITY_META,
+  getSupportedFormats,
+} from "@/lib/crypto/registry";
 import type { GraphNode, NodeInputMeta } from "@/lib/crypto/types";
 import type { DataFormat } from "@/lib/crypto/service";
 import { useState } from "react";
@@ -53,6 +58,7 @@ export function NodeInspector({ node }: Props) {
     chip: "bg-muted/50 text-muted-foreground border-border/50",
     dot: "bg-muted-foreground",
   };
+  const security = meta.security ? SECURITY_META[meta.security] : null;
   const update = (patch: Record<string, unknown>) => graphStore.updateNodeData(node.id, patch);
 
   const remove = () => graphStore.removeNode(node.id);
@@ -61,11 +67,21 @@ export function NodeInspector({ node }: Props) {
     <aside className="h-full w-full rounded-2xl border border-border bg-card/80 backdrop-blur-xl shadow-2xl flex flex-col overflow-hidden">
       <div className="p-3 border-b border-border bg-muted/20">
         <div className="flex items-center justify-between mb-2">
-          <span
-            className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-background shadow-sm ${cat.chip}`}
-          >
-            {cat.label}
-          </span>
+          <div className="flex items-center gap-1 min-w-0">
+            <span
+              className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-background shadow-sm ${cat.chip}`}
+            >
+              {cat.label}
+            </span>
+            {security && (
+              <span
+                title={security.title}
+                className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${security.className}`}
+              >
+                {security.label}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-1">
             <button
               onClick={remove}

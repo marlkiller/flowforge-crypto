@@ -424,11 +424,17 @@
 .react-flow__minimap-node.mm-io {
   fill: var(--color-handle-raw) !important;
 }
-.react-flow__minimap-node.mm-string {
+.react-flow__minimap-node.mm-data {
   fill: var(--color-handle-string) !important;
 }
 .react-flow__minimap-node.mm-encoding {
   fill: var(--color-handle-hex) !important;
+}
+.react-flow__minimap-node.mm-format {
+  fill: var(--color-handle-cert) !important;
+}
+.react-flow__minimap-node.mm-checksum {
+  fill: var(--color-handle-string) !important;
 }
 .react-flow__minimap-node.mm-hash {
   fill: var(--color-handle-string) !important;
@@ -436,7 +442,13 @@
 .react-flow__minimap-node.mm-cipher {
   fill: var(--color-handle-hex) !important;
 }
-.react-flow__minimap-node.mm-asymmetric {
+.react-flow__minimap-node.mm-public-key {
+  fill: var(--color-handle-key) !important;
+}
+.react-flow__minimap-node.mm-signature {
+  fill: var(--color-handle-key) !important;
+}
+.react-flow__minimap-node.mm-key-exchange {
   fill: var(--color-handle-key) !important;
 }
 .react-flow__minimap-node.mm-mac {
@@ -450,6 +462,12 @@
 }
 .react-flow__minimap-node.mm-protocol {
   fill: var(--color-handle-raw) !important;
+}
+.react-flow__minimap-node.mm-secret-sharing {
+  fill: var(--color-handle-json) !important;
+}
+.react-flow__minimap-node.mm-certificate {
+  fill: var(--color-handle-cert) !important;
 }
 .react-flow__minimap-node.mm-pqc {
   fill: var(--color-handle-key) !important;
