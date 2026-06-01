@@ -1,0 +1,380 @@
+{
+  "version": 1,
+  "workflows": [
+    {
+      "name": "TablePlus Encrypt → Decrypt (Full Cycle)",
+      "nodes": [
+        {
+          "id": "n_1",
+          "type": "crypto",
+          "position": { "x": 50, "y": 100 },
+          "data": {
+            "kind": "input",
+            "label": "Plaintext",
+            "inputFormat": "utf8",
+            "text": "{\"sign\":\"12345678901234567890123456789012345678901234567890\",\"email\":\"marlkiller@voidm.com\",\"deviceID\":\"ee4f1d1890b4eb49a5a4d7f195ca8b67\",\"licenseKey\":\"licenseKey\",\"purchasedAt\":\"2026-12-30\",\"nextChargeAt\":521,\"updatesAvailableUntil\":\"2026-12-30\"}"
+          }
+        },
+        {
+          "id": "n_2",
+          "type": "crypto",
+          "position": { "x": 50, "y": 250 },
+          "data": {
+            "kind": "input",
+            "label": "Password",
+            "inputFormat": "utf8",
+            "text": "6X5bSL62EV2BKe7rZVx477aWvwz4ZMgSu8szHUfX93W6GJhEdVymJ2fFdFYH6EUg"
+          }
+        },
+        {
+          "id": "n_3",
+          "type": "crypto",
+          "position": { "x": 50, "y": 400 },
+          "data": {
+            "kind": "input",
+            "label": "Schema (0x03)",
+            "inputFormat": "hex",
+            "text": "03"
+          }
+        },
+        {
+          "id": "n_4",
+          "type": "crypto",
+          "position": { "x": 50, "y": 550 },
+          "data": {
+            "kind": "input",
+            "label": "Options (0x01)",
+            "inputFormat": "hex",
+            "text": "01"
+          }
+        },
+        {
+          "id": "n_5",
+          "type": "crypto",
+          "position": { "x": 300, "y": 100 },
+          "data": {
+            "kind": "random",
+            "label": "Salt",
+            "outputFormat": "hex",
+            "length": 8
+          }
+        },
+        {
+          "id": "n_6",
+          "type": "crypto",
+          "position": { "x": 300, "y": 250 },
+          "data": {
+            "kind": "random",
+            "label": "HMAC Salt",
+            "outputFormat": "hex",
+            "length": 8
+          }
+        },
+        {
+          "id": "n_7",
+          "type": "crypto",
+          "position": { "x": 300, "y": 400 },
+          "data": {
+            "kind": "random",
+            "label": "IV",
+            "outputFormat": "hex",
+            "length": 16
+          }
+        },
+        {
+          "id": "n_8",
+          "type": "crypto",
+          "position": { "x": 600, "y": 100 },
+          "data": {
+            "kind": "pbkdf2",
+            "label": "Derive Key",
+            "outputFormat": "hex",
+            "iterations": 10000,
+            "hash": "SHA-1",
+            "length": 256
+          }
+        },
+        {
+          "id": "n_9",
+          "type": "crypto",
+          "position": { "x": 600, "y": 250 },
+          "data": {
+            "kind": "pbkdf2",
+            "label": "Derive HMAC Key",
+            "outputFormat": "hex",
+            "iterations": 10000,
+            "hash": "SHA-1",
+            "length": 256
+          }
+        },
+        {
+          "id": "n_10",
+          "type": "crypto",
+          "position": { "x": 900, "y": 100 },
+          "data": {
+            "kind": "aes",
+            "label": "AES-CBC Encrypt",
+            "outputFormat": "hex",
+            "action": "encrypt",
+            "cipherMode": "CBC",
+            "padding": "PKCS7"
+          }
+        },
+        {
+          "id": "n_11",
+          "type": "crypto",
+          "position": { "x": 900, "y": 300 },
+          "data": {
+            "kind": "join",
+            "label": "Assemble Header",
+            "outputFormat": "hex",
+            "count": 5,
+            "separator": "none"
+          }
+        },
+        {
+          "id": "n_12",
+          "type": "crypto",
+          "position": { "x": 1200, "y": 150 },
+          "data": {
+            "kind": "join",
+            "label": "HMAC Message",
+            "outputFormat": "hex",
+            "count": 2,
+            "separator": "none"
+          }
+        },
+        {
+          "id": "n_13",
+          "type": "crypto",
+          "position": { "x": 1200, "y": 350 },
+          "data": {
+            "kind": "hmac",
+            "label": "Sign HMAC",
+            "outputFormat": "hex",
+            "action": "sign",
+            "hash": "SHA-256"
+          }
+        },
+        {
+          "id": "n_14",
+          "type": "crypto",
+          "position": { "x": 1500, "y": 250 },
+          "data": {
+            "kind": "join",
+            "label": "Assemble Final Data",
+            "outputFormat": "hex",
+            "count": 3,
+            "separator": "none"
+          }
+        },
+        {
+          "id": "n_15",
+          "type": "crypto",
+          "position": { "x": 1500, "y": 500 },
+          "data": {
+            "kind": "output",
+            "label": "Encrypted Data",
+            "outputFormat": "hex"
+          }
+        },
+        {
+          "id": "n_16",
+          "type": "crypto",
+          "position": { "x": 1800, "y": 100 },
+          "data": {
+            "kind": "slice",
+            "label": "Extract Header",
+            "outputFormat": "hex",
+            "start": 0,
+            "end": 34
+          }
+        },
+        {
+          "id": "n_17",
+          "type": "crypto",
+          "position": { "x": 1800, "y": 250 },
+          "data": {
+            "kind": "slice",
+            "label": "Extract Ciphertext",
+            "outputFormat": "hex",
+            "start": 34,
+            "end": -32
+          }
+        },
+        {
+          "id": "n_18",
+          "type": "crypto",
+          "position": { "x": 1800, "y": 400 },
+          "data": {
+            "kind": "slice",
+            "label": "Extract HMAC",
+            "outputFormat": "hex",
+            "start": -32
+          }
+        },
+        {
+          "id": "n_19",
+          "type": "crypto",
+          "position": { "x": 2100, "y": 100 },
+          "data": {
+            "kind": "slice",
+            "label": "Extract Salt",
+            "outputFormat": "hex",
+            "start": 2,
+            "end": 10
+          }
+        },
+        {
+          "id": "n_20",
+          "type": "crypto",
+          "position": { "x": 2100, "y": 250 },
+          "data": {
+            "kind": "slice",
+            "label": "Extract HMAC Salt",
+            "outputFormat": "hex",
+            "start": 10,
+            "end": 18
+          }
+        },
+        {
+          "id": "n_21",
+          "type": "crypto",
+          "position": { "x": 2100, "y": 400 },
+          "data": {
+            "kind": "slice",
+            "label": "Extract IV",
+            "outputFormat": "hex",
+            "start": 18,
+            "end": 34
+          }
+        },
+        {
+          "id": "n_22",
+          "type": "crypto",
+          "position": { "x": 2400, "y": 100 },
+          "data": {
+            "kind": "pbkdf2",
+            "label": "Derive Key (decrypt)",
+            "outputFormat": "hex",
+            "iterations": 10000,
+            "hash": "SHA-1",
+            "length": 256
+          }
+        },
+        {
+          "id": "n_23",
+          "type": "crypto",
+          "position": { "x": 2400, "y": 250 },
+          "data": {
+            "kind": "pbkdf2",
+            "label": "Derive HMAC Key (decrypt)",
+            "outputFormat": "hex",
+            "iterations": 10000,
+            "hash": "SHA-1",
+            "length": 256
+          }
+        },
+        {
+          "id": "n_24",
+          "type": "crypto",
+          "position": { "x": 2700, "y": 150 },
+          "data": {
+            "kind": "join",
+            "label": "HMAC Message (verify)",
+            "outputFormat": "hex",
+            "count": 2,
+            "separator": "none"
+          }
+        },
+        {
+          "id": "n_25",
+          "type": "crypto",
+          "position": { "x": 2700, "y": 350 },
+          "data": {
+            "kind": "hmac",
+            "label": "Verify HMAC",
+            "outputFormat": "utf8",
+            "action": "verify",
+            "hash": "SHA-256"
+          }
+        },
+        {
+          "id": "n_26",
+          "type": "crypto",
+          "position": { "x": 3000, "y": 150 },
+          "data": {
+            "kind": "aes",
+            "label": "AES-CBC Decrypt",
+            "outputFormat": "utf8",
+            "action": "decrypt",
+            "cipherMode": "CBC",
+            "padding": "PKCS7"
+          }
+        },
+        {
+          "id": "n_27",
+          "type": "crypto",
+          "position": { "x": 3300, "y": 150 },
+          "data": {
+            "kind": "output",
+            "label": "Decrypted Plaintext",
+            "outputFormat": "utf8"
+          }
+        },
+        {
+          "id": "n_28",
+          "type": "crypto",
+          "position": { "x": 3300, "y": 350 },
+          "data": {
+            "kind": "output",
+            "label": "HMAC Verification",
+            "outputFormat": "utf8"
+          }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "source": "n_1", "target": "n_10", "targetHandle": "data", "animated": true },
+        { "id": "e2", "source": "n_2", "target": "n_8", "targetHandle": "password", "animated": true },
+        { "id": "e3", "source": "n_2", "target": "n_9", "targetHandle": "password", "animated": true },
+        { "id": "e4", "source": "n_2", "target": "n_22", "targetHandle": "password", "animated": true },
+        { "id": "e5", "source": "n_2", "target": "n_23", "targetHandle": "password", "animated": true },
+        { "id": "e6", "source": "n_5", "target": "n_8", "targetHandle": "salt", "animated": true },
+        { "id": "e7", "source": "n_5", "target": "n_11", "targetHandle": "in_3", "animated": true },
+        { "id": "e8", "source": "n_6", "target": "n_9", "targetHandle": "salt", "animated": true },
+        { "id": "e9", "source": "n_6", "target": "n_11", "targetHandle": "in_4", "animated": true },
+        { "id": "e10", "source": "n_7", "target": "n_10", "targetHandle": "iv", "animated": true },
+        { "id": "e11", "source": "n_7", "target": "n_11", "targetHandle": "in_5", "animated": true },
+        { "id": "e12", "source": "n_3", "target": "n_11", "targetHandle": "in_1", "animated": true },
+        { "id": "e13", "source": "n_4", "target": "n_11", "targetHandle": "in_2", "animated": true },
+        { "id": "e14", "source": "n_8", "target": "n_10", "targetHandle": "key", "animated": true },
+        { "id": "e15", "source": "n_9", "target": "n_13", "targetHandle": "key", "animated": true },
+        { "id": "e16", "source": "n_10", "target": "n_12", "targetHandle": "in_2", "animated": true },
+        { "id": "e17", "source": "n_10", "target": "n_14", "targetHandle": "in_2", "animated": true },
+        { "id": "e18", "source": "n_11", "target": "n_12", "targetHandle": "in_1", "animated": true },
+        { "id": "e19", "source": "n_11", "target": "n_14", "targetHandle": "in_1", "animated": true },
+        { "id": "e20", "source": "n_12", "target": "n_13", "targetHandle": "data", "animated": true },
+        { "id": "e21", "source": "n_13", "target": "n_14", "targetHandle": "in_3", "animated": true },
+        { "id": "e22", "source": "n_14", "target": "n_15", "targetHandle": "data", "animated": true },
+        { "id": "e23", "source": "n_14", "target": "n_16", "targetHandle": "data", "animated": true },
+        { "id": "e24", "source": "n_14", "target": "n_17", "targetHandle": "data", "animated": true },
+        { "id": "e25", "source": "n_14", "target": "n_18", "targetHandle": "data", "animated": true },
+        { "id": "e26", "source": "n_16", "target": "n_19", "targetHandle": "data", "animated": true },
+        { "id": "e27", "source": "n_16", "target": "n_20", "targetHandle": "data", "animated": true },
+        { "id": "e28", "source": "n_16", "target": "n_21", "targetHandle": "data", "animated": true },
+        { "id": "e29", "source": "n_16", "target": "n_24", "targetHandle": "in_1", "animated": true },
+        { "id": "e30", "source": "n_17", "target": "n_24", "targetHandle": "in_2", "animated": true },
+        { "id": "e31", "source": "n_17", "target": "n_26", "targetHandle": "data", "animated": true },
+        { "id": "e32", "source": "n_18", "target": "n_25", "targetHandle": "signature", "animated": true },
+        { "id": "e33", "source": "n_19", "target": "n_22", "targetHandle": "salt", "animated": true },
+        { "id": "e34", "source": "n_20", "target": "n_23", "targetHandle": "salt", "animated": true },
+        { "id": "e35", "source": "n_21", "target": "n_26", "targetHandle": "iv", "animated": true },
+        { "id": "e36", "source": "n_22", "target": "n_26", "targetHandle": "key", "animated": true },
+        { "id": "e37", "source": "n_23", "target": "n_25", "targetHandle": "key", "animated": true },
+        { "id": "e38", "source": "n_24", "target": "n_25", "targetHandle": "data", "animated": true },
+        { "id": "e39", "source": "n_25", "target": "n_28", "targetHandle": "data", "animated": true },
+        { "id": "e40", "source": "n_26", "target": "n_27", "targetHandle": "data", "animated": true }
+      ]
+    }
+  ]
+}

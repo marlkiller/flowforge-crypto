@@ -17,7 +17,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "sync-prompt": "node scripts/sync-prompt.mjs"
   },
   "dependencies": {
     "@noble/ciphers": "^2.2.0",

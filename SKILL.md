@@ -4,13 +4,14 @@ Visual crypto pipeline editor built with TanStack Start + React 19 + React Flow 
 
 ## Commands
 
-| Command             | Purpose                              |
-| ------------------- | ------------------------------------ |
-| `npm run dev`       | Dev server                           |
-| `npm run typecheck` | TypeScript check (run before commit) |
-| `npm run lint`      | ESLint                               |
-| `npm run format`    | Prettier                             |
-| `npm run build`     | Production build                     |
+| Command               | Purpose                                             |
+| --------------------- | --------------------------------------------------- |
+| `npm run dev`         | Dev server                                          |
+| `npm run typecheck`   | TypeScript check (run before commit)                |
+| `npm run lint`        | ESLint                                              |
+| `npm run format`      | Prettier                                            |
+| `npm run build`       | Production build                                    |
+| `npm run sync-prompt` | Regenerate WORKFLOW_GEN_PROMPT.md from source nodes |
 
 ## Quick Start — Add a New Node
 
