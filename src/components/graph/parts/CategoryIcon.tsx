@@ -12,6 +12,11 @@ import {
   Archive,
   Atom,
   Search,
+  FileKey,
+  PenTool,
+  ArrowRightLeft,
+  MousePointer2,
+  Braces,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,6 +34,11 @@ const iconMap: Record<string, LucideIcon> = {
   Archive,
   Atom,
   Search,
+  FileKey,
+  PenTool,
+  ArrowRightLeft,
+  MousePointer2,
+  Braces,
 };
 
 interface Props {

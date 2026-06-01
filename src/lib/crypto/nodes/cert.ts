@@ -78,7 +78,7 @@ registerNodeDef("pemDerConvert", {
   meta: {
     kind: "pemDerConvert",
     label: "PEM ↔ DER",
-    category: "encoding",
+    category: "format",
     description: "Convert between PEM and DER certificate/key formats.",
     defaultOutput: "utf8",
     inputs: [
@@ -166,7 +166,7 @@ registerNodeDef("jwkConvert", {
   meta: {
     kind: "jwkConvert",
     label: "JWK Convert",
-    category: "encoding",
+    category: "format",
     description: "Display JWK details or convert between formats (using jose).",
     defaultOutput: "utf8",
     inputs: [

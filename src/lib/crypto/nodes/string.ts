@@ -5,7 +5,7 @@ registerNodeDef("uppercase", {
   meta: {
     kind: "uppercase",
     label: "Upper Case",
-    category: "string",
+    category: "data",
     description: "UTF-8 text → uppercase.",
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
@@ -17,7 +17,7 @@ registerNodeDef("lowercase", {
   meta: {
     kind: "lowercase",
     label: "Lower Case",
-    category: "string",
+    category: "data",
     description: "UTF-8 text → lowercase.",
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
@@ -29,7 +29,7 @@ registerNodeDef("reverse", {
   meta: {
     kind: "reverse",
     label: "Reverse",
-    category: "string",
+    category: "data",
     description: "Reverse UTF-8 string.",
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
@@ -41,7 +41,7 @@ registerNodeDef("trim", {
   meta: {
     kind: "trim",
     label: "Trim",
-    category: "string",
+    category: "data",
     description: "Trim leading/trailing whitespace.",
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
@@ -52,7 +52,7 @@ registerNodeDef("length", {
   meta: {
     kind: "length",
     label: "Length",
-    category: "string",
+    category: "data",
     description: "Emit decimal byte length.",
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },

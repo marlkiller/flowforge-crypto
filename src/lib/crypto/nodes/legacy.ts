@@ -9,7 +9,7 @@ function makeLegacyCipherNode(algo: "DES" | "TripleDES", label: string): NodeDef
     meta: {
       kind: algo.toLowerCase(),
       label,
-      category: "legacy",
+      category: "cipher",
       description: `${label} legacy encryption (INSECURE).`,
       defaultOutput: "hex" as DataFormat,
       inputs: [
@@ -83,7 +83,7 @@ function makeStreamCipherNode(kind: string, label: string, algo: string, hasIv: 
     meta: {
       kind,
       label,
-      category: "legacy",
+      category: "cipher",
       description: `${label} stream cipher.`,
       defaultOutput: "hex" as DataFormat,
       inputs: [

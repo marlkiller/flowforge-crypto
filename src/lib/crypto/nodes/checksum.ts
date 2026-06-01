@@ -6,7 +6,7 @@ registerNodeDef("checksum", {
   meta: {
     kind: "checksum",
     label: "Checksum",
-    category: "string",
+    category: "hash",
     description:
       "Compute a checksum over string data. Transition Checksum is derived from reverse-engineering Snipaste's calculate_char_transition_char.",
     defaultOutput: "utf8",

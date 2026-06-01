@@ -6,7 +6,7 @@ registerNodeDef("xor", {
   meta: {
     kind: "xor",
     label: "XOR",
-    category: "string",
+    category: "analysis",
     description: "Byte-wise XOR of two inputs.",
     defaultOutput: "hex",
     inputs: [
@@ -30,7 +30,7 @@ registerNodeDef("constantTimeCompare", {
   meta: {
     kind: "constantTimeCompare",
     label: "Const-Time Compare",
-    category: "string",
+    category: "analysis",
     description: "Timing-safe byte comparison. Outputs 'Match' or 'No Match'.",
     defaultOutput: "utf8",
     supportedFormats: ["utf8", "bool"],

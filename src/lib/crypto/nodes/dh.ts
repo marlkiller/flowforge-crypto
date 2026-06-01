@@ -49,7 +49,7 @@ registerNodeDef("dh_keygen", {
   meta: {
     kind: "dh_keygen",
     label: "DH Key Gen",
-    category: "asymmetric",
+    category: "pki",
     description: "Generate a Diffie-Hellman key pair using MODP groups.",
     defaultOutput: "hex",
     outputs: [
@@ -85,7 +85,7 @@ registerNodeDef("dh_derive", {
   meta: {
     kind: "dh_derive",
     label: "DH Derive",
-    category: "asymmetric",
+    category: "kex",
     description: "Derive a shared secret using traditional Diffie-Hellman.",
     defaultOutput: "hex",
     inputs: [

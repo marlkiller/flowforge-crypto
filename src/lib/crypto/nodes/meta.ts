@@ -4,7 +4,7 @@ import type { DataFormat } from "../service";
 export const RSA_KEYGEN_META: NodeKindMeta = {
   kind: "rsa_keygen",
   label: "RSA Key Gen",
-  category: "asymmetric",
+  category: "pki",
   description: "Generate an RSA key pair.",
   defaultOutput: "pem",
   supportedFormats: ["pem", "base64", "hex", "utf8"],
@@ -56,7 +56,7 @@ export const RSA_KEYGEN_META: NodeKindMeta = {
 export const RSA_META: NodeKindMeta = {
   kind: "rsa",
   label: "RSA",
-  category: "asymmetric",
+  category: "pki",
   description: "RSA encrypt/decrypt. Supports RSA-OAEP, RSAES-PKCS1-V1_5, RAW.",
   defaultOutput: "base64",
   inputs: [
@@ -122,7 +122,7 @@ export const RSA_META: NodeKindMeta = {
 export const RSA_SIGN_META: NodeKindMeta = {
   kind: "rsa_sign",
   label: "RSA Sign",
-  category: "asymmetric",
+  category: "sign",
   description: "Digital signature generation using a private key.",
   defaultOutput: "base64",
   inputs: [
@@ -165,7 +165,7 @@ export const RSA_SIGN_META: NodeKindMeta = {
 export const RSA_VERIFY_META: NodeKindMeta = {
   kind: "rsa_verify",
   label: "RSA Verify",
-  category: "asymmetric",
+  category: "sign",
   description: "Digital signature verification using a public key.",
   defaultOutput: "utf8",
   supportedFormats: ["utf8", "bool"],
@@ -215,7 +215,7 @@ export const RSA_VERIFY_META: NodeKindMeta = {
 export const SM2_KEYGEN_META: NodeKindMeta = {
   kind: "sm2_keygen",
   label: "SM2 Key Gen",
-  category: "asymmetric",
+  category: "pki",
   description:
     "Generate an SM2 key pair (Chinese national elliptic curve standard, GB/T 32918-2016).",
   defaultOutput: "hex",
@@ -228,7 +228,7 @@ export const SM2_KEYGEN_META: NodeKindMeta = {
 export const SM2_SIGN_META: NodeKindMeta = {
   kind: "sm2_sign",
   label: "SM2 Sign",
-  category: "asymmetric",
+  category: "sign",
   description: "Sign data using an SM2 private key (SM2 signature with SM3 hash).",
   defaultOutput: "hex",
   inputs: [
@@ -247,7 +247,7 @@ export const SM2_SIGN_META: NodeKindMeta = {
 export const SM2_VERIFY_META: NodeKindMeta = {
   kind: "sm2_verify",
   label: "SM2 Verify",
-  category: "asymmetric",
+  category: "sign",
   description: "Verify an SM2 signature using an SM2 public key.",
   defaultOutput: "utf8",
   supportedFormats: ["utf8", "hex", "base64", "bool"],
@@ -271,7 +271,7 @@ export const SM2_VERIFY_META: NodeKindMeta = {
 export const SM2_ENCRYPT_META: NodeKindMeta = {
   kind: "sm2_encrypt",
   label: "SM2 Encrypt",
-  category: "asymmetric",
+  category: "pki",
   description: "Encrypt data using an SM2 public key.",
   defaultOutput: "hex",
   inputs: [
@@ -283,7 +283,7 @@ export const SM2_ENCRYPT_META: NodeKindMeta = {
 export const SM2_DECRYPT_META: NodeKindMeta = {
   kind: "sm2_decrypt",
   label: "SM2 Decrypt",
-  category: "asymmetric",
+  category: "pki",
   description: "Decrypt data using an SM2 private key.",
   defaultOutput: "utf8",
   inputs: [
@@ -563,7 +563,7 @@ export const SHA0_META = makeHashMeta("sha0", "SHA-0", "Legacy SHA-0 hash functi
 export const EC_KEYGEN_META: NodeKindMeta = {
   kind: "ec_keygen",
   label: "EC Key Gen",
-  category: "asymmetric",
+  category: "pki",
   description: "Generate an Elliptic Curve key pair.",
   defaultOutput: "pem",
   outputs: [
@@ -600,7 +600,7 @@ export const EC_KEYGEN_META: NodeKindMeta = {
 export const ECDSA_SIGN_META: NodeKindMeta = {
   kind: "ecdsa_sign",
   label: "ECDSA Sign",
-  category: "asymmetric",
+  category: "sign",
   description: "Sign data using an ECDSA private key.",
   defaultOutput: "base64",
   inputs: [
@@ -641,7 +641,7 @@ export const ECDSA_SIGN_META: NodeKindMeta = {
 export const ECDSA_VERIFY_META: NodeKindMeta = {
   kind: "ecdsa_verify",
   label: "ECDSA Verify",
-  category: "asymmetric",
+  category: "sign",
   description: "Verify data signature using an ECDSA public key.",
   defaultOutput: "utf8",
   supportedFormats: ["utf8", "bool"],
@@ -689,7 +689,7 @@ export const ECDSA_VERIFY_META: NodeKindMeta = {
 export const ECDH_META: NodeKindMeta = {
   kind: "ecdh",
   label: "ECDH Derive",
-  category: "asymmetric",
+  category: "kex",
   description: "Derive bits using ECDH (Elliptic Curve Diffie-Hellman).",
   defaultOutput: "hex",
   inputs: [

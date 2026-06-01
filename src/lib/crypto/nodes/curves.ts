@@ -11,7 +11,7 @@ registerNodeDef("secp256k1_keygen", {
   meta: {
     kind: "secp256k1_keygen",
     label: "secp256k1 Key Gen",
-    category: "asymmetric",
+    category: "pki",
     description: "Generate a secp256k1 key pair (Bitcoin/Ethereum curve).",
     defaultOutput: "hex",
     outputs: [
@@ -30,7 +30,7 @@ registerNodeDef("secp256k1_sign", {
   meta: {
     kind: "secp256k1_sign",
     label: "secp256k1 Sign",
-    category: "asymmetric",
+    category: "sign",
     description: "Sign data using a secp256k1 private key (ECDSA).",
     defaultOutput: "base64",
     inputs: [
@@ -63,7 +63,7 @@ registerNodeDef("secp256k1_verify", {
   meta: {
     kind: "secp256k1_verify",
     label: "secp256k1 Verify",
-    category: "asymmetric",
+    category: "sign",
     description: "Verify a secp256k1 signature using a public key.",
     defaultOutput: "utf8",
     supportedFormats: ["utf8", "bool"],
@@ -102,7 +102,7 @@ registerNodeDef("ecdh_secp256k1", {
   meta: {
     kind: "ecdh_secp256k1",
     label: "secp256k1 ECDH",
-    category: "asymmetric",
+    category: "kex",
     description: "Derive a shared secret using secp256k1 ECDH.",
     defaultOutput: "hex",
     inputs: [
@@ -132,7 +132,7 @@ registerNodeDef("ed448_keygen", {
   meta: {
     kind: "ed448_keygen",
     label: "Ed448 Key Gen",
-    category: "asymmetric",
+    category: "pki",
     description: "Generate an Ed448 (Edwards-curve) key pair.",
     defaultOutput: "hex",
     outputs: [
@@ -151,7 +151,7 @@ registerNodeDef("ed448_sign", {
   meta: {
     kind: "ed448_sign",
     label: "Ed448 Sign",
-    category: "asymmetric",
+    category: "sign",
     description: "Sign data using an Ed448 private key.",
     defaultOutput: "base64",
     inputs: [
@@ -171,7 +171,7 @@ registerNodeDef("ed448_verify", {
   meta: {
     kind: "ed448_verify",
     label: "Ed448 Verify",
-    category: "asymmetric",
+    category: "sign",
     description: "Verify a signature using an Ed448 public key.",
     defaultOutput: "utf8",
     supportedFormats: ["utf8", "bool"],
@@ -197,7 +197,7 @@ registerNodeDef("x448_keygen", {
   meta: {
     kind: "x448_keygen",
     label: "X448 Key Gen",
-    category: "asymmetric",
+    category: "pki",
     description: "Generate a key pair for X448 Diffie-Hellman.",
     outputs: [
       { id: "privateKey", label: "Private Key" },
@@ -218,7 +218,7 @@ registerNodeDef("x448_derive", {
   meta: {
     kind: "x448_derive",
     label: "X448 Derive",
-    category: "asymmetric",
+    category: "kex",
     description: "Derive a shared secret using X448 Diffie-Hellman.",
     defaultOutput: "hex",
     inputs: [
@@ -252,7 +252,7 @@ registerNodeDef("bls_keygen", {
   meta: {
     kind: "bls_keygen",
     label: "BLS12-381 Key Gen",
-    category: "asymmetric",
+    category: "pki",
     description: "Generate a BLS12-381 key pair for BLS signatures (short sigs in G1).",
     defaultOutput: "hex",
     outputs: [
@@ -271,7 +271,7 @@ registerNodeDef("bls_sign", {
   meta: {
     kind: "bls_sign",
     label: "BLS12-381 Sign",
-    category: "asymmetric",
+    category: "sign",
     description: "Sign data using a BLS12-381 private key.",
     defaultOutput: "base64",
     inputs: [
@@ -293,7 +293,7 @@ registerNodeDef("bls_verify", {
   meta: {
     kind: "bls_verify",
     label: "BLS12-381 Verify",
-    category: "asymmetric",
+    category: "sign",
     description: "Verify a BLS12-381 signature using a public key.",
     defaultOutput: "utf8",
     supportedFormats: ["utf8", "bool"],

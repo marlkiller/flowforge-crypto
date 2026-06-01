@@ -171,7 +171,7 @@ registerNodeDef("template", {
   meta: {
     kind: "template",
     label: "Template",
-    category: "io",
+    category: "data",
     description: "Format a string by replacing {in_1}, {in_2}, ... with wired inputs.",
     defaultOutput: "utf8",
     inputs: [
@@ -198,7 +198,7 @@ registerNodeDef("timestamp", {
   meta: {
     kind: "timestamp",
     label: "Timestamp",
-    category: "io",
+    category: "data",
     description: "Generate current timestamp as ISO 8601 string or Unix epoch seconds.",
     defaultOutput: "utf8",
     inputs: [
