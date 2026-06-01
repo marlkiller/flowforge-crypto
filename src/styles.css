@@ -152,23 +152,23 @@
   --note-yellow-bg: oklch(0.96 0.15 95);
   --note-yellow-text: oklch(0.3 0.1 95);
   --note-yellow-border: oklch(0.85 0.15 95);
-  
+
   --note-blue-bg: oklch(0.9 0.08 240);
   --note-blue-text: oklch(0.3 0.1 240);
   --note-blue-border: oklch(0.8 0.1 240);
-  
+
   --note-green-bg: oklch(0.94 0.12 150);
   --note-green-text: oklch(0.3 0.1 150);
   --note-green-border: oklch(0.8 0.15 150);
-  
+
   --note-red-bg: oklch(0.92 0.1 25);
   --note-red-text: oklch(0.3 0.1 25);
   --note-red-border: oklch(0.85 0.1 25);
-  
+
   --note-purple-bg: oklch(0.92 0.08 280);
   --note-purple-text: oklch(0.3 0.1 280);
   --note-purple-border: oklch(0.8 0.1 280);
-  
+
   --note-zinc-bg: oklch(0.96 0 0);
   --note-zinc-text: oklch(0.2 0 0);
   --note-zinc-border: oklch(0.8 0 0);
@@ -232,23 +232,23 @@
   --note-yellow-bg: oklch(0.35 0.12 95 / 80%);
   --note-yellow-text: oklch(0.9 0.1 95);
   --note-yellow-border: oklch(0.5 0.1 95 / 50%);
-  
+
   --note-blue-bg: oklch(0.35 0.1 240 / 80%);
   --note-blue-text: oklch(0.9 0.08 240);
   --note-blue-border: oklch(0.5 0.08 240 / 50%);
-  
+
   --note-green-bg: oklch(0.35 0.1 150 / 80%);
   --note-green-text: oklch(0.9 0.08 150);
   --note-green-border: oklch(0.5 0.08 150 / 50%);
-  
+
   --note-red-bg: oklch(0.35 0.1 25 / 80%);
   --note-red-text: oklch(0.9 0.08 25);
   --note-red-border: oklch(0.5 0.08 25 / 50%);
-  
+
   --note-purple-bg: oklch(0.35 0.1 280 / 80%);
   --note-purple-text: oklch(0.9 0.08 280);
   --note-purple-border: oklch(0.5 0.08 280 / 50%);
-  
+
   --note-zinc-bg: oklch(0.3 0 0 / 80%);
   --note-zinc-text: oklch(0.9 0 0);
   --note-zinc-border: oklch(0.5 0 0 / 50%);
@@ -305,13 +305,15 @@
   height: 12px !important;
   border: 2px solid var(--color-background);
   background-color: var(--color-handle-raw);
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
   z-index: 20;
 }
 
 /* invisible extended hit area — anchor NEVER moves */
 .react-flow__handle::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: -10px;
   border-radius: 50%;
@@ -323,13 +325,27 @@
 }
 
 /* ── Colors ── */
-.react-flow__handle.handle-raw     { background-color: var(--color-handle-raw); }
-.react-flow__handle.handle-string  { background-color: var(--color-handle-string); }
-.react-flow__handle.handle-hex     { background-color: var(--color-handle-hex); }
-.react-flow__handle.handle-cert    { background-color: var(--color-handle-cert); }
-.react-flow__handle.handle-key     { background-color: var(--color-handle-key); }
-.react-flow__handle.handle-bool    { background-color: var(--color-handle-bool); }
-.react-flow__handle.handle-json    { background-color: var(--color-handle-json); }
+.react-flow__handle.handle-raw {
+  background-color: var(--color-handle-raw);
+}
+.react-flow__handle.handle-string {
+  background-color: var(--color-handle-string);
+}
+.react-flow__handle.handle-hex {
+  background-color: var(--color-handle-hex);
+}
+.react-flow__handle.handle-cert {
+  background-color: var(--color-handle-cert);
+}
+.react-flow__handle.handle-key {
+  background-color: var(--color-handle-key);
+}
+.react-flow__handle.handle-bool {
+  background-color: var(--color-handle-bool);
+}
+.react-flow__handle.handle-json {
+  background-color: var(--color-handle-json);
+}
 
 /* ── Shapes ── */
 .react-flow__handle.handle-diamond {
@@ -357,15 +373,22 @@
 }
 
 @keyframes handle-glow {
-  0%, 100% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-chart-2) 30%, transparent); }
-  50%      { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-chart-2) 15%, transparent); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-chart-2) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-chart-2) 15%, transparent);
+  }
 }
 
 /* MiniMap Professional Styling */
 .react-flow__minimap {
   border-radius: var(--radius-lg) !important;
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
   border: 1px solid var(--border) !important;
 }
 
@@ -380,7 +403,10 @@
   fill: var(--color-handle-raw) !important; /* Default */
   rx: 4; /* Rounded corners for nodes in minimap */
   opacity: 0.2; /* Substantially lighter, matches node header vibe */
-  transition: opacity 0.2s, fill 0.2s, stroke 0.2s;
+  transition:
+    opacity 0.2s,
+    fill 0.2s,
+    stroke 0.2s;
   stroke: var(--background); /* Boundary stroke for overlapping nodes */
   stroke-width: 1px;
 }
@@ -395,29 +421,62 @@
   stroke-width: 2.5px !important;
 }
 
-.react-flow__minimap-node.mm-io { fill: var(--color-handle-raw) !important; }
-.react-flow__minimap-node.mm-string { fill: var(--color-handle-string) !important; }
-.react-flow__minimap-node.mm-encoding { fill: var(--color-handle-hex) !important; }
-.react-flow__minimap-node.mm-hash { fill: var(--color-handle-string) !important; }
-.react-flow__minimap-node.mm-cipher { fill: var(--color-handle-hex) !important; }
-.react-flow__minimap-node.mm-asymmetric { fill: var(--color-handle-key) !important; }
-.react-flow__minimap-node.mm-mac { fill: var(--color-handle-string) !important; }
-.react-flow__minimap-node.mm-kdf { fill: var(--color-handle-hex) !important; }
-.react-flow__minimap-node.mm-entropy { fill: var(--color-handle-hex) !important; }
-.react-flow__minimap-node.mm-protocol { fill: var(--color-handle-raw) !important; }
-.react-flow__minimap-node.mm-pqc { fill: var(--color-handle-key) !important; }
-.react-flow__minimap-node.mm-analysis { fill: var(--color-handle-string) !important; }
-.react-flow__minimap-node.mm-ui { fill: var(--muted-foreground) !important; opacity: 0.3; }
+.react-flow__minimap-node.mm-io {
+  fill: var(--color-handle-raw) !important;
+}
+.react-flow__minimap-node.mm-string {
+  fill: var(--color-handle-string) !important;
+}
+.react-flow__minimap-node.mm-encoding {
+  fill: var(--color-handle-hex) !important;
+}
+.react-flow__minimap-node.mm-hash {
+  fill: var(--color-handle-string) !important;
+}
+.react-flow__minimap-node.mm-cipher {
+  fill: var(--color-handle-hex) !important;
+}
+.react-flow__minimap-node.mm-asymmetric {
+  fill: var(--color-handle-key) !important;
+}
+.react-flow__minimap-node.mm-mac {
+  fill: var(--color-handle-string) !important;
+}
+.react-flow__minimap-node.mm-kdf {
+  fill: var(--color-handle-hex) !important;
+}
+.react-flow__minimap-node.mm-entropy {
+  fill: var(--color-handle-hex) !important;
+}
+.react-flow__minimap-node.mm-protocol {
+  fill: var(--color-handle-raw) !important;
+}
+.react-flow__minimap-node.mm-pqc {
+  fill: var(--color-handle-key) !important;
+}
+.react-flow__minimap-node.mm-analysis {
+  fill: var(--color-handle-string) !important;
+}
+.react-flow__minimap-node.mm-ui {
+  fill: var(--muted-foreground) !important;
+  opacity: 0.3;
+}
 
 /* Camera Shutter Effect */
 @keyframes shutter-flash {
-  0% { opacity: 0; }
-  20% { opacity: 0.8; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .shutter-active::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background: white;
