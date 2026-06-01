@@ -140,82 +140,106 @@ export function useGraphInteraction(
     setContextMenu(null);
   }, []);
 
-  const onNodeDragStop = useCallback((_event: React.MouseEvent, node: RFNode) => {
-    if (node.data?.kind === "group") return; // groups cannot nest
-    const allNodes = graphStore.getActive().nodes;
-    const groups = allNodes.filter((g) => g.data.kind === "group" && g.id !== node.id);
-    const nodeW = (node.width ?? 100) as number;
-    const nodeH = (node.height ?? 40) as number;
+  const onNodeDragStop = useCallback(
+    (_event: React.MouseEvent, node: RFNode) => {
+      if (node.data?.kind === "group") return; // groups cannot nest
+      const allNodes = graphStore.getActive().nodes;
+      const rfNodes = rf.getNodes();
+      const selectedIds = new Set(
+        rfNodes
+          .filter((n) => n.selected && n.id !== node.id && n.data?.kind !== "group")
+          .map((n) => n.id),
+      );
+      selectedIds.add(node.id);
+      const groups = allNodes.filter((g) => g.data.kind === "group");
+      const nodeW = (node.width ?? 100) as number;
+      const nodeH = (node.height ?? 40) as number;
 
-    // Compute absolute center position
-    let absX = node.position.x;
-    let absY = node.position.y;
-    if (node.parentId) {
-      const parent = allNodes.find((n) => n.id === node.parentId);
-      if (parent) {
-        absX += parent.position.x;
-        absY += parent.position.y;
+      // Compute absolute center position of the anchor node
+      let absX = node.position.x;
+      let absY = node.position.y;
+      if (node.parentId) {
+        const parent = allNodes.find((n) => n.id === node.parentId);
+        if (parent) {
+          absX += parent.position.x;
+          absY += parent.position.y;
+        }
       }
-    }
-    const nodeCx = absX + nodeW / 2;
-    const nodeCy = absY + nodeH / 2;
+      const nodeCx = absX + nodeW / 2;
+      const nodeCy = absY + nodeH / 2;
 
-    let bestGroup: string | null = null;
-    for (const g of groups) {
-      const gw = (g.width ?? 200) as number;
-      const gh = (g.height ?? 100) as number;
-      if (
-        nodeCx >= g.position.x &&
-        nodeCx <= g.position.x + gw &&
-        nodeCy >= g.position.y &&
-        nodeCy <= g.position.y + gh
-      ) {
-        bestGroup = g.id;
-        break;
+      let bestGroup: string | null = null;
+      for (const g of groups) {
+        const gw = (g.width ?? 200) as number;
+        const gh = (g.height ?? 100) as number;
+        if (
+          nodeCx >= g.position.x &&
+          nodeCx <= g.position.x + gw &&
+          nodeCy >= g.position.y &&
+          nodeCy <= g.position.y + gh
+        ) {
+          bestGroup = g.id;
+          break;
+        }
       }
-    }
 
-    if (bestGroup !== (node.parentId ?? null)) {
+      // Check if any selected node's group affiliation would change
+      let needsUpdate = false;
+      for (const sid of selectedIds) {
+        const n = allNodes.find((nd) => nd.id === sid);
+        if (!n) continue;
+        if (bestGroup !== (n.parentId ?? null)) {
+          needsUpdate = true;
+          break;
+        }
+      }
+      if (!needsUpdate) return;
+
       graphStore.snapshot();
       const w = graphStore.getActive();
 
       if (bestGroup) {
-        // Entering a group → convert to relative position
-        const group = allNodes.find((n) => n.id === bestGroup)!;
-        const relPos = {
-          x: absX - group.position.x,
-          y: absY - group.position.y,
-        };
+        const group = allNodes.find((nd) => nd.id === bestGroup)!;
         graphStore.setNodes(
-          w.nodes.map((n) =>
-            n.id === node.id
-              ? { ...n, position: relPos, parentId: bestGroup, extent: "parent" as const }
-              : n,
-          ),
+          w.nodes.map((n) => {
+            if (!selectedIds.has(n.id)) return n;
+            let aX = n.position.x;
+            let aY = n.position.y;
+            if (n.parentId) {
+              const p = allNodes.find((nd) => nd.id === n.parentId);
+              if (p) {
+                aX += p.position.x;
+                aY += p.position.y;
+              }
+            }
+            return {
+              ...n,
+              position: { x: aX - group.position.x, y: aY - group.position.y },
+              parentId: bestGroup,
+              extent: "parent" as const,
+            };
+          }),
         );
-      } else if (node.parentId) {
-        // Leaving a group → convert to absolute position
-        const oldParent = allNodes.find((n) => n.id === node.parentId);
-        if (oldParent) {
-          graphStore.setNodes(
-            w.nodes.map((n) =>
-              n.id === node.id
-                ? {
-                    ...n,
-                    position: {
-                      x: node.position.x + oldParent.position.x,
-                      y: node.position.y + oldParent.position.y,
-                    },
-                    parentId: undefined,
-                    extent: undefined,
-                  }
-                : n,
-            ),
-          );
-        }
+      } else {
+        // Leaving a group — convert all selected children to absolute
+        graphStore.setNodes(
+          w.nodes.map((n) => {
+            if (!selectedIds.has(n.id) || !n.parentId) return n;
+            const p = allNodes.find((nd) => nd.id === n.parentId);
+            return {
+              ...n,
+              position: p
+                ? { x: n.position.x + p.position.x, y: n.position.y + p.position.y }
+                : n.position,
+              parentId: undefined,
+              extent: undefined,
+            };
+          }),
+        );
       }
-    }
-  }, []);
+    },
+    [rf],
+  );
 
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: RFNode) => {

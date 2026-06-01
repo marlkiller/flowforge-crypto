@@ -11,9 +11,10 @@ export const GroupNode = memo(({ data, selected }: NodeProps) => {
         width: "100%",
         height: "100%",
         borderColor: selected ? "var(--color-primary)" : "var(--color-border)",
+        borderWidth: selected ? 2 : 1.5,
         backgroundColor: selected
-          ? "color-mix(in srgb, var(--color-primary) 8%, transparent)"
-          : "color-mix(in srgb, var(--color-muted) 15%, transparent)",
+          ? "color-mix(in srgb, var(--color-primary) 15%, transparent)"
+          : "color-mix(in srgb, var(--color-muted) 30%, transparent)",
       }}
     >
       <NodeResizer
