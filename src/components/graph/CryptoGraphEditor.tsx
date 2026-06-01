@@ -607,7 +607,7 @@ function InnerEditor() {
                   <Camera className="w-4 h-4" />
                 </button>
                 {showFormatPicker && (
-                  <div className="absolute top-full right-0 mt-1 flex flex-col rounded-md border bg-card shadow-md overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="graph-toolbar absolute top-full right-0 mt-1 flex flex-col rounded-md border bg-card shadow-md overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
                     {(["png", "jpeg", "webp"] as const).map((fmt) => (
                       <button
                         key={fmt}
@@ -634,8 +634,8 @@ function InnerEditor() {
                               skipFonts: false,
                               style: { transform: "scale(1)" },
                               filter: (node: HTMLElement) => {
-                                const cls = node.className || "";
-                                if (typeof cls !== "string") return true;
+                                const cls = node.getAttribute?.("class") || "";
+
                                 if (cls.includes("graph-toolbar")) return false;
                                 return !["minimap", "controls", "panel", "attribution"].some((e) =>
                                   cls.includes(`react-flow__${e}`),
@@ -688,7 +688,7 @@ function InnerEditor() {
                 aria-label={
                   interaction.selectionMode ? "Switch to pan mode" : "Switch to selection mode"
                 }
-                className={`absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border shadow-md transition-all cursor-pointer ${
+                className={`graph-toolbar absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border shadow-md transition-all cursor-pointer ${
                   interaction.selectionMode
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-card text-muted-foreground border-border hover:bg-accent"
