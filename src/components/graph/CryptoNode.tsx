@@ -31,6 +31,13 @@ function getHandleStyle(types?: string[]) {
   return `${colorClass} ${shapeClass}`;
 }
 
+const MAX_OUTPUT_LEN = 256;
+
+function formatOutput(output: string) {
+  if (output.length <= MAX_OUTPUT_LEN) return output;
+  return output.slice(0, MAX_OUTPUT_LEN) + `\n\n... [${(output.length / 1024).toFixed(1)}KB total, truncated]`;
+}
+
 export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
   const d = data as NodeData;
   const meta = NODE_KIND_META[d.kind];
@@ -175,7 +182,7 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
             </div>
           ) : (
             <div className="rounded-md bg-background border border-border text-foreground px-2.5 py-1.5 break-all font-mono max-h-20 overflow-auto text-[10px] shadow-inner custom-scrollbar whitespace-pre-wrap">
-              {d.output || <span className="text-muted-foreground italic">No output yet</span>}
+              {d.output ? formatOutput(d.output) : <span className="text-muted-foreground italic">No output yet</span>}
             </div>
           )}
         </div>
