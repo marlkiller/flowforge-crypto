@@ -140,8 +140,8 @@ interface SidebarProps {
   toggleCat: (cat: string) => void;
   onDragStart: (e: React.DragEvent, kind: string) => void;
   openExportDialog: () => void;
+  openImportDialog: () => void;
   openShareDialog: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 export function Sidebar({
@@ -155,8 +155,8 @@ export function Sidebar({
   toggleCat,
   onDragStart,
   openExportDialog,
+  openImportDialog,
   openShareDialog,
-  fileInputRef,
 }: SidebarProps) {
   return (
     <aside
@@ -284,7 +284,7 @@ export function Sidebar({
                 <Download className="w-3 h-3" /> Export
               </button>
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={openImportDialog}
                 className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-accent text-[9px] font-bold uppercase tracking-wider transition-all"
               >
                 <Upload className="w-3 h-3" /> Import

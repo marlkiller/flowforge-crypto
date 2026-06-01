@@ -421,8 +421,8 @@ function InnerEditor() {
           toggleCat={toggleCat}
           onDragStart={interaction.onDragStart}
           openExportDialog={workflowActions.openExportDialog}
+          openImportDialog={workflowActions.openImportDialog}
           openShareDialog={workflowActions.openShareDialog}
-          fileInputRef={fileInputRef}
         />
       )}
 
@@ -450,8 +450,8 @@ function InnerEditor() {
               toggleCat={toggleCat}
               onDragStart={interaction.onDragStart}
               openExportDialog={workflowActions.openExportDialog}
+              openImportDialog={workflowActions.openImportDialog}
               openShareDialog={workflowActions.openShareDialog}
-              fileInputRef={fileInputRef}
             />
           </div>
         </div>
@@ -974,17 +974,23 @@ function InnerEditor() {
         setExportDialogOpen={workflowActions.setExportDialogOpen}
         exportSelectedIds={workflowActions.exportSelectedIds}
         setExportSelectedIds={workflowActions.setExportSelectedIds}
+        exportText={workflowActions.exportText}
         handleExportConfirm={workflowActions.handleExportConfirm}
         importDialogOpen={workflowActions.importDialogOpen}
         setImportDialogOpen={workflowActions.setImportDialogOpen}
         importCandidates={workflowActions.importCandidates}
         importSelectedIds={workflowActions.importSelectedIds}
         setImportSelectedIds={workflowActions.setImportSelectedIds}
+        importText={workflowActions.importText}
+        setImportText={workflowActions.setImportText}
+        handleImportText={workflowActions.handleImportText}
         handleImportConfirm={workflowActions.handleImportConfirm}
+        fileInputRef={fileInputRef}
         shareDialogOpen={workflowActions.shareDialogOpen}
         setShareDialogOpen={workflowActions.setShareDialogOpen}
         shareSelectedIds={workflowActions.shareSelectedIds}
         setShareSelectedIds={workflowActions.setShareSelectedIds}
+        shareUrl={workflowActions.shareUrl}
         handleShareConfirm={workflowActions.handleShareConfirm}
         shareImportDialogOpen={workflowActions.shareImportDialogOpen}
         setShareImportDialogOpen={workflowActions.setShareImportDialogOpen}

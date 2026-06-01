@@ -13,13 +13,40 @@ export function useWorkflowActions(workflows: Workflow[]) {
   // Export/Import dialog state
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportSelectedIds, setExportSelectedIds] = useState<Set<string>>(new Set());
+  const [exportText, setExportText] = useState("");
+
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importCandidates, setImportCandidates] = useState<Workflow[]>([]);
   const [importSelectedIds, setImportSelectedIds] = useState<Set<string>>(new Set());
+  const [importText, setImportText] = useState("");
+
+  // Update export text when selection changes
+  useEffect(() => {
+    if (exportDialogOpen) {
+      const ids = Array.from(exportSelectedIds);
+      const text = graphStore.serializeWorkflows(ids);
+      setExportText(text);
+    }
+  }, [exportSelectedIds, exportDialogOpen]);
 
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareSelectedIds, setShareSelectedIds] = useState<Set<string>>(new Set());
+  const [shareUrl, setShareUrl] = useState("");
+
+  // Update share URL when selection changes
+  useEffect(() => {
+    if (shareDialogOpen) {
+      const ids = Array.from(shareSelectedIds);
+      if (ids.length === 0) {
+        setShareUrl("");
+        return;
+      }
+      const targets = workflows.filter((w) => ids.includes(w.id));
+      const encoded = encodeWorkflows(targets);
+      setShareUrl(generateShareUrl(encoded));
+    }
+  }, [shareSelectedIds, shareDialogOpen, workflows]);
 
   // Share import dialog state
   const [shareImportDialogOpen, setShareImportDialogOpen] = useState(false);
@@ -40,6 +67,12 @@ export function useWorkflowActions(workflows: Workflow[]) {
     setExportDialogOpen(false);
   }, [exportSelectedIds]);
 
+  const openImportDialog = useCallback(() => {
+    setImportCandidates([]);
+    setImportText("");
+    setImportDialogOpen(true);
+  }, []);
+
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -56,6 +89,22 @@ export function useWorkflowActions(workflows: Workflow[]) {
     }
   };
 
+  const handleImportText = useCallback(() => {
+    if (!importText.trim()) {
+      toast.error("Please paste workflow JSON first");
+      return;
+    }
+    try {
+      const workflows = graphStore.parseWorkflowString(importText);
+      setImportCandidates(workflows);
+      setImportSelectedIds(new Set(workflows.map((w) => w.id)));
+    } catch (err) {
+      toast.error("Parse failed", {
+        description: err instanceof Error ? err.message : "Invalid JSON format",
+      });
+    }
+  }, [importText]);
+
   const handleImportConfirm = useCallback(() => {
     const ids = Array.from(importSelectedIds);
     if (ids.length === 0) {
@@ -67,6 +116,7 @@ export function useWorkflowActions(workflows: Workflow[]) {
     toast.success(`Imported ${count} workflow${count > 1 ? "s" : ""}`);
     setImportDialogOpen(false);
     setImportCandidates([]);
+    setImportText("");
   }, [importSelectedIds, importCandidates]);
 
   // Share
@@ -133,22 +183,29 @@ export function useWorkflowActions(workflows: Workflow[]) {
     setExportDialogOpen,
     exportSelectedIds,
     setExportSelectedIds,
+    exportText,
+    setExportText,
     importDialogOpen,
     setImportDialogOpen,
     importCandidates,
     importSelectedIds,
     setImportSelectedIds,
+    importText,
+    setImportText,
     shareDialogOpen,
     setShareDialogOpen,
     shareSelectedIds,
     setShareSelectedIds,
+    shareUrl,
     shareImportDialogOpen,
     setShareImportDialogOpen,
     sharedWorkflows,
     setSharedWorkflows,
     openExportDialog,
     handleExportConfirm,
+    openImportDialog,
     handleImportFile,
+    handleImportText,
     handleImportConfirm,
     openShareDialog,
     handleShareConfirm,

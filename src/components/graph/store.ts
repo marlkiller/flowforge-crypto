@@ -403,11 +403,11 @@ export const graphStore = {
   },
 
   // Export/Import
-  exportWorkflows: (workflowIds?: string[]) => {
+  serializeWorkflows: (workflowIds?: string[]) => {
     const targets = workflowIds
       ? state.workflows.filter((w) => workflowIds.includes(w.id))
       : state.workflows;
-    if (targets.length === 0) return;
+    if (targets.length === 0) return "";
     const serializable = targets.map((w) => ({
       ...w,
       nodes: w.nodes.map((n) => ({
@@ -421,9 +421,39 @@ export const graphStore = {
         },
       })),
     }));
-    const blob = new Blob([JSON.stringify({ version: 1, workflows: serializable }, null, 2)], {
-      type: "application/json",
-    });
+    return JSON.stringify({ version: 1, workflows: serializable }, null, 2);
+  },
+
+  cleanWorkflows: (imported: any[]): Workflow[] => {
+    const cleaned: Workflow[] = [];
+    for (const w of imported) {
+      if (!w.nodes || !w.edges) continue;
+      const nodes = w.nodes.filter((n: GraphNode) => n.data && NODE_KIND_META[n.data.kind]);
+      if (nodes.length === 0) continue;
+      nodes.forEach((n: GraphNode) => {
+        if (n.data) {
+          n.data.fileBytes = undefined;
+          n.data.output = undefined;
+          n.data.error = undefined;
+          n.data.outputBytesLen = undefined;
+        }
+      });
+      cleaned.push({
+        id: nextWfId(),
+        name: w.name || "Imported",
+        nodes,
+        edges: w.edges || [],
+        selectedNodeId: null,
+        selectedEdgeId: null,
+      });
+    }
+    return cleaned;
+  },
+
+  exportWorkflows: (workflowIds?: string[]) => {
+    const json = graphStore.serializeWorkflows(workflowIds);
+    if (!json) return;
+    const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -433,46 +463,32 @@ export const graphStore = {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   },
+
+  parseWorkflowString: (content: string): Workflow[] => {
+    try {
+      const parsed = JSON.parse(content);
+      const imported = parsed.workflows ?? (Array.isArray(parsed) ? parsed : [parsed]);
+      if (!Array.isArray(imported) || imported.length === 0) {
+        throw new Error("Invalid workflow data");
+      }
+      const cleaned = graphStore.cleanWorkflows(imported);
+      if (cleaned.length === 0) {
+        throw new Error("No valid workflows found");
+      }
+      return cleaned;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error("Invalid JSON format");
+    }
+  },
+
   parseImportFile: (file: File): Promise<Workflow[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const parsed = JSON.parse(reader.result as string);
-          const imported = parsed.workflows ?? (Array.isArray(parsed) ? parsed : [parsed]);
-          if (!Array.isArray(imported) || imported.length === 0) {
-            reject(new Error("Invalid workflow file"));
-            return;
-          }
-          const cleaned: Workflow[] = [];
-          for (const w of imported) {
-            if (!w.nodes || !w.edges) continue;
-            const nodes = w.nodes.filter((n: GraphNode) => n.data && NODE_KIND_META[n.data.kind]);
-            if (nodes.length === 0) continue;
-            nodes.forEach((n: GraphNode) => {
-              if (n.data) {
-                n.data.fileBytes = undefined;
-                n.data.output = undefined;
-                n.data.error = undefined;
-                n.data.outputBytesLen = undefined;
-              }
-            });
-            cleaned.push({
-              id: nextWfId(),
-              name: w.name || "Imported",
-              nodes,
-              edges: w.edges || [],
-              selectedNodeId: null,
-              selectedEdgeId: null,
-            });
-          }
-          if (cleaned.length === 0) {
-            reject(new Error("No valid workflows found in file"));
-            return;
-          }
-          resolve(cleaned);
-        } catch {
-          reject(new Error("Invalid workflow file"));
+          resolve(graphStore.parseWorkflowString(reader.result as string));
+        } catch (err) {
+          reject(err);
         }
       };
       reader.onerror = () => reject(new Error("Failed to read file"));
