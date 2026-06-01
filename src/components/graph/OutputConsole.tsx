@@ -194,28 +194,28 @@ export function OutputConsole({
             </button>
           </>
         )}
-        {!minimized && groups.length > 0 && (
-          <div className="ml-auto flex items-center gap-1.5">
-            <Layers className="w-3 h-3 text-muted-foreground/50" />
-            <select
-              value={selectedGroup ?? ""}
-              onChange={(e) => onGroupChange(e.target.value || null)}
-              className="bg-background border border-border rounded px-1.5 py-0.5 text-[10px] text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer max-w-[140px]"
-              title="Filter execution to a specific group"
-            >
-              <option value="">Execute All</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.data.label as string}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        {!minimized && (
-          <GripHorizontal className="w-3 h-3 text-muted-foreground/40 ml-1 cursor-row-resize" />
-        )}
-        <div className="ml-1">
+        <div className="ml-auto flex items-center gap-1">
+          {!minimized && (
+            <>
+              <Layers className="w-3 h-3 text-muted-foreground/50" />
+              <select
+                value={selectedGroup ?? ""}
+                onChange={(e) => onGroupChange(e.target.value || null)}
+                className="bg-background border border-border rounded px-1.5 py-0.5 text-[10px] text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer max-w-[140px]"
+                title="Filter execution to a specific group"
+              >
+                <option value="">Execute All</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.data.label as string}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+          {!minimized && (
+            <GripHorizontal className="w-3 h-3 text-muted-foreground/40 cursor-row-resize" />
+          )}
           <button
             onClick={onRun}
             disabled={running}

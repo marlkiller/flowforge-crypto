@@ -92,6 +92,12 @@ function InnerEditor() {
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (selectedGroup && !nodes.some((n) => n.id === selectedGroup)) {
+      setSelectedGroup(null);
+    }
+  }, [nodes, selectedGroup]);
+
   const toggleCat = (cat: string) => {
     setCollapsedCats((prev) => {
       const next = new Set(prev);
