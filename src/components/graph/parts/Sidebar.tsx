@@ -22,6 +22,7 @@ import {
   Split,
   Archive,
   GitBranch,
+  Layers,
 } from "lucide-react";
 import { getActiveCategories, CATEGORY_META, NODE_KIND_META } from "@/lib/crypto/registry";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -37,6 +38,7 @@ import {
 import { useState } from "react";
 
 const PRESET_ICONS: Record<string, typeof Fingerprint> = {
+  "Group Demo (Isolated + Connected)": Layers,
   "RSA Signing Flow": Fingerprint,
   "AES-GCM Encrypt/Decrypt": ShieldCheck,
   "AES-CBC Encrypt/Decrypt": ShieldCheck,

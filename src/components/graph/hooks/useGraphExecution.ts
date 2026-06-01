@@ -7,7 +7,12 @@ import { toast } from "sonner";
 
 const EXECUTION_MIN_MS = 150;
 
-export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: GraphEdge[]) {
+export function useGraphExecution(
+  activeId: string,
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  selectedGroup: string | null = null,
+) {
   const [errorCount, setErrorCount] = useState(0);
   const [execLogs, setExecLogs] = useState<NodeExecutionLog[]>([]);
   const [execRunning, setExecRunning] = useState(false);
@@ -91,8 +96,64 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
 
     const wf = graphStore.getActive();
 
+    // When filtering by group, include connected nodes via edges (not absolute isolation)
+    const filteredNodes = selectedGroup
+      ? (() => {
+          const groupNode = wf.nodes.find((n) => n.id === selectedGroup);
+          const allowOutbound = groupNode?.data?.allowOutbound === "yes";
+          const seed = new Set(
+            wf.nodes
+              .filter((n) => n.parentId === selectedGroup || n.id === selectedGroup)
+              .map((n) => n.id),
+          );
+
+          // Build adjacency
+          const inEdges = new Map<string, string[]>();
+          const outEdges = new Map<string, string[]>();
+          for (const e of wf.edges) {
+            const ins = inEdges.get(e.target) || [];
+            ins.push(e.source);
+            inEdges.set(e.target, ins);
+            const outs = outEdges.get(e.source) || [];
+            outs.push(e.target);
+            outEdges.set(e.source, outs);
+          }
+
+          // Walk upstream (always include all dependencies for correct execution)
+          const selected = new Set(seed);
+          const queue = Array.from(seed);
+          for (const id of queue) {
+            for (const src of inEdges.get(id) || []) {
+              if (!selected.has(src)) {
+                selected.add(src);
+                queue.push(src);
+              }
+            }
+          }
+
+          // Walk downstream (only if allowOutbound)
+          if (allowOutbound) {
+            const fwd = Array.from(seed);
+            for (const id of fwd) {
+              for (const tgt of outEdges.get(id) || []) {
+                if (!selected.has(tgt)) {
+                  selected.add(tgt);
+                  fwd.push(tgt);
+                }
+              }
+            }
+          }
+
+          return wf.nodes.filter((n) => selected.has(n.id));
+        })()
+      : wf.nodes;
+    const groupIds = new Set(filteredNodes.map((n) => n.id));
+    const filteredEdges = selectedGroup
+      ? wf.edges.filter((e) => groupIds.has(e.source) && groupIds.has(e.target))
+      : wf.edges;
+
     try {
-      const result = await workerExecute(wf.nodes, wf.edges);
+      const result = await workerExecute(filteredNodes, filteredEdges);
       setExecLogs(result.logs);
       const errors = Array.from(result.errors.values());
       setErrorCount(errors.length);
@@ -173,7 +234,7 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
       isExecutingRef.current = false;
       setExecRunning(false);
     }
-  }, [workerExecute]);
+  }, [workerExecute, selectedGroup]);
 
   const execKey = useMemo(() => {
     const summary = {

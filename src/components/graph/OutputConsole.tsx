@@ -1,13 +1,16 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Play, ChevronDown, GripHorizontal, Loader2, Copy, Timer } from "lucide-react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { Play, ChevronDown, GripHorizontal, Loader2, Copy, Timer, Layers } from "lucide-react";
 import { toast } from "sonner";
-import type { NodeExecutionLog } from "@/lib/crypto/types";
+import type { NodeExecutionLog, GraphNode } from "@/lib/crypto/types";
 import { formatBytes } from "@/lib/crypto/service";
 
 interface Props {
   logs: NodeExecutionLog[];
   running: boolean;
   onRun: () => void;
+  nodes: GraphNode[];
+  selectedGroup: string | null;
+  onGroupChange: (groupId: string | null) => void;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -31,7 +34,28 @@ const STATUS_BG: Record<string, string> = {
 const MIN_H = 32;
 const MAX_H = window.innerHeight * 0.6;
 
-export function OutputConsole({ logs, running, onRun }: Props) {
+export function OutputConsole({
+  logs,
+  running,
+  onRun,
+  nodes,
+  selectedGroup,
+  onGroupChange,
+}: Props) {
+  const groups = useMemo(() => {
+    return nodes.filter((n) => n.data.kind === "group");
+  }, [nodes]);
+
+  const groupLabelByNodeId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const n of nodes) {
+      if (n.parentId) {
+        const group = nodes.find((g) => g.id === n.parentId);
+        if (group) map.set(n.id, group.data.label as string);
+      }
+    }
+    return map;
+  }, [nodes]);
   const ref = useRef<HTMLDivElement>(null);
   const [minimized, setMinimized] = useState(false);
   const [height, setHeight] = useState(144);
@@ -170,10 +194,28 @@ export function OutputConsole({ logs, running, onRun }: Props) {
             </button>
           </>
         )}
-        {!minimized && (
-          <GripHorizontal className="w-3 h-3 text-muted-foreground/40 ml-auto cursor-row-resize" />
+        {!minimized && groups.length > 0 && (
+          <div className="ml-auto flex items-center gap-1.5">
+            <Layers className="w-3 h-3 text-muted-foreground/50" />
+            <select
+              value={selectedGroup ?? ""}
+              onChange={(e) => onGroupChange(e.target.value || null)}
+              className="bg-background border border-border rounded px-1.5 py-0.5 text-[10px] text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer max-w-[140px]"
+              title="Filter execution to a specific group"
+            >
+              <option value="">Execute All</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.data.label as string}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
-        <div className="ml-2">
+        {!minimized && (
+          <GripHorizontal className="w-3 h-3 text-muted-foreground/40 ml-1 cursor-row-resize" />
+        )}
+        <div className="ml-1">
           <button
             onClick={onRun}
             disabled={running}
@@ -198,7 +240,24 @@ export function OutputConsole({ logs, running, onRun }: Props) {
               {lastRunRef.current > 0 && <> · Last run {lastRunAgo()}</>}
             </p>
           ) : (
-            logs.map((log, i) => <LogEntry key={log.nodeId} log={log} index={i} />)
+            (() => {
+              const grouped = logs.slice().sort((a, b) => {
+                const ga = groupLabelByNodeId.get(a.nodeId);
+                const gb = groupLabelByNodeId.get(b.nodeId);
+                if (ga && !gb) return 1;
+                if (!ga && gb) return -1;
+                if (ga && gb && ga !== gb) return ga.localeCompare(gb);
+                return 0;
+              });
+              return grouped.map((log, i) => (
+                <LogEntry
+                  key={log.nodeId}
+                  log={log}
+                  index={i}
+                  groupLabel={groupLabelByNodeId.get(log.nodeId)}
+                />
+              ));
+            })()
           )}
         </div>
       )}
@@ -208,7 +267,15 @@ export function OutputConsole({ logs, running, onRun }: Props) {
 
 const MAX_OUTPUT_LEN = 10240;
 
-function LogEntry({ log, index }: { log: NodeExecutionLog; index: number }) {
+function LogEntry({
+  log,
+  index,
+  groupLabel,
+}: {
+  log: NodeExecutionLog;
+  index: number;
+  groupLabel?: string;
+}) {
   const [showFull, setShowFull] = useState(false);
   const fmtMatch = log.params?.match(/^(?:input|output)Format:(\w+)$/);
   const formatVal = fmtMatch?.[1] ?? log.outputFormat;
@@ -262,10 +329,18 @@ function LogEntry({ log, index }: { log: NodeExecutionLog; index: number }) {
             </span>
           </>
         )}
-        <span
-          className={`ml-auto inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${STATUS_COLOR[log.status]} ${log.status === "error" ? "bg-destructive/10" : log.status === "success" ? "bg-emerald-500/10" : "bg-muted"}`}
-        >
-          {STATUS_LABEL[log.status]}
+        <span className="ml-auto flex items-center gap-1.5">
+          {groupLabel && (
+            <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-400/10">
+              <Layers className="w-2.5 h-2.5" />
+              {groupLabel}
+            </span>
+          )}
+          <span
+            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${STATUS_COLOR[log.status]} ${log.status === "error" ? "bg-destructive/10" : log.status === "success" ? "bg-emerald-500/10" : "bg-muted"}`}
+          >
+            {STATUS_LABEL[log.status]}
+          </span>
         </span>
         {log.status !== "skipped" && (
           <span className="text-muted-foreground font-mono text-[10px]">

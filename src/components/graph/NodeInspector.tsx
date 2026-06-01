@@ -142,6 +142,11 @@ export function NodeInspector({ node }: Props) {
               update={update}
             />
           ))}
+        {meta.kind !== "group" && (
+          <Section title="Group">
+            <GroupSelector nodeId={node.id} currentParentId={node.parentId} />
+          </Section>
+        )}
         {meta.category !== "ui" && (
           <>
             <Section title="Output Format">
@@ -262,6 +267,87 @@ function InspectorField({
         )}
       </div>
     </Section>
+  );
+}
+
+function GroupSelector({
+  nodeId,
+  currentParentId,
+}: {
+  nodeId: string;
+  currentParentId: string | undefined;
+}) {
+  const w = graphStore.getActive();
+  const groups = w.nodes.filter((n) => n.data.kind === "group" && n.id !== nodeId);
+
+  return (
+    <div className="relative">
+      <select
+        className="w-full rounded-lg bg-background border border-border px-2.5 py-2 text-xs text-foreground font-medium outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm appearance-none cursor-pointer transition-all"
+        value={currentParentId ?? ""}
+        onChange={(e) => {
+          const newGroupId = e.target.value || null;
+          const node = w.nodes.find((n) => n.id === nodeId);
+          if (!node) return;
+
+          graphStore.snapshot();
+
+          if (newGroupId) {
+            const group = w.nodes.find((n) => n.id === newGroupId)!;
+            const absX =
+              node.position.x +
+              (currentParentId
+                ? (w.nodes.find((n) => n.id === currentParentId)?.position.x ?? 0)
+                : 0);
+            const absY =
+              node.position.y +
+              (currentParentId
+                ? (w.nodes.find((n) => n.id === currentParentId)?.position.y ?? 0)
+                : 0);
+            const relPos = {
+              x: absX - group.position.x,
+              y: absY - group.position.y,
+            };
+            graphStore.setNodes(
+              w.nodes.map((n) =>
+                n.id === nodeId
+                  ? { ...n, position: relPos, parentId: newGroupId, extent: "parent" as const }
+                  : n,
+              ),
+            );
+          } else if (currentParentId) {
+            const oldParent = w.nodes.find((n) => n.id === currentParentId);
+            if (oldParent) {
+              graphStore.setNodes(
+                w.nodes.map((n) =>
+                  n.id === nodeId
+                    ? {
+                        ...n,
+                        position: {
+                          x: node.position.x + oldParent.position.x,
+                          y: node.position.y + oldParent.position.y,
+                        },
+                        parentId: undefined,
+                        extent: undefined,
+                      }
+                    : n,
+                ),
+              );
+            }
+          }
+        }}
+      >
+        <option value="">None</option>
+        {groups.map((g) => (
+          <option key={g.id} value={g.id}>
+            {g.data.label as string}
+          </option>
+        ))}
+      </select>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+        ▼
+      </div>
+    </div>
   );
 }
 

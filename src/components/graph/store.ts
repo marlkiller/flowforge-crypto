@@ -4,6 +4,7 @@ import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
 import "@/lib/crypto/setup";
 import { NODE_KIND_META } from "@/lib/crypto/registry";
 import { getLayoutedNodes } from "@/lib/crypto/layout";
+import { initGroupCounter } from "@/lib/crypto/factory";
 
 export interface Workflow {
   id: string;
@@ -64,6 +65,18 @@ function loadPersistedState(): State | null {
     });
 
     parsed.workflows = parsed.workflows.filter((w: Workflow) => w.nodes.length > 0);
+    parsed.workflows.forEach((w: Workflow) => {
+      w.nodes = sortNodes(w.nodes as GraphNode[]);
+    });
+    // Init group counter from existing groups
+    let maxGroup = 0;
+    parsed.workflows.forEach((w: Workflow) => {
+      w.nodes.forEach((n) => {
+        const match = (n.data?.label as string)?.match(/^Group_(\d+)$/);
+        if (match) maxGroup = Math.max(maxGroup, parseInt(match[1], 10));
+      });
+    });
+    initGroupCounter(maxGroup);
     if (parsed.workflows.length === 0) return null;
 
     return {
@@ -116,10 +129,53 @@ function cloneWorkflow(w: Workflow): Workflow {
   return JSON.parse(JSON.stringify(w));
 }
 
+// Ensure parent nodes come before children in the array (xyflow requirement).
+// Also clears dangling parentId references to prevent "parent node not found" errors.
+function sortNodes(nodes: GraphNode[]): GraphNode[] {
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  const cleaned = nodes.map((n) => {
+    if (n.parentId && !nodeMap.has(n.parentId)) {
+      return { ...n, parentId: undefined, extent: undefined };
+    }
+    return n;
+  });
+
+  const sorted: GraphNode[] = [];
+  const added = new Set<string>();
+
+  for (const n of cleaned) {
+    if (!n.parentId || !nodeMap.has(n.parentId)) {
+      sorted.push(n);
+      added.add(n.id);
+    }
+  }
+
+  let prevSize = 0;
+  while (sorted.length < cleaned.length && sorted.length > prevSize) {
+    prevSize = sorted.length;
+    for (const n of cleaned) {
+      if (!added.has(n.id) && added.has(n.parentId!)) {
+        sorted.push(n);
+        added.add(n.id);
+      }
+    }
+  }
+
+  for (const n of cleaned) {
+    if (!added.has(n.id)) {
+      sorted.push(n);
+      added.add(n.id);
+    }
+  }
+
+  return sorted;
+}
+
 function patchActive(patch: Partial<Workflow>) {
+  const sorted = patch.nodes ? { ...patch, nodes: sortNodes(patch.nodes) } : patch;
   state = {
     ...state,
-    workflows: state.workflows.map((w) => (w.id === state.activeId ? { ...w, ...patch } : w)),
+    workflows: state.workflows.map((w) => (w.id === state.activeId ? { ...w, ...sorted } : w)),
   };
   emit();
 }
@@ -211,7 +267,12 @@ export const graphStore = {
   setActiveGraph: (g: { nodes: GraphNode[]; edges: GraphEdge[]; name?: string }) => {
     snapshot();
     state = { ...state, graphKey: state.graphKey + 1 };
-    patchActive({ ...g, selectedNodeId: null, selectedEdgeId: null, viewport: undefined });
+    patchActive({
+      ...g,
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      viewport: undefined,
+    });
   },
   updateNodeData: (id: string, patch: Record<string, unknown>) => {
     snapshot();
@@ -255,13 +316,58 @@ export const graphStore = {
       }
     }
 
+    // When group isolation settings change, remove edges that now violate
+    if (
+      updatedNode?.data.kind === "group" &&
+      ("allowInbound" in patch || "allowOutbound" in patch)
+    ) {
+      const updatedData = { ...updatedNode.data, ...patch };
+      const filteredEdges = w.edges.filter((e) => {
+        const src = nextNodes.find((n) => n.id === e.source);
+        const tgt = nextNodes.find((n) => n.id === e.target);
+        if (!src || !tgt) return false;
+        if (src.parentId === tgt.parentId) return true;
+        if (src.parentId === id) {
+          return updatedData.allowOutbound === "yes";
+        }
+        if (tgt.parentId === id) {
+          return updatedData.allowInbound === "yes";
+        }
+        return true;
+      });
+      if (filteredEdges.length !== w.edges.length) {
+        patchActive({ nodes: nextNodes, edges: filteredEdges });
+        return;
+      }
+    }
+
     patchActive({ nodes: nextNodes });
   },
   removeNode: (id: string) => {
     snapshot();
     const w = active();
+    const node = w.nodes.find((n) => n.id === id);
+    const isGroup = node?.data.kind === "group";
+    const nextNodes = isGroup
+      ? w.nodes
+          .filter((n) => n.id !== id)
+          .map((n) => {
+            if (n.parentId === id) {
+              return {
+                ...n,
+                parentId: undefined,
+                extent: undefined,
+                position: {
+                  x: n.position.x + node!.position.x,
+                  y: n.position.y + node!.position.y,
+                },
+              };
+            }
+            return n;
+          })
+      : w.nodes.filter((n) => n.id !== id);
     patchActive({
-      nodes: w.nodes.filter((n) => n.id !== id),
+      nodes: nextNodes,
       edges: w.edges.filter((e) => e.source !== id && e.target !== id),
       selectedNodeId: w.selectedNodeId === id ? null : w.selectedNodeId,
       selectedEdgeId: null,

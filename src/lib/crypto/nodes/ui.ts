@@ -51,6 +51,44 @@ export const NOTE_META: NodeKindMeta = {
   ],
 };
 
+export const GROUP_META: NodeKindMeta = {
+  kind: "group",
+  label: "Group",
+  category: "ui",
+  description: "Group nodes together and execute them as a unit.",
+  inputs: [
+    {
+      id: "allowInbound",
+      label: "Allow Inbound",
+      type: "select",
+      defaultValue: "yes",
+      options: [
+        { label: "No", value: "no" },
+        { label: "Yes", value: "yes" },
+      ],
+      connectable: false,
+    },
+    {
+      id: "allowOutbound",
+      label: "Allow Outbound",
+      type: "select",
+      defaultValue: "yes",
+      options: [
+        { label: "No", value: "no" },
+        { label: "Yes", value: "yes" },
+      ],
+      connectable: false,
+    },
+    {
+      id: "label",
+      label: "Group Name",
+      type: "text",
+      defaultValue: "Group",
+      connectable: false,
+    },
+  ],
+};
+
 const dummyRunner = () => ({});
 
 export const noteDef: NodeDef = {
@@ -58,4 +96,10 @@ export const noteDef: NodeDef = {
   runner: dummyRunner,
 };
 
+export const groupDef: NodeDef = {
+  meta: GROUP_META,
+  runner: dummyRunner,
+};
+
 registerNodeDef("note", noteDef);
+registerNodeDef("group", groupDef);

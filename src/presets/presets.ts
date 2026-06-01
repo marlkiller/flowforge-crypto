@@ -2249,6 +2249,201 @@ export function getRncryptorDeepDivePreset(): WorkflowSeed {
   };
 }
 
+function groupNode(label: string, x: number, y: number, extra: Record<string, unknown> = {}) {
+  return makeNode("group", { x, y }, { label, ...extra });
+}
+
+function getGroupDemoPreset(): WorkflowSeed {
+  // ═══════════════════════════════════════════════════════════════
+  // Group 1: 全关  in=no  out=no
+  // 组内自闭环路，无法与外部通信。试图连接外部会变红。
+  // ═══════════════════════════════════════════════════════════════
+  const g1 = groupNode("Fully Closed (in=no, out=no)", 20, 20, {
+    allowInbound: "no",
+    allowOutbound: "no",
+  });
+  const g1_in = makeNode("input", { x: 40, y: 80 }, { text: "hello from group", label: "Src" });
+  const g1_hash = makeNode("sha256", { x: 220, y: 80 }, { label: "SHA-256" });
+  const g1_hex = makeNode("hex", { x: 420, y: 80 }, { action: "encode", label: "To Hex" });
+  const g1_out = makeNode("output", { x: 600, y: 80 }, { label: "Result" });
+  [g1_in, g1_hash, g1_hex, g1_out].forEach((n) => {
+    n.parentId = g1.id;
+    n.extent = "parent" as const;
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // Group 2: 只进不出  in=yes  out=no
+  // 外部 Input 可以进组，但组内 Output 连出时会报错（红色）
+  // ═══════════════════════════════════════════════════════════════
+  const g2 = groupNode("Inbound Only (in=yes, out=no)", 20, 360, {
+    allowInbound: "yes",
+    allowOutbound: "no",
+  });
+  const g2_dec = makeNode(
+    "aes",
+    { x: 40, y: 420 },
+    { action: "decrypt", cipherMode: "GCM", label: "AES Decrypt" },
+  );
+  const g2_decOut = makeNode("output", { x: 240, y: 420 }, { label: "Decrypted" });
+  [g2_dec, g2_decOut].forEach((n) => {
+    n.parentId = g2.id;
+    n.extent = "parent" as const;
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // Group 3: 只出不进  in=no  out=yes
+  // 组内节点可以连出，但外部节点连入时会报错（红色）
+  // ═══════════════════════════════════════════════════════════════
+  const g3 = groupNode("Outbound Only (in=no, out=yes)", 20, 700, {
+    allowInbound: "no",
+    allowOutbound: "yes",
+  });
+  const g3_enc = makeNode(
+    "aes",
+    { x: 40, y: 760 },
+    { action: "encrypt", cipherMode: "GCM", label: "AES Encrypt" },
+  );
+  const g3_hash = makeNode("sha256", { x: 240, y: 760 }, { label: "Hash" });
+  [g3_enc, g3_hash].forEach((n) => {
+    n.parentId = g3.id;
+    n.extent = "parent" as const;
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // Group 4: 全开  in=yes  out=yes
+  // 外部节点可自由进出，无限制
+  // ═══════════════════════════════════════════════════════════════
+  const g4 = groupNode("Fully Open (in=yes, out=yes)", 20, 1040, {
+    allowInbound: "yes",
+    allowOutbound: "yes",
+  });
+  const g4_transform = makeNode("uppercase", { x: 40, y: 1100 }, { label: "To Upper" });
+  const g4_out = makeNode("output", { x: 240, y: 1100 }, { label: "Internal Out" });
+  [g4_transform, g4_out].forEach((n) => {
+    n.parentId = g4.id;
+    n.extent = "parent" as const;
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // External nodes — 放在各组右方，方便测试连线是否报错
+  // ═══════════════════════════════════════════════════════════════
+  const extCiphertext = makeNode(
+    "input",
+    { x: 750, y: 180 },
+    { text: "ciphertext_hex", label: "Ext Ciphertext" },
+  );
+  const extKey = makeNode(
+    "input",
+    { x: 750, y: 300 },
+    {
+      text: "12345678901234567890123456789012",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Ext Key",
+    },
+  );
+  const extIv = makeNode(
+    "input",
+    { x: 750, y: 420 },
+    {
+      text: "12345678901234567890123456789012",
+      inputFormat: "hex",
+      outputFormat: "hex",
+      label: "Ext IV",
+    },
+  );
+  const extResult = makeNode("output", { x: 750, y: 640 }, { label: "External Out" });
+  const extPlaintext = makeNode(
+    "input",
+    { x: 750, y: 940 },
+    { text: "hello world", outputFormat: "utf8", label: "Ext Plaintext" },
+  );
+  const extUpperResult = makeNode("output", { x: 750, y: 1060 }, { label: "Upper Result" });
+
+  return {
+    name: "Group Demo (Isolated + Connected)",
+    nodes: [
+      g1,
+      g1_in,
+      g1_hash,
+      g1_hex,
+      g1_out,
+      g2,
+      g2_dec,
+      g2_decOut,
+      g3,
+      g3_enc,
+      g3_hash,
+      g4,
+      g4_transform,
+      g4_out,
+      extCiphertext,
+      extKey,
+      extIv,
+      extResult,
+      extPlaintext,
+      extUpperResult,
+    ],
+    edges: [
+      // ── Group 1 internal (no external edges) ──
+      { id: "g1e1", source: g1_in.id, target: g1_hash.id, targetHandle: "data", animated: true },
+      { id: "g1e2", source: g1_hash.id, target: g1_hex.id, targetHandle: "data", animated: true },
+      { id: "g1e3", source: g1_hex.id, target: g1_out.id, targetHandle: "data", animated: true },
+
+      // ── Group 2 internal + inbound only ──
+      { id: "g2e1", source: g2_dec.id, target: g2_decOut.id, targetHandle: "data", animated: true },
+      // ✅ 外部 → 组内（allowInbound=yes → 成功）
+      {
+        id: "ex2a",
+        source: extCiphertext.id,
+        target: g2_dec.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      { id: "ex2b", source: extKey.id, target: g2_dec.id, targetHandle: "key", animated: true },
+      { id: "ex2c", source: extIv.id, target: g2_dec.id, targetHandle: "iv", animated: true },
+      // ❌ 组内 → 外部 被禁止（试图拖动会变红）
+
+      // ── Group 3 internal + outbound only ──
+      { id: "g3e1", source: g3_enc.id, target: g3_hash.id, targetHandle: "data", animated: true },
+      // ✅ 组内 → 外部（allowOutbound=yes → 成功）
+      {
+        id: "ex3a",
+        source: g3_hash.id,
+        target: extResult.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      // ❌ 外部 → 组内 被禁止（试图拖动会变红）
+
+      // ── Group 4 internal + full bidirectional ──
+      {
+        id: "g4e1",
+        source: g4_transform.id,
+        target: g4_out.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      // ✅ 外部 → 组内（allowInbound=yes）
+      {
+        id: "ex4a",
+        source: extPlaintext.id,
+        target: g4_transform.id,
+        targetHandle: "data",
+        animated: true,
+      },
+      // ✅ 组内 → 外部（allowOutbound=yes）
+      {
+        id: "ex4b",
+        source: g4_transform.id,
+        target: extUpperResult.id,
+        targetHandle: "data",
+        animated: true,
+      },
+    ],
+  };
+}
+
 export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string }[] = [
   {
     label: "RNCryptor v3 Deep Dive (Hi + Lo)",
@@ -2411,5 +2606,10 @@ export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string 
     label: "HTTPS Handshake Simulation",
     seed: getHttpsHandshakePreset(),
     keywords: "https handshake tls ecdh hkdf aes gcm",
+  },
+  {
+    label: "Group Demo (Isolated + Connected)",
+    seed: getGroupDemoPreset(),
+    keywords: "group isolation inbound outbound pipeline organization",
   },
 ];

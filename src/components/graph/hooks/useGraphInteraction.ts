@@ -140,6 +140,83 @@ export function useGraphInteraction(
     setContextMenu(null);
   }, []);
 
+  const onNodeDragStop = useCallback((_event: React.MouseEvent, node: RFNode) => {
+    if (node.data?.kind === "group") return; // groups cannot nest
+    const allNodes = graphStore.getActive().nodes;
+    const groups = allNodes.filter((g) => g.data.kind === "group" && g.id !== node.id);
+    const nodeW = (node.width ?? 100) as number;
+    const nodeH = (node.height ?? 40) as number;
+
+    // Compute absolute center position
+    let absX = node.position.x;
+    let absY = node.position.y;
+    if (node.parentId) {
+      const parent = allNodes.find((n) => n.id === node.parentId);
+      if (parent) {
+        absX += parent.position.x;
+        absY += parent.position.y;
+      }
+    }
+    const nodeCx = absX + nodeW / 2;
+    const nodeCy = absY + nodeH / 2;
+
+    let bestGroup: string | null = null;
+    for (const g of groups) {
+      const gw = (g.width ?? 200) as number;
+      const gh = (g.height ?? 100) as number;
+      if (
+        nodeCx >= g.position.x &&
+        nodeCx <= g.position.x + gw &&
+        nodeCy >= g.position.y &&
+        nodeCy <= g.position.y + gh
+      ) {
+        bestGroup = g.id;
+        break;
+      }
+    }
+
+    if (bestGroup !== (node.parentId ?? null)) {
+      graphStore.snapshot();
+      const w = graphStore.getActive();
+
+      if (bestGroup) {
+        // Entering a group → convert to relative position
+        const group = allNodes.find((n) => n.id === bestGroup)!;
+        const relPos = {
+          x: absX - group.position.x,
+          y: absY - group.position.y,
+        };
+        graphStore.setNodes(
+          w.nodes.map((n) =>
+            n.id === node.id
+              ? { ...n, position: relPos, parentId: bestGroup, extent: "parent" as const }
+              : n,
+          ),
+        );
+      } else if (node.parentId) {
+        // Leaving a group → convert to absolute position
+        const oldParent = allNodes.find((n) => n.id === node.parentId);
+        if (oldParent) {
+          graphStore.setNodes(
+            w.nodes.map((n) =>
+              n.id === node.id
+                ? {
+                    ...n,
+                    position: {
+                      x: node.position.x + oldParent.position.x,
+                      y: node.position.y + oldParent.position.y,
+                    },
+                    parentId: undefined,
+                    extent: undefined,
+                  }
+                : n,
+            ),
+          );
+        }
+      }
+    }
+  }, []);
+
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: RFNode) => {
       event.preventDefault();
@@ -193,10 +270,41 @@ export function useGraphInteraction(
     e.preventDefault();
     const kind = e.dataTransfer.getData("application/x-crypto-kind");
     if (!kind) return;
-    const position = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
-    const n = makeNode(kind, position);
+    const absPos = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    const n = makeNode(kind, absPos);
     graphStore.snapshot();
-    graphStore.setNodes([...graphStore.getActive().nodes, n]);
+
+    // Check if dropped inside a group (groups cannot nest)
+    const allNodes = graphStore.getActive().nodes;
+    if (n.data.kind === "group") {
+      graphStore.setNodes([...allNodes, n]);
+      graphStore.setSelected(n.id);
+      return;
+    }
+    const groups = allNodes.filter((g) => g.data.kind === "group" && g.id !== n.id);
+    const nodeCx = absPos.x + 50;
+    const nodeCy = absPos.y + 20;
+    for (const g of groups) {
+      const gw = (g.width ?? 200) as number;
+      const gh = (g.height ?? 100) as number;
+      if (
+        nodeCx >= g.position.x &&
+        nodeCx <= g.position.x + gw &&
+        nodeCy >= g.position.y &&
+        nodeCy <= g.position.y + gh
+      ) {
+        // Inside group → convert to relative position
+        n.position = {
+          x: absPos.x - g.position.x,
+          y: absPos.y - g.position.y,
+        };
+        n.parentId = g.id;
+        n.extent = "parent" as const;
+        break;
+      }
+    }
+
+    graphStore.setNodes([...allNodes, n]);
     graphStore.setSelected(n.id);
   };
 
@@ -298,6 +406,7 @@ export function useGraphInteraction(
     onNodeContextMenu,
     onEdgeClick,
     onEdgeContextMenu,
+    onNodeDragStop,
     onDragStart,
     onDragOver,
     onDrop,

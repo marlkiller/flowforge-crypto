@@ -22,6 +22,7 @@ import "@xyflow/react/dist/style.css";
 
 import { CryptoNode } from "./CryptoNode";
 import { NoteNode } from "./parts/NoteNode";
+import { GroupNode } from "./parts/GroupNode";
 import { NodeInspector } from "./NodeInspector";
 import { OutputConsole } from "./OutputConsole";
 import { graphStore, useGraphStore } from "./store";
@@ -57,6 +58,7 @@ import { toast } from "sonner";
 const nodeTypes = {
   crypto: CryptoNode,
   note: NoteNode,
+  cryptoGroup: GroupNode,
 };
 
 function InnerEditor() {
@@ -88,6 +90,7 @@ function InnerEditor() {
   const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
   const toggleCat = (cat: string) => {
     setCollapsedCats((prev) => {
@@ -99,7 +102,12 @@ function InnerEditor() {
   };
 
   // Logic extracted to hooks
-  const { execRunning, execLogs, errorCount, execute } = useGraphExecution(activeId, nodes, edges);
+  const { execRunning, execLogs, errorCount, execute } = useGraphExecution(
+    activeId,
+    nodes,
+    edges,
+    selectedGroup,
+  );
   const interaction = useGraphInteraction(nodes, edges, wrapperRef);
   const workflowActions = useWorkflowActions(workflows);
 
@@ -136,6 +144,18 @@ function InnerEditor() {
       const sourceNode = nodes.find((n) => n.id === conn.source);
       const targetNode = nodes.find((n) => n.id === conn.target);
       if (!sourceNode || !targetNode) return false;
+
+      // Group isolation: check group-level allowInbound / allowOutbound settings
+      if (sourceNode.parentId !== targetNode.parentId) {
+        if (sourceNode.parentId) {
+          const group = nodes.find((n) => n.id === sourceNode.parentId);
+          if (!group || group.data.allowOutbound !== "yes") return false;
+        }
+        if (targetNode.parentId) {
+          const group = nodes.find((n) => n.id === targetNode.parentId);
+          if (!group || group.data.allowInbound !== "yes") return false;
+        }
+      }
 
       const sourceMeta = NODE_KIND_META[sourceNode.data.kind];
       const targetMeta = NODE_KIND_META[targetNode.data.kind];
@@ -312,6 +332,55 @@ function InnerEditor() {
     ? nodes.find((n) => n.id === interaction.contextMenu!.nodeId)
     : null;
 
+  const groups = useMemo(() => nodes.filter((n) => n.data.kind === "group"), [nodes]);
+  const selectedNonGroupNodes = useMemo(
+    () => nodes.filter((n) => n.selected && n.data.kind !== "group"),
+    [nodes],
+  );
+
+  const setNodeGroup = useCallback((nodeId: string, groupId: string | null) => {
+    graphStore.snapshot();
+    const w = graphStore.getActive();
+    const node = w.nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    if (groupId) {
+      const group = w.nodes.find((n) => n.id === groupId);
+      if (!group) return;
+      let absX = node.position.x;
+      let absY = node.position.y;
+      if (node.parentId) {
+        const p = w.nodes.find((n) => n.id === node.parentId);
+        if (p) {
+          absX += p.position.x;
+          absY += p.position.y;
+        }
+      }
+      graphStore.setNodes(
+        w.nodes.map((n) =>
+          n.id === nodeId
+            ? {
+                ...n,
+                position: { x: absX - group.position.x, y: absY - group.position.y },
+                parentId: groupId,
+                extent: "parent" as const,
+              }
+            : n,
+        ),
+      );
+    } else if (node.parentId) {
+      const parent = w.nodes.find((n) => n.id === node.parentId);
+      const newPos = parent
+        ? { x: node.position.x + parent.position.x, y: node.position.y + parent.position.y }
+        : node.position;
+      graphStore.setNodes(
+        w.nodes.map((n) =>
+          n.id === nodeId ? { ...n, position: newPos, parentId: undefined, extent: undefined } : n,
+        ),
+      );
+    }
+  }, []);
+
   return (
     <div className="h-screen w-screen bg-background text-foreground font-sans flex">
       {isMobile ? (
@@ -431,6 +500,7 @@ function InnerEditor() {
                 graphStore.snapshot();
                 graphStore.bringToFront(node.id);
               }}
+              onNodeDragStop={interaction.onNodeDragStop}
               onEdgeClick={interaction.onEdgeClick}
               onEdgeContextMenu={interaction.onEdgeContextMenu}
               onMoveEnd={onMoveEnd}
@@ -688,6 +758,39 @@ function InnerEditor() {
                 >
                   <Copy className="w-3 h-3" /> Duplicate
                 </button>
+                {ctxNode.data.kind !== "group" && groups.length > 0 && (
+                  <>
+                    <div className="my-0.5 border-t border-border/50" />
+                    <div className="px-2.5 py-1 text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">
+                      Assign to Group
+                    </div>
+                    {groups.map((g) => (
+                      <button
+                        key={g.id}
+                        onClick={() => {
+                          setNodeGroup(ctxNode.id, ctxNode.parentId === g.id ? null : g.id);
+                          interaction.setContextMenu(null);
+                        }}
+                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent transition-colors ${ctxNode.parentId === g.id ? "text-primary" : ""}`}
+                      >
+                        <div className="w-2 h-2 rounded-full bg-primary/40 shrink-0" />
+                        {g.data.label as string}
+                        {ctxNode.parentId === g.id && <span className="ml-auto text-[9px]">✓</span>}
+                      </button>
+                    ))}
+                    {ctxNode.parentId && (
+                      <button
+                        onClick={() => {
+                          setNodeGroup(ctxNode.id, null);
+                          interaction.setContextMenu(null);
+                        }}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" /> Clear Group
+                      </button>
+                    )}
+                  </>
+                )}
                 <div className="my-0.5 border-t border-border/50" />
                 <button
                   onClick={interaction.deleteNode}
@@ -747,6 +850,42 @@ function InnerEditor() {
                 >
                   <Copy className="w-3 h-3" /> Duplicate
                 </button>
+                {selectedNonGroupNodes.length > 0 && groups.length > 0 && (
+                  <>
+                    <div className="my-0.5 border-t border-border/50" />
+                    <div className="px-2.5 py-1 text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">
+                      Assign to Group
+                    </div>
+                    {groups.map((g) => (
+                      <button
+                        key={g.id}
+                        onClick={() => {
+                          for (const n of selectedNonGroupNodes) {
+                            setNodeGroup(n.id, n.parentId === g.id ? null : g.id);
+                          }
+                          interaction.setContextMenu(null);
+                        }}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent transition-colors"
+                      >
+                        <div className="w-2 h-2 rounded-full bg-primary/40 shrink-0" />
+                        {g.data.label as string}
+                      </button>
+                    ))}
+                    {selectedNonGroupNodes.some((n) => n.parentId) && (
+                      <button
+                        onClick={() => {
+                          for (const n of selectedNonGroupNodes) {
+                            if (n.parentId) setNodeGroup(n.id, null);
+                          }
+                          interaction.setContextMenu(null);
+                        }}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" /> Clear Group
+                      </button>
+                    )}
+                  </>
+                )}
                 <div className="my-0.5 border-t border-border/50" />
                 <button
                   onClick={interaction.deleteSelected}
@@ -783,7 +922,14 @@ function InnerEditor() {
         </div>
 
         {/* Console */}
-        <OutputConsole logs={execLogs} running={execRunning} onRun={execute} />
+        <OutputConsole
+          logs={execLogs}
+          running={execRunning}
+          onRun={execute}
+          nodes={nodes}
+          selectedGroup={selectedGroup}
+          onGroupChange={setSelectedGroup}
+        />
       </div>
 
       {/* Right Inspector — hidden on mobile (use sheet instead) */}

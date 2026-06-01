@@ -27,6 +27,13 @@ const MAP: Record<string, string> = {
   sourceHandle: "sh",
   targetHandle: "th",
   outputFormat: "of",
+  parentId: "pi",
+  extent: "e",
+  width: "w",
+  height: "h",
+  style: "s",
+  allowInbound: "ai",
+  allowOutbound: "ao",
   // Values
   crypto: "c",
   asymmetric: "a",
@@ -37,19 +44,24 @@ const MAP: Record<string, string> = {
 const REV_MAP = Object.fromEntries(Object.entries(MAP).map(([k, v]) => [v, k]));
 
 function minifyNode(n: GraphNode) {
-  return {
+  const result: any = {
     i: n.id,
     p: [Math.round(n.position.x), Math.round(n.position.y)],
+    t: n.type || (n.data.kind === "note" ? "note" : "crypto"),
     d: Object.entries(n.data).reduce((acc, [k, v]) => {
-      // Skip runtime junk
       if (["fileBytes", "output", "error", "outputBytesLen"].includes(k)) return acc;
-      // Skip defaults
       if (k === "outputFormat" && v === "hex") return acc;
       const key = MAP[k] || k;
       acc[key] = v;
       return acc;
     }, {} as any),
   };
+  if (n.parentId) result.pi = n.parentId;
+  if (n.extent) result.e = n.extent;
+  if (n.width) result.w = n.width;
+  if (n.height) result.h = n.height;
+  if (n.style) result.s = n.style;
+  return result;
 }
 
 function expandNode(m: any): GraphNode {
@@ -60,12 +72,18 @@ function expandNode(m: any): GraphNode {
   });
   if (!data.outputFormat && data.kind !== "note") data.outputFormat = "hex";
 
-  return {
+  const node: any = {
     id: m.i,
-    type: data.kind === "note" ? "note" : "crypto",
+    type: m.t || (data.kind === "note" ? "note" : "crypto"),
     position: { x: m.p[0], y: m.p[1] },
     data,
-  } as GraphNode;
+  };
+  if (m.pi) node.parentId = m.pi;
+  if (m.e) node.extent = m.e;
+  if (m.w) node.width = m.w;
+  if (m.h) node.height = m.h;
+  if (m.s) node.style = m.s;
+  return node as GraphNode;
 }
 
 function minifyEdge(e: GraphEdge) {
