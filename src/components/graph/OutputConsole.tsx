@@ -120,53 +120,55 @@ export function OutputConsole({ logs, running, onRun }: Props) {
           <span className="text-[10px] text-muted-foreground">{logs.length} steps</span>
         )}
         {!minimized && logs.length > 0 && (
-          <button
-            onClick={() => {
-              const text = logs
-                .map((log, i) => {
-                  const fmt = (log.outputFormat ?? "utf8") as any;
-                  const out =
-                    log.status === "success" && log.outputs
-                      ? (() => {
-                          const entries = Object.entries(log.outputs);
-                          if (
-                            entries.length === 1 &&
-                            (entries[0][0] === "default" || entries[0][0] === "data")
-                          ) {
-                            const dv = entries[0][1];
-                            return dv.value instanceof Uint8Array
-                              ? formatBytes(dv.value, fmt)
-                              : String(dv.value);
-                          }
-                          return entries
-                            .map(([k, dv]) => {
-                              const val =
-                                dv.value instanceof Uint8Array
-                                  ? formatBytes(dv.value, fmt)
-                                  : String(dv.value);
-                              return `${k.toUpperCase()}:\n${val}`;
-                            })
-                            .join("\n\n");
-                        })()
-                      : (log.error ?? "");
-                  const params = log.params ? `\n${log.params}` : "";
-                  return `#${i + 1} ${log.label} · ${log.kind} · ${log.status.toUpperCase()} · ${log.outputBytes?.byteLength ?? 0}B · ${log.duration.toFixed(1)}ms${params}\n${out}`;
-                })
-                .join("\n\n---\n\n");
-              navigator.clipboard.writeText(text).then(
-                () =>
-                  toast.success("Logs copied to clipboard", {
-                    description: `${logs.length} step${logs.length > 1 ? "s" : ""} copied`,
-                  }),
-                () => toast.error("Failed to copy logs"),
-              );
-            }}
-            className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors ml-1"
-            title="Copy all logs"
-            aria-label="Copy all logs"
-          >
-            <Copy className="w-3 h-3" />
-          </button>
+          <>
+            <button
+              onClick={() => {
+                const text = logs
+                  .map((log, i) => {
+                    const fmt = (log.outputFormat ?? "utf8") as any;
+                    const out =
+                      log.status === "success" && log.outputs
+                        ? (() => {
+                            const entries = Object.entries(log.outputs);
+                            if (
+                              entries.length === 1 &&
+                              (entries[0][0] === "default" || entries[0][0] === "data")
+                            ) {
+                              const dv = entries[0][1];
+                              return dv.value instanceof Uint8Array
+                                ? formatBytes(dv.value, fmt)
+                                : String(dv.value);
+                            }
+                            return entries
+                              .map(([k, dv]) => {
+                                const val =
+                                  dv.value instanceof Uint8Array
+                                    ? formatBytes(dv.value, fmt)
+                                    : String(dv.value);
+                                return `${k.toUpperCase()}:\n${val}`;
+                              })
+                              .join("\n\n");
+                          })()
+                        : (log.error ?? "");
+                    const params = log.params ? `\n${log.params}` : "";
+                    return `#${i + 1} ${log.label} · ${log.kind} · ${log.status.toUpperCase()} · ${log.outputBytes?.byteLength ?? 0}B · ${log.duration.toFixed(1)}ms${params}\n${out}`;
+                  })
+                  .join("\n\n---\n\n");
+                navigator.clipboard.writeText(text).then(
+                  () =>
+                    toast.success("Logs copied to clipboard", {
+                      description: `${logs.length} step${logs.length > 1 ? "s" : ""} copied`,
+                    }),
+                  () => toast.error("Failed to copy logs"),
+                );
+              }}
+              className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors ml-1"
+              title="Copy all logs"
+              aria-label="Copy all logs"
+            >
+              <Copy className="w-3 h-3" />
+            </button>
+          </>
         )}
         {!minimized && (
           <GripHorizontal className="w-3 h-3 text-muted-foreground/40 ml-auto cursor-row-resize" />
@@ -204,10 +206,43 @@ export function OutputConsole({ logs, running, onRun }: Props) {
   );
 }
 
+const MAX_OUTPUT_LEN = 10240;
+
 function LogEntry({ log, index }: { log: NodeExecutionLog; index: number }) {
+  const [showFull, setShowFull] = useState(false);
   const fmtMatch = log.params?.match(/^(?:input|output)Format:(\w+)$/);
   const formatVal = fmtMatch?.[1] ?? log.outputFormat;
   const showParams = log.params && !fmtMatch;
+
+  const outputText = (() => {
+    if (log.status !== "success" || !log.outputs) return "";
+    const fmt = (log.outputFormat ?? "utf8") as any;
+    const entries = Object.entries(log.outputs);
+
+    const getLabel = (key: string) => {
+      if (key === "publicKey") return "PUBLIC KEY";
+      if (key === "privateKey") return "PRIVATE KEY";
+      return key
+        .replace(/([A-Z])/g, " $1")
+        .toUpperCase()
+        .trim();
+    };
+
+    if (entries.length === 1 && (entries[0][0] === "default" || entries[0][0] === "data")) {
+      const dv = entries[0][1];
+      return dv.value instanceof Uint8Array ? formatBytes(dv.value, fmt) : String(dv.value);
+    } else {
+      return entries
+        .map(([k, dv]) => {
+          const val =
+            dv.value instanceof Uint8Array
+              ? formatBytes(dv.value, fmt, getLabel(k))
+              : String(dv.value);
+          return `${k.toUpperCase()}:\n${val}`;
+        })
+        .join("\n\n");
+    }
+  })();
 
   return (
     <div
@@ -248,42 +283,27 @@ function LogEntry({ log, index }: { log: NodeExecutionLog; index: number }) {
       {(log.status === "success" || log.status === "error") && (
         <div className="mt-1 text-[11px] font-mono leading-relaxed whitespace-pre-wrap break-all">
           {log.status === "success" && log.outputs ? (
-            (() => {
-              const fmt = (log.outputFormat ?? "utf8") as any;
-              const entries = Object.entries(log.outputs);
-
-              const getLabel = (key: string) => {
-                if (key === "publicKey") return "PUBLIC KEY";
-                if (key === "privateKey") return "PRIVATE KEY";
-                return key
-                  .replace(/([A-Z])/g, " $1")
-                  .toUpperCase()
-                  .trim();
-              };
-
-              if (
-                entries.length === 1 &&
-                (entries[0][0] === "default" || entries[0][0] === "data")
-              ) {
-                const dv = entries[0][1];
-                return dv.value instanceof Uint8Array
-                  ? formatBytes(dv.value, fmt)
-                  : String(dv.value);
-              } else {
-                return entries
-                  .map(([k, dv]) => {
-                    const val =
-                      dv.value instanceof Uint8Array
-                        ? formatBytes(dv.value, fmt, getLabel(k))
-                        : String(dv.value);
-                    return `${k.toUpperCase()}:\n${val}`;
-                  })
-                  .join("\n\n");
-              }
-            })()
+            showFull ? (
+              outputText
+            ) : outputText.length > MAX_OUTPUT_LEN ? (
+              outputText.slice(0, MAX_OUTPUT_LEN) +
+              `\n\n... [${(outputText.length / 1024).toFixed(1)}KB total]`
+            ) : (
+              outputText
+            )
           ) : log.status === "error" && log.error ? (
             <span className="text-destructive">{log.error}</span>
           ) : null}
+          {outputText.length > MAX_OUTPUT_LEN && (
+            <div className="mt-2">
+              <button
+                onClick={() => setShowFull(!showFull)}
+                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                [{showFull ? "collapse" : "show full"}]
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

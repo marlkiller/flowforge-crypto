@@ -47,6 +47,7 @@ registerNodeDef("file", {
     label: "File",
     category: "io",
     description: "Source — reads bytes from a local file.",
+    defaultOutput: "hex",
   },
   runner: (node) => {
     const fileBytes = node.data["fileBytes"] as Uint8Array | undefined;

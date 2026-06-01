@@ -191,6 +191,9 @@ export function useGraphExecution(activeId: string, nodes: GraphNode[], edges: G
               }
             }
           }
+          if (n.data.kind === "file") {
+            config.fileName = n.data.fileName;
+          }
           return { id: n.id, c: config };
         }),
       edges: edges.map((e) => ({

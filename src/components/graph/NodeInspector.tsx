@@ -3,13 +3,24 @@ import { graphStore } from "./store";
 import { NODE_KIND_META, CATEGORY_META, getSupportedFormats } from "@/lib/crypto/registry";
 import type { GraphNode, NodeInputMeta } from "@/lib/crypto/types";
 import type { DataFormat } from "@/lib/crypto/service";
+import { useState } from "react";
 import { Trash2, File, Upload, Link2, Settings2 } from "lucide-react";
 
 interface Props {
   node: GraphNode | null;
 }
 
+const MAX_OUTPUT_LEN = 10240;
+function truncateOutput(output: string) {
+  if (output.length <= MAX_OUTPUT_LEN) return output;
+  return (
+    output.slice(0, MAX_OUTPUT_LEN) +
+    `\n\n... [${(output.length / 1024).toFixed(1)}KB total, truncated]`
+  );
+}
+
 export function NodeInspector({ node }: Props) {
+  const [showFullOutput, setShowFullOutput] = useState(false);
   if (!node) {
     return (
       <aside className="h-full w-full rounded-xl border border-border bg-card/80 backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center p-6 text-center">
@@ -145,9 +156,19 @@ export function NodeInspector({ node }: Props) {
               {typeof d.outputBytesLen === "number" && (
                 <div className="text-[10px] font-medium text-muted-foreground mb-1.5 flex items-center justify-between">
                   <span>Size</span>
-                  <span className="text-foreground bg-background px-1.5 py-0.5 rounded border border-border">
-                    {d.outputBytesLen} bytes
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {d.output && d.output.length > MAX_OUTPUT_LEN && (
+                      <button
+                        onClick={() => setShowFullOutput(!showFullOutput)}
+                        className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        [{showFullOutput ? "collapse" : "show full"}]
+                      </button>
+                    )}
+                    <span className="text-foreground bg-background px-1.5 py-0.5 rounded border border-border">
+                      {d.outputBytesLen} bytes
+                    </span>
+                  </div>
                 </div>
               )}
               {d.error ? (
@@ -156,7 +177,13 @@ export function NodeInspector({ node }: Props) {
                 </pre>
               ) : (
                 <pre className="mt-1 rounded-lg bg-background border border-border text-foreground p-2.5 break-all whitespace-pre-wrap font-mono text-[11px] min-h-[80px] max-h-80 overflow-auto shadow-inner custom-scrollbar leading-relaxed">
-                  {d.output || (
+                  {d.output ? (
+                    showFullOutput ? (
+                      d.output
+                    ) : (
+                      truncateOutput(d.output)
+                    )
+                  ) : (
                     <span className="text-muted-foreground italic">Pipeline waiting to run...</span>
                   )}
                 </pre>
