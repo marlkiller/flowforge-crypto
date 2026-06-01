@@ -35,6 +35,7 @@ import {
   ChevronDown,
   MousePointer2,
   Loader2,
+  FileText,
   Wand,
   Camera,
   CornerDownRight,
@@ -414,7 +415,6 @@ function InnerEditor() {
           leftPanelOpen={leftPanelOpen}
           setLeftPanelOpen={setLeftPanelOpen}
           setPluginDialogOpen={setPluginDialogOpen}
-          setPromptDialogOpen={setPromptDialogOpen}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           collapsedCats={collapsedCats}
@@ -443,7 +443,6 @@ function InnerEditor() {
               leftPanelOpen={true}
               setLeftPanelOpen={() => {}}
               setPluginDialogOpen={setPluginDialogOpen}
-              setPromptDialogOpen={setPromptDialogOpen}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               collapsedCats={collapsedCats}
@@ -926,6 +925,14 @@ function InnerEditor() {
                 title="New workflow"
               >
                 <Plus className="w-4 h-4" /> New Tab
+              </button>
+              <div className="w-px h-4 bg-border mx-1 shrink-0" />
+              <button
+                onClick={() => setPromptDialogOpen(true)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+                title="Generate workflow prompt for AI"
+              >
+                <FileText className="w-4 h-4" /> LLM Prompt
               </button>
             </div>
           </div>
