@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Copy, Check } from "lucide-react";
 import { useState, useMemo } from "react";
-import { NODE_KIND_META } from "@/lib/crypto/registry";
+import { NODE_KIND_META, getActiveCategories } from "@/lib/crypto/registry";
 import type { NodeInputMeta, NodeOutputMeta } from "@/lib/crypto/types";
 import { toast } from "sonner";
 
@@ -60,22 +60,7 @@ and output a workflow JSON that can be imported via File > Import.
 
 Format: kind | label | inputs | outputs\n`;
 
-    const order = [
-      "io",
-      "ui",
-      "string",
-      "encoding",
-      "hash",
-      "cipher",
-      "asymmetric",
-      "mac",
-      "kdf",
-      "entropy",
-      "protocol",
-      "legacy",
-      "pqc",
-      "analysis",
-    ];
+    const order = getActiveCategories();
 
     const nodes = Object.values(NODE_KIND_META);
     nodes.sort((a, b) => {
