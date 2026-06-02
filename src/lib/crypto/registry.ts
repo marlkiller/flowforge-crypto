@@ -133,13 +133,13 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     dot: "bg-rose-400",
     color: "var(--color-cat-cipher)",
   },
-  "public-key": {
-    label: "Public-Key",
+  asymmetric: {
+    label: "Asymmetric",
     icon: "FileKey",
     accent: "text-indigo-300",
     chip: "bg-indigo-500/15 text-indigo-300 border-indigo-500/40",
     dot: "bg-indigo-400",
-    color: "var(--color-cat-public-key)",
+    color: "var(--color-cat-asymmetric)",
   },
   signature: {
     label: "Signatures",
@@ -263,7 +263,7 @@ export function getActiveCategories(): string[] {
     "checksum",
     "hash",
     "cipher",
-    "public-key",
+    "asymmetric",
     "signature",
     "key-exchange",
     "mac",

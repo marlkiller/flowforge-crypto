@@ -11,7 +11,7 @@ registerNodeDef("secp256k1_keygen", {
   meta: {
     kind: "secp256k1_keygen",
     label: "secp256k1 Key Gen",
-    category: "public-key",
+    category: "asymmetric",
     description: "Generate a secp256k1 key pair (Bitcoin/Ethereum curve).",
     defaultOutput: "hex",
     outputs: [
@@ -132,7 +132,7 @@ registerNodeDef("ed448_keygen", {
   meta: {
     kind: "ed448_keygen",
     label: "Ed448 Key Gen",
-    category: "public-key",
+    category: "asymmetric",
     description: "Generate an Ed448 (Edwards-curve) key pair.",
     defaultOutput: "hex",
     outputs: [
@@ -252,7 +252,7 @@ registerNodeDef("bls_keygen", {
   meta: {
     kind: "bls_keygen",
     label: "BLS12-381 Key Gen",
-    category: "public-key",
+    category: "asymmetric",
     description: "Generate a BLS12-381 key pair for BLS signatures (short sigs in G1).",
     defaultOutput: "hex",
     outputs: [

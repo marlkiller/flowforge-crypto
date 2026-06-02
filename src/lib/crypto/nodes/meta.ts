@@ -4,7 +4,7 @@ import type { DataFormat } from "../service";
 export const RSA_KEYGEN_META: NodeKindMeta = {
   kind: "rsa_keygen",
   label: "RSA Key Gen",
-  category: "public-key",
+  category: "asymmetric",
   description: "Generate an RSA key pair.",
   defaultOutput: "pem",
   supportedFormats: ["pem", "base64", "hex", "utf8"],
@@ -67,7 +67,7 @@ export const RSA_KEYGEN_META: NodeKindMeta = {
 export const RSA_META: NodeKindMeta = {
   kind: "rsa",
   label: "RSA",
-  category: "public-key",
+  category: "asymmetric",
   description: "RSA encrypt/decrypt. Supports RSA-OAEP, RSAES-PKCS1-V1_5, RAW.",
   defaultOutput: "base64",
   inputs: [
@@ -226,7 +226,7 @@ export const RSA_VERIFY_META: NodeKindMeta = {
 export const SM2_KEYGEN_META: NodeKindMeta = {
   kind: "sm2_keygen",
   label: "SM2 Key Gen",
-  category: "public-key",
+  category: "asymmetric",
   description:
     "Generate an SM2 key pair (Chinese national elliptic curve standard, GB/T 32918-2016).",
   defaultOutput: "hex",
@@ -282,7 +282,7 @@ export const SM2_VERIFY_META: NodeKindMeta = {
 export const SM2_ENCRYPT_META: NodeKindMeta = {
   kind: "sm2_encrypt",
   label: "SM2 Encrypt",
-  category: "public-key",
+  category: "asymmetric",
   description: "Encrypt data using an SM2 public key.",
   defaultOutput: "hex",
   inputs: [
@@ -294,7 +294,7 @@ export const SM2_ENCRYPT_META: NodeKindMeta = {
 export const SM2_DECRYPT_META: NodeKindMeta = {
   kind: "sm2_decrypt",
   label: "SM2 Decrypt",
-  category: "public-key",
+  category: "asymmetric",
   description: "Decrypt data using an SM2 private key.",
   defaultOutput: "utf8",
   inputs: [
@@ -595,7 +595,7 @@ export const SHA0_META = makeHashMeta(
 export const EC_KEYGEN_META: NodeKindMeta = {
   kind: "ec_keygen",
   label: "EC Key Gen",
-  category: "public-key",
+  category: "asymmetric",
   description: "Generate an Elliptic Curve key pair.",
   defaultOutput: "pem",
   outputs: [

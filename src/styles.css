@@ -80,7 +80,7 @@
   --color-cat-checksum: var(--cat-checksum);
   --color-cat-hash: var(--cat-hash);
   --color-cat-cipher: var(--cat-cipher);
-  --color-cat-public-key: var(--cat-public-key);
+  --color-cat-asymmetric: var(--cat-asymmetric);
   --color-cat-signature: var(--cat-signature);
   --color-cat-key-exchange: var(--cat-key-exchange);
   --color-cat-mac: var(--cat-mac);
@@ -179,7 +179,7 @@
   --cat-checksum: #ca8a04;
   --cat-hash: #059669;
   --cat-cipher: #e11d48;
-  --cat-public-key: #4f46e5;
+  --cat-asymmetric: #4f46e5;
   --cat-signature: #7c3aed;
   --cat-key-exchange: #c026d3;
   --cat-mac: #0891b2;
@@ -282,7 +282,7 @@
   --cat-checksum: #facc15;
   --cat-hash: #34d399;
   --cat-cipher: #fb7185;
-  --cat-public-key: #818cf8;
+  --cat-asymmetric: #818cf8;
   --cat-signature: #a78bfa;
   --cat-key-exchange: #e879f9;
   --cat-mac: #22d3ee;
@@ -513,8 +513,8 @@
 .react-flow__minimap-node.mm-cipher {
   fill: var(--color-cat-cipher) !important;
 }
-.react-flow__minimap-node.mm-public-key {
-  fill: var(--color-cat-public-key) !important;
+.react-flow__minimap-node.mm-asymmetric {
+  fill: var(--color-cat-asymmetric) !important;
 }
 .react-flow__minimap-node.mm-signature {
   fill: var(--color-cat-signature) !important;

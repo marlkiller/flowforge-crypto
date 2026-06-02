@@ -8,7 +8,7 @@ registerNodeDef("ed_keygen", {
   meta: {
     kind: "ed_keygen",
     label: "Ed25519 Key Gen",
-    category: "public-key",
+    category: "asymmetric",
     description: "Generate an Ed25519 key pair (modern Edwards-curve DSA).",
     defaultOutput: "pem",
     outputs: [

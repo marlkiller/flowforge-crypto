@@ -10,7 +10,7 @@ export type NodeCategory =
   | "checksum"
   | "hash"
   | "cipher"
-  | "public-key"
+  | "asymmetric"
   | "signature"
   | "key-exchange"
   | "mac"
@@ -20,8 +20,7 @@ export type NodeCategory =
   | "secret-sharing"
   | "certificate"
   | "pqc"
-  | "analysis"
-  | "ui";
+  | "analysis";
 
 export type NodeKind = string;
 
