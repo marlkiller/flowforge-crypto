@@ -700,7 +700,7 @@ function InnerEditor() {
                 <MiniMap
                   pannable
                   zoomable
-                  bgColor="var(--graph-background)"
+                  bgColor="var(--minimap-bg)"
                   maskColor="var(--minimap-mask)"
                   maskStrokeColor="var(--minimap-mask-stroke)"
                   nodeClassName={(node) => {

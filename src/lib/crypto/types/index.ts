@@ -20,7 +20,8 @@ export type NodeCategory =
   | "secret-sharing"
   | "certificate"
   | "pqc"
-  | "analysis";
+  | "analysis"
+  | "ui";
 
 export type NodeKind = string;
 

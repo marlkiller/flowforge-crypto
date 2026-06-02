@@ -83,7 +83,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-sky-300",
     chip: "bg-sky-500/15 text-sky-300 border-sky-500/40",
     dot: "bg-sky-400",
-    color: "#38bdf8",
+    color: "var(--color-cat-io)",
   },
   data: {
     label: "Text/Data",
@@ -91,7 +91,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-purple-300",
     chip: "bg-purple-500/15 text-purple-300 border-purple-500/40",
     dot: "bg-purple-400",
-    color: "#c084fc",
+    color: "var(--color-cat-data)",
   },
   encoding: {
     label: "Encoding",
@@ -99,7 +99,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-amber-300",
     chip: "bg-amber-500/15 text-amber-300 border-amber-500/40",
     dot: "bg-amber-400",
-    color: "#fbbf24",
+    color: "var(--color-cat-encoding)",
   },
   format: {
     label: "Key Formats",
@@ -107,7 +107,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-orange-400",
     chip: "bg-orange-500/15 text-orange-400 border-orange-500/40",
     dot: "bg-orange-500",
-    color: "#f97316",
+    color: "var(--color-cat-format)",
   },
   checksum: {
     label: "Checksums",
@@ -115,7 +115,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-yellow-300",
     chip: "bg-yellow-500/15 text-yellow-300 border-yellow-500/40",
     dot: "bg-yellow-400",
-    color: "#facc15",
+    color: "var(--color-cat-checksum)",
   },
   hash: {
     label: "Hash",
@@ -123,7 +123,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-emerald-300",
     chip: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40",
     dot: "bg-emerald-400",
-    color: "#34d399",
+    color: "var(--color-cat-hash)",
   },
   cipher: {
     label: "Symmetric",
@@ -131,7 +131,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-rose-300",
     chip: "bg-rose-500/15 text-rose-300 border-rose-500/40",
     dot: "bg-rose-400",
-    color: "#fb7185",
+    color: "var(--color-cat-cipher)",
   },
   "public-key": {
     label: "Public-Key",
@@ -139,7 +139,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-indigo-300",
     chip: "bg-indigo-500/15 text-indigo-300 border-indigo-500/40",
     dot: "bg-indigo-400",
-    color: "#818cf8",
+    color: "var(--color-cat-public-key)",
   },
   signature: {
     label: "Signatures",
@@ -147,7 +147,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-violet-300",
     chip: "bg-violet-500/15 text-violet-300 border-violet-500/40",
     dot: "bg-violet-400",
-    color: "#a78bfa",
+    color: "var(--color-cat-signature)",
   },
   "key-exchange": {
     label: "Key Exchange",
@@ -155,7 +155,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-fuchsia-300",
     chip: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/40",
     dot: "bg-fuchsia-400",
-    color: "#e879f9",
+    color: "var(--color-cat-key-exchange)",
   },
   mac: {
     label: "MAC",
@@ -163,7 +163,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-cyan-300",
     chip: "bg-cyan-500/15 text-cyan-300 border-cyan-500/40",
     dot: "bg-cyan-400",
-    color: "#22d3ee",
+    color: "var(--color-cat-mac)",
   },
   kdf: {
     label: "KDF",
@@ -171,7 +171,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-orange-300",
     chip: "bg-orange-500/15 text-orange-300 border-orange-500/40",
     dot: "bg-orange-400",
-    color: "#fb923c",
+    color: "var(--color-cat-kdf)",
   },
   entropy: {
     label: "Entropy",
@@ -179,7 +179,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-lime-300",
     chip: "bg-lime-500/15 text-lime-300 border-lime-500/40",
     dot: "bg-lime-400",
-    color: "#a3e635",
+    color: "var(--color-cat-entropy)",
   },
   protocol: {
     label: "Protocol",
@@ -187,7 +187,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-blue-300",
     chip: "bg-blue-500/15 text-blue-300 border-blue-500/40",
     dot: "bg-blue-400",
-    color: "#60a5fa",
+    color: "var(--color-cat-protocol)",
   },
   "secret-sharing": {
     label: "Secret Sharing",
@@ -195,7 +195,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-slate-300",
     chip: "bg-slate-500/15 text-slate-300 border-slate-500/40",
     dot: "bg-slate-400",
-    color: "#94a3b8",
+    color: "var(--color-cat-secret-sharing)",
   },
   certificate: {
     label: "Certificates",
@@ -203,7 +203,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-green-300",
     chip: "bg-green-500/15 text-green-300 border-green-500/40",
     dot: "bg-green-400",
-    color: "#4ade80",
+    color: "var(--color-cat-certificate)",
   },
   pqc: {
     label: "Post-Quantum",
@@ -211,7 +211,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-pink-300",
     chip: "bg-pink-500/15 text-pink-300 border-pink-500/40",
     dot: "bg-pink-400",
-    color: "#f472b6",
+    color: "var(--color-cat-pqc)",
   },
   analysis: {
     label: "Analysis",
@@ -219,7 +219,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-teal-300",
     chip: "bg-teal-500/15 text-teal-300 border-teal-500/40",
     dot: "bg-teal-400",
-    color: "#2dd4bf",
+    color: "var(--color-cat-analysis)",
   },
   ui: {
     label: "UI",
@@ -227,7 +227,7 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     accent: "text-zinc-300",
     chip: "bg-zinc-500/15 text-zinc-300 border-zinc-500/40",
     dot: "bg-zinc-400",
-    color: "#d4d4d8",
+    color: "var(--color-cat-ui)",
   },
 };
 

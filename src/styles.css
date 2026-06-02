@@ -72,6 +72,27 @@
   --color-handle-bool: var(--handle-bool);
   --color-handle-json: var(--handle-json);
 
+  /* Category Colors */
+  --color-cat-io: var(--cat-io);
+  --color-cat-data: var(--cat-data);
+  --color-cat-encoding: var(--cat-encoding);
+  --color-cat-format: var(--cat-format);
+  --color-cat-checksum: var(--cat-checksum);
+  --color-cat-hash: var(--cat-hash);
+  --color-cat-cipher: var(--cat-cipher);
+  --color-cat-public-key: var(--cat-public-key);
+  --color-cat-signature: var(--cat-signature);
+  --color-cat-key-exchange: var(--cat-key-exchange);
+  --color-cat-mac: var(--cat-mac);
+  --color-cat-kdf: var(--cat-kdf);
+  --color-cat-entropy: var(--cat-entropy);
+  --color-cat-protocol: var(--cat-protocol);
+  --color-cat-secret-sharing: var(--cat-secret-sharing);
+  --color-cat-certificate: var(--cat-certificate);
+  --color-cat-pqc: var(--cat-pqc);
+  --color-cat-analysis: var(--cat-analysis);
+  --color-cat-ui: var(--cat-ui);
+
   /* Note Colors */
   --color-note-yellow: var(--note-yellow-bg);
   --color-note-yellow-foreground: var(--note-yellow-text);
@@ -136,8 +157,10 @@
   --graph-grid: oklch(0.929 0.013 255.508 / 20%);
 
   /* MiniMap Colors */
-  --minimap-mask: rgba(0, 0, 0, 0.5);
-  --minimap-mask-stroke: rgba(0, 0, 0, 0.4);
+  --minimap-bg: var(--background);
+  --minimap-mask: oklch(0 0 0 / 35%);
+  --minimap-mask-stroke: oklch(0 0 0 / 40%);
+  --minimap-border: var(--border);
 
   /* Handle Colors - Light */
   --handle-raw: oklch(0.607 0.162 231.356);
@@ -147,6 +170,27 @@
   --handle-key: oklch(0.516 0.209 303.69);
   --handle-bool: oklch(0.609 0.219 14.65);
   --handle-json: oklch(0.67 0.15 210);
+
+  /* Category Colors - Light (Higher contrast) */
+  --cat-io: #0ea5e9;
+  --cat-data: #a855f7;
+  --cat-encoding: #d97706;
+  --cat-format: #ea580c;
+  --cat-checksum: #ca8a04;
+  --cat-hash: #059669;
+  --cat-cipher: #e11d48;
+  --cat-public-key: #4f46e5;
+  --cat-signature: #7c3aed;
+  --cat-key-exchange: #c026d3;
+  --cat-mac: #0891b2;
+  --cat-kdf: #ea580c;
+  --cat-entropy: #65a30d;
+  --cat-protocol: #2563eb;
+  --cat-secret-sharing: #475569;
+  --cat-certificate: #16a34a;
+  --cat-pqc: #db2777;
+  --cat-analysis: #0d9488;
+  --cat-ui: #71717a;
 
   /* Note Colors - Light */
   --note-yellow-bg: oklch(0.96 0.15 95);
@@ -216,8 +260,10 @@
   --graph-grid: oklch(1 0 0 / 10%);
 
   /* MiniMap Colors - Dark */
-  --minimap-mask: rgba(0, 0, 0, 0.82);
-  --minimap-mask-stroke: rgba(255, 255, 255, 0.35);
+  --minimap-bg: oklch(0.25 0.02 264.695);
+  --minimap-mask: oklch(0 0 0 / 75%);
+  --minimap-mask-stroke: var(--primary);
+  --minimap-border: oklch(1 0 0 / 20%);
 
   /* Handle Colors - Dark */
   --handle-raw: oklch(0.488 0.243 264.376);
@@ -227,6 +273,27 @@
   --handle-key: oklch(0.627 0.265 303.9);
   --handle-bool: oklch(0.704 0.191 22.216);
   --handle-json: oklch(0.6 0.12 210);
+
+  /* Category Colors - Dark (Vibrant) */
+  --cat-io: #38bdf8;
+  --cat-data: #c084fc;
+  --cat-encoding: #fbbf24;
+  --cat-format: #f97316;
+  --cat-checksum: #facc15;
+  --cat-hash: #34d399;
+  --cat-cipher: #fb7185;
+  --cat-public-key: #818cf8;
+  --cat-signature: #a78bfa;
+  --cat-key-exchange: #e879f9;
+  --cat-mac: #22d3ee;
+  --cat-kdf: #fb923c;
+  --cat-entropy: #a3e635;
+  --cat-protocol: #60a5fa;
+  --cat-secret-sharing: #94a3b8;
+  --cat-certificate: #4ade80;
+  --cat-pqc: #f472b6;
+  --cat-analysis: #2dd4bf;
+  --cat-ui: #d4d4d8;
 
   /* Note Colors - Dark */
   --note-yellow-bg: oklch(0.35 0.12 95 / 80%);
@@ -392,6 +459,10 @@
   border: 1px solid var(--border) !important;
 }
 
+.dark .react-flow__minimap {
+  border: 1px solid var(--minimap-border) !important;
+}
+
 .react-flow__minimap-mask {
   fill: var(--minimap-mask);
   stroke: var(--minimap-mask-stroke);
@@ -422,61 +493,61 @@
 }
 
 .react-flow__minimap-node.mm-io {
-  fill: var(--color-handle-raw) !important;
+  fill: var(--color-cat-io) !important;
 }
 .react-flow__minimap-node.mm-data {
-  fill: var(--color-handle-string) !important;
+  fill: var(--color-cat-data) !important;
 }
 .react-flow__minimap-node.mm-encoding {
-  fill: var(--color-handle-hex) !important;
+  fill: var(--color-cat-encoding) !important;
 }
 .react-flow__minimap-node.mm-format {
-  fill: var(--color-handle-cert) !important;
+  fill: var(--color-cat-format) !important;
 }
 .react-flow__minimap-node.mm-checksum {
-  fill: var(--color-handle-string) !important;
+  fill: var(--color-cat-checksum) !important;
 }
 .react-flow__minimap-node.mm-hash {
-  fill: var(--color-handle-string) !important;
+  fill: var(--color-cat-hash) !important;
 }
 .react-flow__minimap-node.mm-cipher {
-  fill: var(--color-handle-hex) !important;
+  fill: var(--color-cat-cipher) !important;
 }
 .react-flow__minimap-node.mm-public-key {
-  fill: var(--color-handle-key) !important;
+  fill: var(--color-cat-public-key) !important;
 }
 .react-flow__minimap-node.mm-signature {
-  fill: var(--color-handle-key) !important;
+  fill: var(--color-cat-signature) !important;
 }
 .react-flow__minimap-node.mm-key-exchange {
-  fill: var(--color-handle-key) !important;
+  fill: var(--color-cat-key-exchange) !important;
 }
 .react-flow__minimap-node.mm-mac {
-  fill: var(--color-handle-string) !important;
+  fill: var(--color-cat-mac) !important;
 }
 .react-flow__minimap-node.mm-kdf {
-  fill: var(--color-handle-hex) !important;
+  fill: var(--color-cat-kdf) !important;
 }
 .react-flow__minimap-node.mm-entropy {
-  fill: var(--color-handle-hex) !important;
+  fill: var(--color-cat-entropy) !important;
 }
 .react-flow__minimap-node.mm-protocol {
-  fill: var(--color-handle-raw) !important;
+  fill: var(--color-cat-protocol) !important;
 }
 .react-flow__minimap-node.mm-secret-sharing {
-  fill: var(--color-handle-json) !important;
+  fill: var(--color-cat-secret-sharing) !important;
 }
 .react-flow__minimap-node.mm-certificate {
-  fill: var(--color-handle-cert) !important;
+  fill: var(--color-cat-certificate) !important;
 }
 .react-flow__minimap-node.mm-pqc {
-  fill: var(--color-handle-key) !important;
+  fill: var(--color-cat-pqc) !important;
 }
 .react-flow__minimap-node.mm-analysis {
-  fill: var(--color-handle-string) !important;
+  fill: var(--color-cat-analysis) !important;
 }
 .react-flow__minimap-node.mm-ui {
-  fill: var(--muted-foreground) !important;
+  fill: var(--color-cat-ui) !important;
   opacity: 0.3;
 }
 
