@@ -1,6 +1,6 @@
 import { registerNodeDef } from "../registry";
 import { utf8ToBytes } from "../service";
-import { getField, getNumberField } from "../utils";
+import { getField, getNumberField, getParamBytes } from "../utils";
 
 registerNodeDef("xor", {
   meta: {
@@ -14,9 +14,9 @@ registerNodeDef("xor", {
       { id: "b", label: "Input B", connectable: true, acceptTypes: ["hex", "base64"] },
     ],
   },
-  runner: (_, inputs) => {
-    const a = inputs["a"] ?? new Uint8Array(0);
-    const b = inputs["b"] ?? new Uint8Array(0);
+  runner: (node, inputs) => {
+    const a = getParamBytes(node, inputs, "a") ?? new Uint8Array(0);
+    const b = getParamBytes(node, inputs, "b") ?? new Uint8Array(0);
     const len = Math.max(a.length, b.length);
     const out = new Uint8Array(len);
     for (let i = 0; i < len; i++) {
@@ -40,8 +40,8 @@ registerNodeDef("constantTimeCompare", {
     ],
   },
   runner: (node, inputs) => {
-    const a = inputs["a"] ?? new Uint8Array(0);
-    const b = inputs["b"] ?? new Uint8Array(0);
+    const a = getParamBytes(node, inputs, "a") ?? new Uint8Array(0);
+    const b = getParamBytes(node, inputs, "b") ?? new Uint8Array(0);
     const fmt = (node.data["outputFormat"] as string) || "utf8";
 
     if (a.length !== b.length) {

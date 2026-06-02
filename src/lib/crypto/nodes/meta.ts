@@ -38,6 +38,17 @@ export const RSA_KEYGEN_META: NodeKindMeta = {
       connectable: false,
     },
     {
+      id: "publicExponent",
+      label: "Public Exponent (e)",
+      type: "select",
+      defaultValue: "65537",
+      options: [
+        { label: "65537", value: "65537" },
+        { label: "3", value: "3" },
+      ],
+      connectable: false,
+    },
+    {
       id: "hash",
       label: "Hash",
       type: "select",

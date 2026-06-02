@@ -932,7 +932,7 @@ function InnerEditor() {
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
                 title="Generate workflow prompt for AI"
               >
-                <FileText className="w-4 h-4" /> LLM Prompt
+                <FileText className="w-4 h-4" /> Prompt
               </button>
             </div>
           </div>

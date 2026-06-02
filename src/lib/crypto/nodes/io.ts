@@ -1,5 +1,5 @@
 import { registerNodeDef } from "../registry";
-import { getField, getNumberField, parseAs } from "../utils";
+import { getField, getNumberField, parseAs, getParamBytes } from "../utils";
 import { utf8ToBytes, bytesToUtf8 } from "../service";
 import type { DataFormat } from "../service";
 
@@ -10,7 +10,7 @@ registerNodeDef("input", {
     category: "io",
     description: "Source — parses text as UTF-8 / HEX / Base64 / Bool.",
     defaultOutput: "utf8",
-    supportedFormats: ["utf8", "hex", "base64", "bool"],
+    supportedFormats: ["utf8", "hex", "base64", "pem", "bool"],
     inputs: [
       {
         id: "inputFormat",
@@ -20,6 +20,7 @@ registerNodeDef("input", {
           { label: "UTF-8", value: "utf8" },
           { label: "Hex", value: "hex" },
           { label: "Base64", value: "base64" },
+          { label: "PEM", value: "pem" },
           { label: "Bool", value: "bool" },
         ],
         connectable: false,
@@ -101,7 +102,8 @@ registerNodeDef("join", {
     const parts: Uint8Array[] = [];
 
     for (let i = 1; i <= count; i++) {
-      const val = inputs[`in_${i}`];
+      const key = `in_${i}`;
+      const val = getParamBytes(node, inputs, key, false);
       if (val) {
         if (parts.length > 0 && sepBytes.length > 0) {
           parts.push(sepBytes);
@@ -131,7 +133,7 @@ registerNodeDef("output", {
     supportedFormats: ["utf8", "hex", "base64", "bool"],
     inputs: [{ id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] }],
   },
-  runner: (_, inputs) => inputs["data"] ?? inputs["default"] ?? new Uint8Array(0),
+  runner: (node, inputs) => getParamBytes(node, inputs, "data", false) ?? new Uint8Array(0),
 });
 
 registerNodeDef("slice", {
@@ -154,7 +156,7 @@ registerNodeDef("slice", {
     ],
   },
   runner: (node, inputs) => {
-    const data = inputs["data"] || new Uint8Array(0);
+    const data = getParamBytes(node, inputs, "data", false) || new Uint8Array(0);
     const start = getNumberField(node, "start", 0);
     const endVal = node.data["end"];
     const endStr = endVal !== undefined ? String(endVal) : undefined;
@@ -185,8 +187,8 @@ registerNodeDef("template", {
     let result = template;
     for (let i = 1; i <= count; i++) {
       const key = `in_${i}`;
-      const val = inputs[key];
-      if (val && val instanceof Uint8Array && val.length > 0) {
+      const val = getParamBytes(node, inputs, key, false);
+      if (val) {
         result = result.replace(new RegExp(`\\{${key}\\}`, "g"), bytesToUtf8(val));
       }
     }

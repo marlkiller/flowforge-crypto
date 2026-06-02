@@ -17,7 +17,9 @@ registerNodeDef("rsa_keygen", {
     const algo = (node.data["algorithm"] as any) || "RSA-OAEP";
     const modulusLength = getNumberField(node, "modulusLength", 2048);
     const hash = getField(node, "hash", "SHA-256");
-    const publicExponent = new Uint8Array([0x01, 0x00, 0x01]);
+    const eStr = getField(node, "publicExponent", "65537");
+    const publicExponent =
+      eStr === "3" ? new Uint8Array([0x03]) : new Uint8Array([0x01, 0x00, 0x01]);
 
     const keyPair = await CryptoService.generateRSAKeyPair(
       algo,

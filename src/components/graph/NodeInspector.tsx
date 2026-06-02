@@ -153,6 +153,7 @@ export function NodeInspector({ node }: Props) {
             <InspectorField
               key={input.id}
               nodeId={node.id}
+              nodeKind={d.kind}
               field={input}
               value={d[input.id] as string | undefined}
               update={update}
@@ -219,17 +220,27 @@ export function NodeInspector({ node }: Props) {
 
 function InspectorField({
   nodeId,
+  nodeKind,
   field,
   value,
   update,
 }: {
   nodeId: string;
+  nodeKind: string;
   field: NodeInputMeta;
   value: string | undefined;
   update: (patch: Record<string, unknown>) => void;
 }) {
   const connections = useNodeConnections({ id: nodeId, handleType: "target", handleId: field.id });
   const isConnected = connections.length > 0;
+
+  const handleChange = (val: string) => {
+    const patch: Record<string, unknown> = { [field.id]: val };
+    if (nodeKind === "input" && field.id === "inputFormat") {
+      patch.outputFormat = val;
+    }
+    update(patch);
+  };
 
   return (
     <Section title={field.label}>
@@ -250,7 +261,7 @@ function InspectorField({
               <textarea
                 className="w-full min-h-[90px] rounded-lg bg-background border border-border p-2.5 text-xs text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-y font-mono shadow-sm custom-scrollbar transition-all"
                 value={value ?? ""}
-                onChange={(e) => update({ [field.id]: e.target.value })}
+                onChange={(e) => handleChange(e.target.value)}
                 placeholder={field.placeholder}
               />
             ) : field.type === "select" ? (
@@ -258,7 +269,7 @@ function InspectorField({
                 <select
                   className="w-full rounded-lg bg-background border border-border px-2.5 py-2 text-xs text-foreground font-medium outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm appearance-none cursor-pointer transition-all"
                   value={value ?? field.options?.[0]?.value ?? ""}
-                  onChange={(e) => update({ [field.id]: e.target.value })}
+                  onChange={(e) => handleChange(e.target.value)}
                 >
                   {field.options?.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -275,7 +286,7 @@ function InspectorField({
                 type={field.type}
                 className="w-full rounded-lg bg-background border border-border px-2.5 py-2 text-xs text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono shadow-sm transition-all"
                 value={value ?? ""}
-                onChange={(e) => update({ [field.id]: e.target.value })}
+                onChange={(e) => handleChange(e.target.value)}
                 placeholder={field.placeholder}
               />
             )}
