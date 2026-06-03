@@ -31,14 +31,10 @@ const MAP: Record<string, string> = {
   extent: "e",
   width: "w",
   height: "h",
+  measured: "m",
   style: "s",
   allowInbound: "ai",
   allowOutbound: "ao",
-  // Values
-  crypto: "c",
-  asymmetric: "a",
-  cipher: "ci",
-  hash: "h",
 };
 
 const REV_MAP = Object.fromEntries(Object.entries(MAP).map(([k, v]) => [v, k]));
@@ -47,10 +43,11 @@ function minifyNode(n: GraphNode) {
   const result: any = {
     i: n.id,
     p: [Math.round(n.position.x), Math.round(n.position.y)],
-    t: n.type || (n.data.kind === "note" ? "note" : "crypto"),
     d: Object.entries(n.data).reduce((acc, [k, v]) => {
-      if (["fileBytes", "output", "error", "outputBytesLen"].includes(k)) return acc;
+      if (["fileBytes", "output", "error", "outputBytesLen", "measured", "selected"].includes(k))
+        return acc;
       if (k === "outputFormat" && v === "hex") return acc;
+      if ((k === "type" || k === "t") && v === "crypto") return acc;
       const key = MAP[k] || k;
       acc[key] = v;
       return acc;
@@ -58,9 +55,7 @@ function minifyNode(n: GraphNode) {
   };
   if (n.parentId) result.pi = n.parentId;
   if (n.extent) result.e = n.extent;
-  if (n.width) result.w = n.width;
-  if (n.height) result.h = n.height;
-  if (n.style) result.s = n.style;
+  if (n.type && n.type !== "crypto") result.t = n.type;
   return result;
 }
 
@@ -74,15 +69,12 @@ function expandNode(m: any): GraphNode {
 
   const node: any = {
     id: m.i,
-    type: m.t || (data.kind === "note" ? "note" : "crypto"),
+    type: m.t || "crypto",
     position: { x: m.p[0], y: m.p[1] },
     data,
   };
   if (m.pi) node.parentId = m.pi;
   if (m.e) node.extent = m.e;
-  if (m.w) node.width = m.w;
-  if (m.h) node.height = m.h;
-  if (m.s) node.style = m.s;
   return node as GraphNode;
 }
 
