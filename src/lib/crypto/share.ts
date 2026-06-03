@@ -56,6 +56,11 @@ function minifyNode(n: GraphNode) {
   if (n.parentId) result.pi = n.parentId;
   if (n.extent) result.e = n.extent;
   if (n.type && n.type !== "crypto") result.t = n.type;
+  if (n.data.kind === "group" || n.data.kind === "note") {
+    if (n.width) result.w = n.width;
+    if (n.height) result.h = n.height;
+    if (n.style) result.s = n.style;
+  }
   return result;
 }
 
@@ -75,6 +80,9 @@ function expandNode(m: any): GraphNode {
   };
   if (m.pi) node.parentId = m.pi;
   if (m.e) node.extent = m.e;
+  if (m.w) node.width = m.w;
+  if (m.h) node.height = m.h;
+  if (m.s) node.style = m.s;
   return node as GraphNode;
 }
 
