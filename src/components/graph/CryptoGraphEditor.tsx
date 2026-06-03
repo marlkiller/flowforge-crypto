@@ -40,6 +40,7 @@ import {
   Camera,
   CornerDownRight,
   GitBranch,
+  Download,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -51,6 +52,7 @@ import { WorkflowTab } from "./parts/WorkflowTab";
 import { GraphDialogs } from "./parts/GraphDialogs";
 import { Sidebar } from "./parts/Sidebar";
 import { PromptDialog } from "./parts/PromptDialog";
+import { SaveOutputDialog } from "./parts/SaveOutputDialog";
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
@@ -91,6 +93,7 @@ function InnerEditor() {
 
   const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
   const [promptDialogOpen, setPromptDialogOpen] = useState(false);
+  const [saveDialogNodeId, setSaveDialogNodeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -735,7 +738,7 @@ function InnerEditor() {
             {/* Node context menu */}
             {interaction.contextMenu && ctxNode && (
               <div
-                className="absolute z-50 w-40 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
+                className="absolute z-50 w-56 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
                 style={{ left: interaction.contextMenu.x, top: interaction.contextMenu.y }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -744,9 +747,6 @@ function InnerEditor() {
                 </div>
                 <button
                   onClick={() => {
-                    // Manually handle copy for single node from context menu
-                    // Note: clipboardRef is internal to useGraphInteraction, but we can call a method if we expose it
-                    // For now, let's just use what's available
                     interaction.copySelected();
                     interaction.setContextMenu(null);
                   }}
@@ -760,6 +760,16 @@ function InnerEditor() {
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
                 >
                   <Copy className="w-3 h-3" /> Copy output
+                </button>
+                <button
+                  onClick={() => {
+                    setSaveDialogNodeId(ctxNode.id);
+                    interaction.setContextMenu(null);
+                  }}
+                  disabled={!ctxNode.data.output}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+                >
+                  <Download className="w-3 h-3" /> Save output
                 </button>
                 <button
                   onClick={interaction.duplicateNode}
@@ -829,7 +839,7 @@ function InnerEditor() {
             {/* Multi-select context menu */}
             {interaction.contextMenu && interaction.contextMenu.multi && (
               <div
-                className="absolute z-50 w-40 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
+                className="absolute z-50 w-56 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
                 style={{ left: interaction.contextMenu.x, top: interaction.contextMenu.y }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -971,7 +981,13 @@ function InnerEditor() {
             )}
           </div>
 
-          {rightPanelOpen && <NodeInspector key={selectedNode?.id} node={selectedNode} />}
+          {rightPanelOpen && (
+            <NodeInspector
+              key={selectedNode?.id}
+              node={selectedNode}
+              onSaveOutput={(id) => setSaveDialogNodeId(id)}
+            />
+          )}
         </aside>
       )}
 
@@ -1007,6 +1023,13 @@ function InnerEditor() {
 
       <PluginManager open={pluginDialogOpen} onOpenChange={setPluginDialogOpen} />
       <PromptDialog open={promptDialogOpen} onOpenChange={setPromptDialogOpen} />
+      <SaveOutputDialog
+        open={saveDialogNodeId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSaveDialogNodeId(null);
+        }}
+        node={nodes.find((n) => n.id === saveDialogNodeId) ?? null}
+      />
     </div>
   );
 }

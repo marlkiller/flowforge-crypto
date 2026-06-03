@@ -9,10 +9,11 @@ import {
 import type { GraphNode, NodeInputMeta } from "@/lib/crypto/types";
 import type { DataFormat } from "@/lib/crypto/service";
 import { useState } from "react";
-import { Trash2, File, Upload, Link2, Settings2 } from "lucide-react";
+import { Trash2, File, Upload, Link2, Settings2, Download } from "lucide-react";
 
 interface Props {
   node: GraphNode | null;
+  onSaveOutput?: (nodeId: string) => void;
 }
 
 const MAX_OUTPUT_LEN = 10240;
@@ -24,7 +25,7 @@ function truncateOutput(output: string) {
   );
 }
 
-export function NodeInspector({ node }: Props) {
+export function NodeInspector({ node, onSaveOutput }: Props) {
   const [showFullOutput, setShowFullOutput] = useState(false);
   if (!node) {
     return (
@@ -179,6 +180,15 @@ export function NodeInspector({ node }: Props) {
                 <div className="text-[10px] font-medium text-muted-foreground mb-1.5 flex items-center justify-between">
                   <span>Size</span>
                   <div className="flex items-center gap-2">
+                    {d.output && (
+                      <button
+                        onClick={() => onSaveOutput?.(node!.id)}
+                        className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                        title="Save output to file"
+                      >
+                        <Download className="w-3 h-3" /> Save
+                      </button>
+                    )}
                     {d.output && d.output.length > MAX_OUTPUT_LEN && (
                       <button
                         onClick={() => setShowFullOutput(!showFullOutput)}
