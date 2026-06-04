@@ -555,11 +555,145 @@ export const BLAKE2S_META: NodeKindMeta = {
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
     {
-      id: "outputLength",
-      label: "Output Length",
+      id: "length",
+      label: "Derived Length (bits)",
       type: "number",
-      defaultValue: 32,
+      defaultValue: 256,
       connectable: false,
+    },
+  ],
+};
+
+// ─── Legacy Ciphers (Heavy — crypto-js) ──────────────────────────
+
+export const DES_META: NodeKindMeta = {
+  kind: "des",
+  label: "DES",
+  category: "cipher",
+  description: "DES legacy encryption (INSECURE).",
+  security: "insecure",
+  defaultOutput: "hex",
+  inputs: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
+    { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text" },
+    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
+    { id: "mode", label: "Mode", connectable: false, type: "select", defaultValue: "CBC", options: [{ label: "CBC", value: "CBC" }, { label: "ECB", value: "ECB" }] },
+  ],
+};
+
+export const TRIPLEDES_META: NodeKindMeta = {
+  kind: "tripledes",
+  label: "3DES",
+  category: "cipher",
+  description: "TripleDES legacy encryption (INSECURE).",
+  security: "insecure",
+  defaultOutput: "hex",
+  inputs: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
+    { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text" },
+    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
+    { id: "mode", label: "Mode", connectable: false, type: "select", defaultValue: "CBC", options: [{ label: "CBC", value: "CBC" }, { label: "ECB", value: "ECB" }] },
+  ],
+};
+
+export const BLOWFISH_META: NodeKindMeta = {
+  kind: "blowfish",
+  label: "Blowfish",
+  category: "cipher",
+  description: "Blowfish block cipher (64-bit block, 32-448 bit key).",
+  security: "deprecated",
+  defaultOutput: "hex",
+  inputs: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
+    { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text", visible: (d) => (d["mode"] as string) !== "ECB" },
+    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
+    { id: "mode", label: "Mode", connectable: false, type: "select", defaultValue: "CBC", options: [{ label: "CBC", value: "CBC" }, { label: "ECB", value: "ECB" }] },
+  ],
+};
+
+export const RC4_META: NodeKindMeta = {
+  kind: "rc4",
+  label: "RC4",
+  category: "cipher",
+  description: "RC4 stream cipher.",
+  security: "insecure",
+  defaultOutput: "hex",
+  inputs: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
+    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
+  ],
+};
+
+export const RABBIT_META: NodeKindMeta = {
+  kind: "rabbit",
+  label: "Rabbit",
+  category: "cipher",
+  description: "Rabbit stream cipher.",
+  security: "deprecated",
+  defaultOutput: "hex",
+  inputs: [
+    { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
+    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
+    { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text" },
+    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
+  ],
+};
+
+// ─── JWT (Heavy — jose) ──────────────────────────────────────────
+
+export const JWT_SIGN_META: NodeKindMeta = {
+  kind: "jwt_sign",
+  label: "JWT Sign",
+  category: "protocol",
+  description: "Sign a JSON Web Token.",
+  defaultOutput: "utf8",
+  inputs: [
+    { id: "payload", label: "Payload", connectable: true, acceptTypes: ["UTF8"] },
+    { id: "key", label: "Secret/Private Key", connectable: true, acceptTypes: ["PEM", "B64"] },
+    {
+      id: "algorithm",
+      label: "Algorithm",
+      type: "select",
+      connectable: false,
+      defaultValue: "HS256",
+      options: [
+        { label: "HS256 (HMAC SHA-256)", value: "HS256" },
+        { label: "HS512 (HMAC SHA-512)", value: "HS512" },
+        { label: "RS256 (RSA PKCS#1 v1.5 SHA-256)", value: "RS256" },
+        { label: "ES256 (ECDSA P-256 SHA-256)", value: "ES256" },
+      ],
+    },
+    { id: "issuer", label: "Issuer (iss)", type: "text", connectable: false, placeholder: "optional..." },
+    { id: "subject", label: "Subject (sub)", type: "text", connectable: false, placeholder: "optional..." },
+    { id: "expiresIn", label: "Expires In (e.g. 2h)", type: "text", connectable: false, defaultValue: "2h" },
+  ],
+};
+
+export const JWT_VERIFY_META: NodeKindMeta = {
+  kind: "jwt_verify",
+  label: "JWT Verify",
+  category: "protocol",
+  description: "Verify a JSON Web Token.",
+  defaultOutput: "utf8",
+  inputs: [
+    { id: "token", label: "JWT Token", connectable: true, acceptTypes: ["UTF8"] },
+    { id: "key", label: "Secret/Public Key", connectable: true, acceptTypes: ["PEM", "B64"] },
+    {
+      id: "algorithm",
+      label: "Expected Alg",
+      type: "select",
+      connectable: false,
+      defaultValue: "HS256",
+      options: [
+        { label: "HS256", value: "HS256" },
+        { label: "HS512", value: "HS512" },
+        { label: "RS256", value: "RS256" },
+        { label: "ES256", value: "ES256" },
+      ],
     },
   ],
 };

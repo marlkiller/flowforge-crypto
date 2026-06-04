@@ -35,14 +35,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { CategoryIcon } from "./CategoryIcon";
 import { graphStore } from "../store";
 import { toast } from "sonner";
-import { ALL_PRESETS } from "@/presets/presets";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const PRESET_ICONS: Record<string, typeof Fingerprint> = {
   "Group Demo (Isolated + Connected)": Layers,
@@ -84,16 +83,24 @@ const PRESET_ICONS: Record<string, typeof Fingerprint> = {
 
 function TemplateMenuButton() {
   const [query, setQuery] = useState("");
-  const filtered = query
-    ? ALL_PRESETS.filter(
+  const [presets, setPresets] = useState<readonly { label: string; keywords: string; seed: any }[] | null>(null);
+
+  const handleOpenChange = (open: boolean) => {
+    if (open && !presets) {
+      import("@/presets/presets").then((mod) => setPresets(mod.ALL_PRESETS));
+    }
+  };
+
+  const filtered = query && presets
+    ? presets.filter(
         (p) =>
           p.label.toLowerCase().includes(query.toLowerCase()) ||
           p.keywords.toLowerCase().includes(query.toLowerCase()),
       )
-    : ALL_PRESETS;
+    : presets ?? [];
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-accent text-[9px] font-bold uppercase tracking-wider transition-all">
           <LayoutTemplate className="w-3 h-3" /> Templates
@@ -109,7 +116,9 @@ function TemplateMenuButton() {
           />
         </div>
         <div className="max-h-64 overflow-y-auto">
-          {filtered.length === 0 ? (
+          {!presets ? (
+            <div className="px-2 py-4 text-center text-[10px] opacity-40">Loading templates...</div>
+          ) : filtered.length === 0 ? (
             <div className="px-2 py-4 text-center text-[10px] opacity-40">No templates found</div>
           ) : (
             filtered.map((p, i) => {
@@ -139,10 +148,6 @@ interface SidebarProps {
   leftPanelOpen: boolean;
   setLeftPanelOpen: (open: boolean) => void;
   setPluginDialogOpen: (open: boolean) => void;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  collapsedCats: Set<string>;
-  toggleCat: (cat: string) => void;
   onDragStart: (e: React.DragEvent, kind: string) => void;
   openExportDialog: () => void;
   openImportDialog: () => void;
@@ -153,15 +158,22 @@ export function Sidebar({
   leftPanelOpen,
   setLeftPanelOpen,
   setPluginDialogOpen,
-  searchQuery,
-  setSearchQuery,
-  collapsedCats,
-  toggleCat,
   onDragStart,
   openExportDialog,
   openImportDialog,
   openShareDialog,
 }: SidebarProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
+  const toggleCat = useCallback((cat: string) => {
+    setCollapsedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }, []);
+
   // Ctrl+S / Cmd+S to save
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

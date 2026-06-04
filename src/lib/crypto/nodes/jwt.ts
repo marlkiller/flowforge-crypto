@@ -3,58 +3,10 @@ import type { GraphNode } from "../types";
 import { utf8ToBytes, bytesToUtf8 } from "../service";
 import { getField, getParamBytes } from "../utils";
 import * as jose from "jose";
+import { JWT_SIGN_META, JWT_VERIFY_META } from "./meta";
 
 registerNodeDef("jwt_sign", {
-  meta: {
-    kind: "jwt_sign",
-    label: "JWT Sign",
-    category: "protocol",
-    description: "Sign a JSON Web Token.",
-    defaultOutput: "utf8",
-    inputs: [
-      { id: "payload", label: "Payload", connectable: true, acceptTypes: ["UTF8"] },
-      {
-        id: "key",
-        label: "Secret/Private Key",
-        connectable: true,
-        acceptTypes: ["PEM", "B64"],
-      },
-      {
-        id: "algorithm",
-        label: "Algorithm",
-        type: "select",
-        connectable: false,
-        defaultValue: "HS256",
-        options: [
-          { label: "HS256 (HMAC SHA-256)", value: "HS256" },
-          { label: "HS512 (HMAC SHA-512)", value: "HS512" },
-          { label: "RS256 (RSA PKCS#1 v1.5 SHA-256)", value: "RS256" },
-          { label: "ES256 (ECDSA P-256 SHA-256)", value: "ES256" },
-        ],
-      },
-      {
-        id: "issuer",
-        label: "Issuer (iss)",
-        type: "text",
-        connectable: false,
-        placeholder: "optional...",
-      },
-      {
-        id: "subject",
-        label: "Subject (sub)",
-        type: "text",
-        connectable: false,
-        placeholder: "optional...",
-      },
-      {
-        id: "expiresIn",
-        label: "Expires In (e.g. 2h)",
-        type: "text",
-        connectable: false,
-        defaultValue: "2h",
-      },
-    ],
-  },
+  meta: JWT_SIGN_META,
   runner: async (node, inputs) => {
     const payloadStr = bytesToUtf8(inputs["payload"] ?? utf8ToBytes("{}"));
     const keyBytes = getParamBytes(node as GraphNode, inputs, "key");
@@ -91,35 +43,7 @@ registerNodeDef("jwt_sign", {
 });
 
 registerNodeDef("jwt_verify", {
-  meta: {
-    kind: "jwt_verify",
-    label: "JWT Verify",
-    category: "protocol",
-    description: "Verify a JSON Web Token.",
-    defaultOutput: "utf8",
-    inputs: [
-      { id: "token", label: "JWT Token", connectable: true, acceptTypes: ["UTF8"] },
-      {
-        id: "key",
-        label: "Secret/Public Key",
-        connectable: true,
-        acceptTypes: ["PEM", "B64"],
-      },
-      {
-        id: "algorithm",
-        label: "Expected Alg",
-        type: "select",
-        connectable: false,
-        defaultValue: "HS256",
-        options: [
-          { label: "HS256", value: "HS256" },
-          { label: "HS512", value: "HS512" },
-          { label: "RS256", value: "RS256" },
-          { label: "ES256", value: "ES256" },
-        ],
-      },
-    ],
-  },
+  meta: JWT_VERIFY_META,
   runner: async (node, inputs) => {
     const token = bytesToUtf8(inputs["token"] ?? new Uint8Array(0));
     const keyBytes = getParamBytes(node as GraphNode, inputs, "key");

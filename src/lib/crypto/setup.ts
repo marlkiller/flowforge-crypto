@@ -11,9 +11,7 @@ import "./nodes/cipher";
 import "./nodes/mac";
 import "./nodes/eddsa";
 import "./nodes/otp";
-import "./nodes/jwt";
 import "./nodes/entropy";
-import "./nodes/legacy";
 import "./nodes/bitwise";
 import "./nodes/pqc";
 import "./nodes/curves";
@@ -67,6 +65,13 @@ import {
   ECDSA_SIGN_META,
   ECDSA_VERIFY_META,
   ECDH_META,
+  DES_META,
+  TRIPLEDES_META,
+  BLOWFISH_META,
+  RC4_META,
+  RABBIT_META,
+  JWT_SIGN_META,
+  JWT_VERIFY_META,
 } from "./nodes/meta";
 
 // RSA
@@ -94,6 +99,17 @@ registerLazyNode("ec_keygen", EC_KEYGEN_META, () => import("./nodes/ecc"));
 registerLazyNode("ecdsa_sign", ECDSA_SIGN_META, () => import("./nodes/ecc"));
 registerLazyNode("ecdsa_verify", ECDSA_VERIFY_META, () => import("./nodes/ecc"));
 registerLazyNode("ecdh", ECDH_META, () => import("./nodes/ecc"));
+
+// Legacy ciphers (crypto-js)
+registerLazyNode("des", DES_META, () => import("./nodes/legacy"));
+registerLazyNode("tripledes", TRIPLEDES_META, () => import("./nodes/legacy"));
+registerLazyNode("blowfish", BLOWFISH_META, () => import("./nodes/legacy"));
+registerLazyNode("rc4", RC4_META, () => import("./nodes/legacy"));
+registerLazyNode("rabbit", RABBIT_META, () => import("./nodes/legacy"));
+
+// JWT (jose)
+registerLazyNode("jwt_sign", JWT_SIGN_META, () => import("./nodes/jwt"));
+registerLazyNode("jwt_verify", JWT_VERIFY_META, () => import("./nodes/jwt"));
 
 // Hashes
 const hashMetas = [

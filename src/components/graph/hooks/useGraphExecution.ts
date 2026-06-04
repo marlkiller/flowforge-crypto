@@ -5,7 +5,7 @@ import type { GraphEdge, GraphNode, NodeExecutionLog, ExecutionResult } from "@/
 import { formatBytes } from "@/lib/crypto/service";
 import { toast } from "sonner";
 
-const EXECUTION_MIN_MS = 150;
+const EXECUTION_DEBOUNCE_MS = 500;
 
 export function useGraphExecution(
   activeId: string,
@@ -261,44 +261,46 @@ export function useGraphExecution(
     }
   }, [workerExecute, selectedGroup]);
 
-  const execKey = useMemo(() => {
-    const summary = {
-      activeId,
-      pluginUrls: graphStore.getAllPluginUrls(),
-      nodes: [...nodes]
-        .sort((a, b) => a.id.localeCompare(b.id))
-        .map((n) => {
-          const meta = NODE_KIND_META[n.data.kind];
-          const config: Record<string, any> = { k: n.data.kind, f: n.data.outputFormat };
-          if (meta?.inputs) {
-            for (const input of meta.inputs) {
-              if (input.type != null) {
-                config[input.id] = n.data[input.id];
-              }
+  // Stable key for auto-execution — only changes on structural/config changes, NOT on node drag.
+  const execKeyRef = useRef("");
+  const prevNodesKeyRef = useRef("");
+  const fullKey = useMemo(() => {
+    const nodesKey = nodes
+      .map((n) => {
+        const meta = NODE_KIND_META[n.data.kind];
+        const config: Record<string, any> = { k: n.data.kind, f: n.data.outputFormat };
+        if (meta?.inputs) {
+          for (const input of meta.inputs) {
+            if (input.type != null) {
+              config[input.id] = n.data[input.id];
             }
           }
-          if (n.data.kind === "file") {
-            config.fileName = n.data.fileName;
-          }
-          return { id: n.id, c: config };
-        }),
-      edges: edges.map((e) => ({
-        s: e.source,
-        t: e.target,
-        sh: e.sourceHandle,
-        th: e.targetHandle,
-      })),
-    };
-    return JSON.stringify(summary);
+        }
+        if (n.data.kind === "file") {
+          config.fileName = n.data.fileName;
+        }
+        return `${n.id}:${JSON.stringify(config)}`;
+      })
+      .sort()
+      .join("|");
+    const edgesKey = edges
+      .map((e) => `${e.source}>${e.target}:${e.sourceHandle??""}:${e.targetHandle??""}`)
+      .sort()
+      .join("|");
+    return `${activeId}|${edgesKey}|${nodesKey}`;
   }, [nodes, edges, activeId]);
+  if (fullKey !== prevNodesKeyRef.current) {
+    prevNodesKeyRef.current = fullKey;
+    execKeyRef.current = fullKey;
+  }
 
   useEffect(() => {
-    if (!execKey) return;
+    if (!execKeyRef.current) return;
     const t = setTimeout(() => {
       execute();
-    }, EXECUTION_MIN_MS);
+    }, EXECUTION_DEBOUNCE_MS);
     return () => clearTimeout(t);
-  }, [execKey, execute]);
+  }, [execKeyRef.current, execute]);
 
   return { execRunning, execLogs, errorCount, execute };
 }

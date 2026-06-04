@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
 import "@/lib/crypto/setup";
 import { NODE_KIND_META } from "@/lib/crypto/registry";
-import { getLayoutedNodes } from "@/lib/crypto/layout";
+
 import { initGroupCounter } from "@/lib/crypto/factory";
 
 export interface Workflow {
@@ -181,7 +181,7 @@ function patchActive(patch: Partial<Workflow>) {
 }
 
 // Undo/redo stacks (not persisted)
-const MAX_UNDO = 50;
+const MAX_UNDO = 10;
 const undoStack: Workflow[] = [];
 const redoStack: Workflow[] = [];
 
@@ -390,11 +390,12 @@ export const graphStore = {
     });
   },
 
-  reflowLayout: () => {
+  reflowLayout: async () => {
     snapshot();
     const w = active();
     if (w.nodes.length === 0) return;
     try {
+      const { getLayoutedNodes } = await import("@/lib/crypto/layout");
       const layouted = getLayoutedNodes(w.nodes, w.edges);
       patchActive({ nodes: layouted.nodes, edges: layouted.edges });
     } catch (e) {

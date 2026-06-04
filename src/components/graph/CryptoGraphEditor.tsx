@@ -53,6 +53,7 @@ import { GraphDialogs } from "./parts/GraphDialogs";
 import { Sidebar } from "./parts/Sidebar";
 import { PromptDialog } from "./parts/PromptDialog";
 import { SaveOutputDialog } from "./parts/SaveOutputDialog";
+
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
@@ -65,7 +66,7 @@ const nodeTypes = {
   cryptoGroup: GroupNode,
 };
 
-function InnerEditor() {
+function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObject<((id: string) => void) | null> }) {
   const { theme } = useTheme();
   const isMobile = useIsMobile();
   const [leftPanelOpen, setLeftPanelOpen] = useState(!isMobile);
@@ -80,6 +81,15 @@ function InnerEditor() {
   );
   const nodes = active.nodes;
   const edges = active.edges;
+  const prevNodesRef = useRef(nodes);
+  const flowNodesRef = useRef<import("@xyflow/react").Node[]>([]);
+  if (nodes !== prevNodesRef.current) {
+    prevNodesRef.current = nodes;
+    flowNodesRef.current = nodes.map((n) => ({
+      ...n,
+      data: { ...n.data, fileBytes: undefined },
+    }));
+  }
   const selectedNode = active.nodes.find((n) => n.id === active.selectedNodeId) ?? null;
   const selectedEdgeId = active.selectedEdgeId;
 
@@ -93,9 +103,6 @@ function InnerEditor() {
 
   const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
   const [promptDialogOpen, setPromptDialogOpen] = useState(false);
-  const [saveDialogNodeId, setSaveDialogNodeId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
   useEffect(() => {
@@ -103,15 +110,6 @@ function InnerEditor() {
       setSelectedGroup(null);
     }
   }, [nodes, selectedGroup]);
-
-  const toggleCat = (cat: string) => {
-    setCollapsedCats((prev) => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
-      return next;
-    });
-  };
 
   // Logic extracted to hooks
   const { execRunning, execLogs, errorCount, execute } = useGraphExecution(
@@ -418,10 +416,6 @@ function InnerEditor() {
           leftPanelOpen={leftPanelOpen}
           setLeftPanelOpen={setLeftPanelOpen}
           setPluginDialogOpen={setPluginDialogOpen}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          collapsedCats={collapsedCats}
-          toggleCat={toggleCat}
           onDragStart={interaction.onDragStart}
           openExportDialog={workflowActions.openExportDialog}
           openImportDialog={workflowActions.openImportDialog}
@@ -446,10 +440,6 @@ function InnerEditor() {
               leftPanelOpen={true}
               setLeftPanelOpen={() => {}}
               setPluginDialogOpen={setPluginDialogOpen}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              collapsedCats={collapsedCats}
-              toggleCat={toggleCat}
               onDragStart={interaction.onDragStart}
               openExportDialog={workflowActions.openExportDialog}
               openImportDialog={workflowActions.openImportDialog}
@@ -496,7 +486,7 @@ function InnerEditor() {
             onDragOver={interaction.onDragOver}
           >
             <ReactFlow
-              nodes={nodes}
+              nodes={flowNodesRef.current}
               edges={edgesWithState}
               nodeTypes={nodeTypes}
               onNodesChange={onNodesChange}
@@ -763,7 +753,7 @@ function InnerEditor() {
                 </button>
                 <button
                   onClick={() => {
-                    setSaveDialogNodeId(ctxNode.id);
+                    onSaveOutputRef.current?.(ctxNode.id);
                     interaction.setContextMenu(null);
                   }}
                   disabled={!ctxNode.data.output}
@@ -985,7 +975,7 @@ function InnerEditor() {
             <NodeInspector
               key={selectedNode?.id}
               node={selectedNode}
-              onSaveOutput={(id) => setSaveDialogNodeId(id)}
+              onSaveOutput={(id) => onSaveOutputRef.current?.(id)}
             />
           )}
         </aside>
@@ -1023,21 +1013,48 @@ function InnerEditor() {
 
       <PluginManager open={pluginDialogOpen} onOpenChange={setPluginDialogOpen} />
       <PromptDialog open={promptDialogOpen} onOpenChange={setPromptDialogOpen} />
-      <SaveOutputDialog
-        open={saveDialogNodeId !== null}
-        onOpenChange={(open) => {
-          if (!open) setSaveDialogNodeId(null);
-        }}
-        node={nodes.find((n) => n.id === saveDialogNodeId) ?? null}
-      />
     </div>
   );
 }
 
 export default function CryptoGraphEditor() {
+  const saveDialogTriggerRef = useRef<((id: string) => void) | null>(null);
+
   return (
     <ReactFlowProvider>
-      <InnerEditor />
+      <InnerEditor onSaveOutputRef={saveDialogTriggerRef} />
+      <SaveDialogBridge triggerRef={saveDialogTriggerRef} />
     </ReactFlowProvider>
+  );
+}
+
+function SaveDialogBridge({ triggerRef }: { triggerRef: React.MutableRefObject<((id: string) => void) | null> }) {
+  const [nodeId, setNodeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    triggerRef.current = (id: string) => setNodeId(id);
+    return () => { triggerRef.current = null; };
+  }, [triggerRef]);
+
+  const node = useGraphStore((s) => {
+    if (!nodeId) return null;
+    const active = s.workflows.find((w) => w.id === s.activeId);
+    return active?.nodes.find((n) => n.id === nodeId) ?? null;
+  });
+
+  if (!node) return null;
+
+  return (
+    <SaveOutputDialog
+      open={nodeId !== null}
+      onOpenChange={(open) => { if (!open) setNodeId(null); }}
+      node={{
+        ...node,
+        data: {
+          ...node.data,
+          fileBytes: undefined,
+        },
+      }}
+    />
   );
 }
