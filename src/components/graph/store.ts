@@ -119,7 +119,6 @@ let state: State = (() => {
 const listeners = new Set<() => void>();
 const emit = () => {
   listeners.forEach((l) => l());
-  persistState(state);
 };
 
 function active(): Workflow {
@@ -127,7 +126,7 @@ function active(): Workflow {
 }
 
 function cloneWorkflow(w: Workflow): Workflow {
-  return JSON.parse(JSON.stringify(w));
+  return structuredClone(w);
 }
 
 // Ensure parent nodes come before children in the array (xyflow requirement).
@@ -541,6 +540,10 @@ export const graphStore = {
   getAllPluginUrls: () => {
     const all = [...(state.pluginUrls || []), ...(state.sessionPluginUrls || [])];
     return Array.from(new Set(all));
+  },
+
+  save: () => {
+    persistState(state);
   },
 
   subscribe: (l: () => void) => {

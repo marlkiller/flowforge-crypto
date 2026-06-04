@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Play, ChevronDown, GripHorizontal, Loader2, Copy, Timer, Layers } from "lucide-react";
 import { toast } from "sonner";
 import type { NodeExecutionLog, GraphNode } from "@/lib/crypto/types";
@@ -34,7 +34,20 @@ const STATUS_BG: Record<string, string> = {
 const MIN_H = 32;
 const MAX_H = window.innerHeight * 0.6;
 
-export function OutputConsole({
+function areConsolePropsEqual(prev: Props, next: Props) {
+  return (
+    prev.logs === next.logs &&
+    prev.running === next.running &&
+    prev.selectedGroup === next.selectedGroup &&
+    prev.nodes.length === next.nodes.length &&
+    prev.nodes.every((n, i) => {
+      const o = next.nodes[i];
+      return o && n.id === o.id && n.data === o.data && n.parentId === o.parentId;
+    })
+  );
+}
+
+export const OutputConsole = memo(function OutputConsole({
   logs,
   running,
   onRun,
@@ -47,11 +60,16 @@ export function OutputConsole({
   }, [nodes]);
 
   const groupLabelByNodeId = useMemo(() => {
+    const groupLabels = new Map<string, string>();
+    for (const g of nodes) {
+      if (g.data.kind === "group") {
+        groupLabels.set(g.id, g.data.label as string);
+      }
+    }
     const map = new Map<string, string>();
     for (const n of nodes) {
-      if (n.parentId) {
-        const group = nodes.find((g) => g.id === n.parentId);
-        if (group) map.set(n.id, group.data.label as string);
+      if (n.parentId && groupLabels.has(n.parentId)) {
+        map.set(n.id, groupLabels.get(n.parentId)!);
       }
     }
     return map;
@@ -263,11 +281,11 @@ export function OutputConsole({
       )}
     </div>
   );
-}
+}, areConsolePropsEqual);
 
-const MAX_OUTPUT_LEN = 10240;
+const MAX_OUTPUT_LEN = 512;
 
-function LogEntry({
+const LogEntry = memo(function LogEntry({
   log,
   index,
   groupLabel,
@@ -383,4 +401,4 @@ function LogEntry({
       )}
     </div>
   );
-}
+});

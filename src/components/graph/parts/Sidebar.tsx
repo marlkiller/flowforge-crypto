@@ -23,6 +23,7 @@ import {
   Archive,
   GitBranch,
   Layers,
+  Save,
 } from "lucide-react";
 import {
   getActiveCategories,
@@ -33,6 +34,7 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CategoryIcon } from "./CategoryIcon";
 import { graphStore } from "../store";
+import { toast } from "sonner";
 import { ALL_PRESETS } from "@/presets/presets";
 import {
   DropdownMenu,
@@ -40,7 +42,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const PRESET_ICONS: Record<string, typeof Fingerprint> = {
   "Group Demo (Isolated + Connected)": Layers,
@@ -160,6 +162,19 @@ export function Sidebar({
   openImportDialog,
   openShareDialog,
 }: SidebarProps) {
+  // Ctrl+S / Cmd+S to save
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        graphStore.save();
+        toast.success("Workflow saved");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <aside
       className={`bg-card border-r border-border flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${leftPanelOpen ? "w-66" : "w-8"}`}
@@ -292,12 +307,14 @@ export function Sidebar({
               <button
                 onClick={openExportDialog}
                 className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-accent text-[9px] font-bold uppercase tracking-wider transition-all"
+                title="Export workflows as JSON file"
               >
                 <Download className="w-3 h-3" /> Export
               </button>
               <button
                 onClick={openImportDialog}
                 className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-accent text-[9px] font-bold uppercase tracking-wider transition-all"
+                title="Import workflows from JSON file"
               >
                 <Upload className="w-3 h-3" /> Import
               </button>
@@ -312,10 +329,25 @@ export function Sidebar({
             <div className="flex gap-1 justify-center">
               <TemplateMenuButton />
               <button
-                onClick={() => graphStore.setActiveGraph({ nodes: [], edges: [] })}
+                onClick={() => {
+                  graphStore.setActiveGraph({ nodes: [], edges: [] });
+                  graphStore.save();
+                  toast.success("Workflow cleared");
+                }}
                 className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-destructive/5 hover:border-destructive/30 text-[9px] font-bold uppercase tracking-wider transition-all"
+                title="Clear all nodes and edges from the canvas"
               >
                 <Trash2 className="w-3 h-3" /> Clear
+              </button>
+              <button
+                onClick={() => {
+                  graphStore.save();
+                  toast.success("Workflow saved");
+                }}
+                className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-background hover:bg-primary/10 hover:border-primary/30 text-[9px] font-bold uppercase tracking-wider transition-all"
+                title="Save workflow to localStorage (Ctrl+S)"
+              >
+                <Save className="w-3 h-3" /> Save
               </button>
             </div>
           </div>

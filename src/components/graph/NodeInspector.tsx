@@ -16,7 +16,16 @@ interface Props {
   onSaveOutput?: (nodeId: string) => void;
 }
 
-const MAX_OUTPUT_LEN = 10240;
+const MAX_OUTPUT_LEN = 512;
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const val = bytes / 1024 ** i;
+  return `${val.toFixed(i === 0 ? 0 : val < 10 ? 2 : 1)} ${units[i]}`;
+}
+
 function truncateOutput(output: string) {
   if (output.length <= MAX_OUTPUT_LEN) return output;
   return (
@@ -198,7 +207,7 @@ export function NodeInspector({ node, onSaveOutput }: Props) {
                       </button>
                     )}
                     <span className="text-foreground bg-background px-1.5 py-0.5 rounded border border-border">
-                      {d.outputBytesLen} bytes
+                      {formatFileSize(d.outputBytesLen)}
                     </span>
                   </div>
                 </div>
