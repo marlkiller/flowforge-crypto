@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,12 +9,12 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
-import { parseBytes, type DataFormat } from "@/lib/crypto/service";
+import { parseBytes, formatBytes, type DataFormat } from "@/lib/crypto/service";
 import type { GraphNode } from "@/lib/crypto/types";
-import { useState } from "react";
 import { toast } from "sonner";
 
-const PREVIEW_LIMIT = 1024 * 1024;
+// Only preview up to 4KB — full data is parsed on save
+const PREVIEW_LIMIT = 4096;
 
 type SaveFormat = "bin" | "hex" | "base64" | "utf8";
 
@@ -103,38 +103,73 @@ interface Props {
 
 export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
   const [saveFormat, setSaveFormat] = useState<SaveFormat>("bin");
+  const [selectedOutput, setSelectedOutput] = useState<string | null>(null);
 
   const fmt = (node?.data.outputFormat as DataFormat) || "utf8";
   const rawOutput = node?.data.output as string | undefined;
+  const outputEntries = node?.data.outputEntries;
+  const isMultiOutput = !!(outputEntries && outputEntries.length > 1);
+
+  useEffect(() => {
+    if (outputEntries?.length) {
+      setSelectedOutput((prev) =>
+        prev && outputEntries.some((e) => e.key === prev) ? prev : outputEntries[0].key,
+      );
+    }
+  }, [outputEntries]);
+
+  const currentEntry = isMultiOutput
+    ? outputEntries!.find((e) => e.key === selectedOutput)
+    : undefined;
+
   const hasOutput = !!rawOutput;
 
+  const totalBytes = node?.data.outputBytesLen ?? 0;
+
   const bytes = useMemo(() => {
-    const raw = rawOutput ? parseBytes(rawOutput, fmt) : null;
-    return raw instanceof Uint8Array ? raw : new Uint8Array();
-  }, [rawOutput, fmt]);
+    if (currentEntry) return currentEntry.bytes;
+    if (!rawOutput) return new Uint8Array();
+    try {
+      const raw = parseBytes(rawOutput, fmt);
+      return raw instanceof Uint8Array ? raw : new Uint8Array();
+    } catch {
+      return new Uint8Array();
+    }
+  }, [rawOutput, fmt, currentEntry]);
+
+  const preview = useMemo(() => {
+    if (currentEntry && saveFormat === "utf8") {
+      return formatBytes(currentEntry.bytes, fmt, currentEntry.label);
+    }
+    return previewContent(bytes, saveFormat, rawOutput || "", PREVIEW_LIMIT);
+  }, [bytes, saveFormat, rawOutput, currentEntry, fmt]);
 
   const currentFmt = SAVE_FORMATS.find((f) => f.value === saveFormat)!;
 
-  const preview = useMemo(
-    () => previewContent(bytes, saveFormat, rawOutput || "", PREVIEW_LIMIT),
-    [bytes, saveFormat, rawOutput],
-  );
-
   const getContent = () => {
+    const hasBytes = bytes.length > 0;
     switch (saveFormat) {
       case "bin":
-        return new Blob([new Uint8Array(bytes)], { type: currentFmt.mime });
+        return hasBytes
+          ? new Blob([new Uint8Array(bytes)], { type: currentFmt.mime })
+          : new Blob([rawOutput || ""], { type: "text/plain;charset=utf-8" });
       case "hex": {
+        if (!hasBytes) return new Blob([rawOutput || ""], { type: currentFmt.mime });
         const hex = Array.from(bytes)
           .map((b) => b.toString(16).padStart(2, "0"))
           .join(" ");
         return new Blob([hex], { type: currentFmt.mime });
       }
       case "base64": {
+        if (!hasBytes) return new Blob([rawOutput || ""], { type: currentFmt.mime });
         const b64 = btoa(String.fromCharCode(...bytes));
         return new Blob([b64], { type: currentFmt.mime });
       }
       case "utf8": {
+        if (currentEntry) {
+          const text = formatBytes(currentEntry.bytes, fmt, currentEntry.label);
+          return new Blob([text], { type: currentFmt.mime });
+        }
         return new Blob([node!.data.output as string], { type: currentFmt.mime });
       }
     }
@@ -143,7 +178,8 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
   const handleSave = async () => {
     if (!hasOutput) return;
     const blob = getContent();
-    const suggestedName = `output${currentFmt.ext}`;
+    const suffix = currentEntry ? `_${currentEntry.key}` : "";
+    const suggestedName = `output${suffix}${currentFmt.ext}`;
 
     if ("showSaveFilePicker" in window) {
       try {
@@ -191,6 +227,29 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
 
         {hasOutput ? (
           <div className="flex-1 min-h-0 space-y-3">
+            {isMultiOutput && outputEntries && (
+              <div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                  Output
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {outputEntries.map((entry) => (
+                    <button
+                      key={entry.key}
+                      onClick={() => setSelectedOutput(entry.key)}
+                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                        selectedOutput === entry.key
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted text-muted-foreground hover:text-foreground hover:bg-accent border border-border"
+                      }`}
+                    >
+                      {entry.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="rounded-lg border border-border bg-background p-3 overflow-auto max-h-[240px] custom-scrollbar">
               <pre className="text-[11px] font-mono leading-relaxed whitespace-pre">{preview}</pre>
             </div>
@@ -218,10 +277,8 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
             </div>
 
             <div className="text-[10px] text-muted-foreground">
-              {bytes.length} bytes total
-              {bytes.length > PREVIEW_LIMIT
-                ? ` · Preview shows first ${Math.min(bytes.length, PREVIEW_LIMIT)} bytes`
-                : ""}
+              {totalBytes} bytes total
+              {totalBytes > PREVIEW_LIMIT ? ` · Preview shows first ${PREVIEW_LIMIT} bytes` : ""}
             </div>
           </div>
         ) : (

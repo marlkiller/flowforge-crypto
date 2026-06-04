@@ -81,6 +81,7 @@ export interface NodeData extends Record<string, unknown> {
   output?: string;
   outputBytesLen?: number;
   error?: string;
+  outputEntries?: { key: string; label: string; bytes: Uint8Array }[];
 }
 
 export type GraphNode = Node<NodeData>;

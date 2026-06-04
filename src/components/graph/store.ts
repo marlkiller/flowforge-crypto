@@ -34,7 +34,7 @@ function persistState(s: State) {
         ...w,
         nodes: w.nodes.map((n) => ({
           ...n,
-          data: { ...n.data, fileBytes: undefined },
+          data: { ...n.data, fileBytes: undefined, outputEntries: undefined },
         })),
       })),
     };
@@ -57,6 +57,7 @@ function loadPersistedState(): State | null {
       w.nodes.forEach((n) => {
         if (n.data) {
           n.data.fileBytes = undefined;
+          n.data.outputEntries = undefined;
           n.data.output = undefined;
           n.data.error = undefined;
           n.data.outputBytesLen = undefined;
@@ -415,6 +416,7 @@ export const graphStore = {
         data: {
           ...n.data,
           fileBytes: undefined,
+          outputEntries: undefined,
           output: undefined,
           error: undefined,
           outputBytesLen: undefined,
@@ -433,6 +435,7 @@ export const graphStore = {
       nodes.forEach((n: GraphNode) => {
         if (n.data) {
           n.data.fileBytes = undefined;
+          n.data.outputEntries = undefined;
           n.data.output = undefined;
           n.data.error = undefined;
           n.data.outputBytesLen = undefined;

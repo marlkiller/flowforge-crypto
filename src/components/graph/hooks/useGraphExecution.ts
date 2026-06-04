@@ -81,7 +81,22 @@ export function useGraphExecution(
             reject(e);
           },
         });
-        worker.postMessage({ id, nodes, edges, pluginUrls });
+        // Extract fileBytes for zero-copy transfer (keep originals intact in store)
+        const fileTransfers: [string, Uint8Array][] = [];
+        const transferables: ArrayBuffer[] = [];
+        const strippedNodes = nodes.map((n) => {
+          if (n.data.fileBytes instanceof Uint8Array) {
+            const copy = n.data.fileBytes.slice();
+            fileTransfers.push([n.id, copy]);
+            transferables.push(copy.buffer);
+            return { ...n, data: { ...n.data, fileBytes: undefined } };
+          }
+          return n;
+        });
+        worker.postMessage(
+          { id, nodes: strippedNodes, edges, pluginUrls, fileTransfers },
+          transferables,
+        );
       });
     },
     [],
@@ -166,6 +181,7 @@ export function useGraphExecution(
 
         let output = "";
         let outputBytesLen: number | undefined = undefined;
+        let outputEntries: { key: string; label: string; bytes: Uint8Array }[] | undefined;
 
         if (outputs) {
           const entries = Object.entries(outputs);
@@ -210,6 +226,15 @@ export function useGraphExecution(
               return acc;
             }, 0);
             outputBytesLen = totalBytes;
+
+            // Store raw entries for multi-output save dialog
+            outputEntries = entries
+              .filter(([_, dv]) => dv?.value instanceof Uint8Array)
+              .map(([k, dv]) => ({
+                key: k,
+                label: getLabel(k),
+                bytes: dv.value as Uint8Array,
+              }));
           }
         }
 
@@ -220,7 +245,7 @@ export function useGraphExecution(
           prev.outputBytesLen === outputBytesLen
         )
           return n;
-        return { ...n, data: { ...prev, output, error, outputBytesLen } };
+        return { ...n, data: { ...prev, output, outputEntries, error, outputBytesLen } };
       });
       if (next.some((n, i) => n !== cur[i])) graphStore.setNodes(next);
     } catch (error) {
