@@ -28,7 +28,7 @@ export function ExecutionStatus({
     : nodes;
 
   return (
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+    <div className="absolute md:bottom-3 bottom-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
       <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border px-3 py-1.5 rounded-lg shadow-md pointer-events-auto">
         <DropdownMenu onOpenChange={(open) => !open && setSearch("")}>
           <DropdownMenuTrigger asChild>
@@ -48,6 +48,7 @@ export function ExecutionStatus({
                 placeholder="Search nodes..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
                 className="w-full bg-background border border-border rounded px-2 py-1 text-[11px] text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none placeholder:text-muted-foreground"
               />
             </div>

@@ -41,10 +41,13 @@ import {
   CornerDownRight,
   GitBranch,
   Download,
+  Layers,
+  Settings2,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PluginManager } from "./PluginManager";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 // New parts and hooks
 import { ExecutionStatus } from "./parts/ExecutionStatus";
@@ -66,7 +69,11 @@ const nodeTypes = {
   cryptoGroup: GroupNode,
 };
 
-function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObject<((id: string) => void) | null> }) {
+function InnerEditor({
+  onSaveOutputRef,
+}: {
+  onSaveOutputRef: React.MutableRefObject<((id: string) => void) | null>;
+}) {
   const { theme } = useTheme();
   const isMobile = useIsMobile();
   const [leftPanelOpen, setLeftPanelOpen] = useState(!isMobile);
@@ -120,6 +127,64 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
   );
   const interaction = useGraphInteraction(nodes, edges, wrapperRef);
   const workflowActions = useWorkflowActions(workflows);
+
+  // --- Mobile & Pointer Drag and Drop Logic ---
+  const touchStartPos = useRef<{ x: number; y: number; kind: string } | null>(null);
+  const [draggedItem, setDraggedItem] = useState<{ kind: string; x: number; y: number } | null>(
+    null,
+  );
+
+  const handlePointerDownNode = useCallback((e: React.PointerEvent, kind: string) => {
+    // Let native HTML5 handle mouse on desktop for ghost image support
+    if (e.pointerType === "mouse") return;
+    touchStartPos.current = { x: e.clientX, y: e.clientY, kind };
+  }, []);
+
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      if (draggedItem) {
+        setDraggedItem({ ...draggedItem, x: e.clientX, y: e.clientY });
+      } else if (touchStartPos.current) {
+        const dx = e.clientX - touchStartPos.current.x;
+        const dy = e.clientY - touchStartPos.current.y;
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+          setDraggedItem({ kind: touchStartPos.current.kind, x: e.clientX, y: e.clientY });
+          setMobileSheet(null); // auto-close mobile sheet if dragging
+        }
+      }
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (draggedItem) {
+        const itemKind = draggedItem.kind;
+        setDraggedItem(null);
+        touchStartPos.current = null;
+
+        if (wrapperRef.current && rf) {
+          const rect = wrapperRef.current.getBoundingClientRect();
+          if (
+            e.clientX >= rect.left &&
+            e.clientX <= rect.right &&
+            e.clientY >= rect.top &&
+            e.clientY <= rect.bottom
+          ) {
+            const flowPos = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+            interaction.onDropTouch(itemKind, flowPos);
+          }
+        }
+      } else {
+        touchStartPos.current = null;
+      }
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+  }, [draggedItem, rf, interaction]);
+  // ---------------------------------------------
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     const cur = graphStore.getActive().nodes;
@@ -398,16 +463,16 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-3 py-1.5 bg-card/90 backdrop-blur-xl border border-border rounded-full shadow-xl">
           <button
             onClick={() => setMobileSheet(mobileSheet === "palette" ? null : "palette")}
-            className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
           >
-            Palette
+            <Layers className="w-3.5 h-3.5" /> Palette
           </button>
           {selectedNode && (
             <button
               onClick={() => setMobileSheet(mobileSheet === "inspector" ? null : "inspector")}
-              className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent text-foreground hover:bg-accent/80 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent text-foreground hover:bg-accent/80 transition-colors"
             >
-              Inspector
+              <Settings2 className="w-3.5 h-3.5" /> Inspector
             </button>
           )}
         </div>
@@ -417,55 +482,56 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
           setLeftPanelOpen={setLeftPanelOpen}
           setPluginDialogOpen={setPluginDialogOpen}
           onDragStart={interaction.onDragStart}
+          onPointerDownNode={handlePointerDownNode}
+          onAddNode={interaction.addNodeAtCenter}
           openExportDialog={workflowActions.openExportDialog}
           openImportDialog={workflowActions.openImportDialog}
           openShareDialog={workflowActions.openShareDialog}
         />
       )}
 
-      {isMobile && mobileSheet === "palette" && (
-        <div className="fixed inset-0 z-[70] flex flex-col bg-background animate-in slide-in-from-bottom duration-200">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-            <span className="text-xs font-semibold">Palette</span>
-            <button
-              onClick={() => setMobileSheet(null)}
-              className="p-1 rounded hover:bg-accent text-muted-foreground"
-              aria-label="Close palette"
-            >
-              <ChevronDown className="w-4 h-4" />
-            </button>
-          </div>
+      <Sheet
+        open={isMobile && mobileSheet === "palette"}
+        onOpenChange={(open) => setMobileSheet(open ? "palette" : null)}
+      >
+        <SheetContent side="bottom" className="h-[85vh] p-0 flex flex-col rounded-t-xl z-[70]">
+          <SheetHeader className="px-4 py-3 border-b border-border">
+            <SheetTitle className="text-left text-sm font-semibold">Palette</SheetTitle>
+          </SheetHeader>
           <div className="flex-1 overflow-y-auto">
             <Sidebar
               leftPanelOpen={true}
               setLeftPanelOpen={() => {}}
               setPluginDialogOpen={setPluginDialogOpen}
               onDragStart={interaction.onDragStart}
+              onPointerDownNode={handlePointerDownNode}
+              onAddNode={(kind) => {
+                interaction.addNodeAtCenter(kind);
+                setMobileSheet(null);
+                import("sonner").then((m) => m.toast.success("Node added to center of canvas"));
+              }}
               openExportDialog={workflowActions.openExportDialog}
               openImportDialog={workflowActions.openImportDialog}
               openShareDialog={workflowActions.openShareDialog}
+              isMobile={true}
             />
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
-      {isMobile && mobileSheet === "inspector" && selectedNode && (
-        <div className="fixed inset-0 z-[70] flex flex-col bg-background animate-in slide-in-from-bottom duration-200">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-            <span className="text-xs font-semibold">Inspector</span>
-            <button
-              onClick={() => setMobileSheet(null)}
-              className="p-1 rounded hover:bg-accent text-muted-foreground"
-              aria-label="Close inspector"
-            >
-              <ChevronDown className="w-4 h-4" />
-            </button>
-          </div>
+      <Sheet
+        open={isMobile && mobileSheet === "inspector" && !!selectedNode}
+        onOpenChange={(open) => setMobileSheet(open ? "inspector" : null)}
+      >
+        <SheetContent side="bottom" className="h-[85vh] p-0 flex flex-col rounded-t-xl z-[70]">
+          <SheetHeader className="px-4 py-3 border-b border-border">
+            <SheetTitle className="text-left text-sm font-semibold">Inspector</SheetTitle>
+          </SheetHeader>
           <div className="flex-1 overflow-y-auto">
-            <NodeInspector key={selectedNode.id} node={selectedNode} />
+            {selectedNode && <NodeInspector key={selectedNode.id} node={selectedNode} />}
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
       <input
         ref={fileInputRef}
@@ -544,7 +610,7 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
                 showFitView
                 showInteractive
                 className="react-flow-controls-custom"
-                style={{ left: 12, bottom: 12 }}
+                style={{ left: 12, bottom: isMobile ? 64 : 12 }}
               />
               <button
                 onClick={() => {
@@ -553,7 +619,7 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
                   const w = graphStore.getActive();
                   graphStore.setEdges(w.edges.map((e) => ({ ...e, type: next })));
                 }}
-                className="graph-toolbar absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all"
+                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all ${isMobile ? "w-10 h-10" : "w-7 h-7"}`}
                 title={
                   edgeType === "smoothstep"
                     ? "Switch to curved edges"
@@ -564,12 +630,12 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
                     ? "Switch to curved edges"
                     : "Switch to right-angle edges"
                 }
-                style={{ top: 12, right: 76 }}
+                style={{ top: 12, right: isMobile ? 104 : 76 }}
               >
                 {edgeType === "smoothstep" ? (
-                  <CornerDownRight className="w-4 h-4" />
+                  <CornerDownRight className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
                 ) : (
-                  <GitBranch className="w-4 h-4" />
+                  <GitBranch className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
                 )}
               </button>
               <button
@@ -578,25 +644,25 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
                   setTimeout(() => rf?.fitView({ padding: 0.3, duration: 200 }), 50);
                 }}
                 disabled={nodes.length === 0}
-                className="graph-toolbar absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none"
+                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none ${isMobile ? "w-10 h-10" : "w-7 h-7"}`}
                 title="Auto-layout nodes with Dagre"
                 aria-label="Auto-layout nodes with Dagre"
-                style={{ top: 12, right: 44 }}
+                style={{ top: 12, right: isMobile ? 58 : 44 }}
               >
-                <Wand className="w-4 h-4" />
+                <Wand className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
               </button>
               <div
                 className="graph-toolbar absolute z-10 flex flex-col items-end"
-                style={{ top: 12, right: 108 }}
+                style={{ top: 12, right: isMobile ? 150 : 108 }}
               >
                 <button
                   onClick={() => setShowFormatPicker((v) => !v)}
                   disabled={nodes.length === 0}
-                  className="flex items-center justify-center w-7 h-7 rounded-md border bg-card text-muted-foreground hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none"
+                  className={`flex items-center justify-center rounded-md border bg-card text-muted-foreground hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none ${isMobile ? "w-10 h-10" : "w-7 h-7"}`}
                   title={`Export screenshot (${screenshotFormat.toUpperCase()})`}
                   aria-label={`Export screenshot as ${screenshotFormat.toUpperCase()}`}
                 >
-                  <Camera className="w-4 h-4" />
+                  <Camera className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
                 </button>
                 {showFormatPicker && (
                   <div className="graph-toolbar absolute top-full right-0 mt-1 flex flex-col rounded-md border bg-card shadow-md overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
@@ -680,14 +746,14 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
                 aria-label={
                   interaction.selectionMode ? "Switch to pan mode" : "Switch to selection mode"
                 }
-                className={`graph-toolbar absolute z-10 flex items-center justify-center w-7 h-7 rounded-md border shadow-md transition-all cursor-pointer ${
+                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border shadow-md transition-all cursor-pointer ${
                   interaction.selectionMode
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-card text-muted-foreground border-border hover:bg-accent"
-                }`}
+                } ${isMobile ? "w-10 h-10" : "w-7 h-7"}`}
                 style={{ top: 12, right: 12 }}
               >
-                <MousePointer2 className="w-4 h-4" />
+                <MousePointer2 className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
               </button>
               {nodes.length > 0 && (
                 <MiniMap
@@ -728,7 +794,7 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
             {/* Node context menu */}
             {interaction.contextMenu && ctxNode && (
               <div
-                className="absolute z-50 w-56 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
+                className="absolute z-50 w-40 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
                 style={{ left: interaction.contextMenu.x, top: interaction.contextMenu.y }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -829,7 +895,7 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
             {/* Multi-select context menu */}
             {interaction.contextMenu && interaction.contextMenu.multi && (
               <div
-                className="absolute z-50 w-56 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
+                className="absolute z-50 w-40 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
                 style={{ left: interaction.contextMenu.x, top: interaction.contextMenu.y }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -908,7 +974,7 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
           </div>
 
           {/* Floating Top Tabs */}
-          <div className="absolute top-4 inset-x-4 flex justify-center z-10 pointer-events-none">
+          <div className="absolute top-4 inset-x-4 flex sm:justify-center justify-start z-10 pointer-events-none">
             <div className="flex items-center gap-1 p-1 bg-card/80 backdrop-blur-xl border border-border rounded-lg shadow-md pointer-events-auto max-w-full overflow-x-auto custom-scrollbar">
               {workflows.map((w) => (
                 <WorkflowTab
@@ -1013,6 +1079,24 @@ function InnerEditor({ onSaveOutputRef }: { onSaveOutputRef: React.MutableRefObj
 
       <PluginManager open={pluginDialogOpen} onOpenChange={setPluginDialogOpen} />
       <PromptDialog open={promptDialogOpen} onOpenChange={setPromptDialogOpen} />
+
+      {/* Pointer Event Drag Preview */}
+      {draggedItem && (
+        <div
+          className="fixed z-[100] pointer-events-none opacity-90 shadow-2xl"
+          style={{
+            left: draggedItem.x,
+            top: draggedItem.y,
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <div className="bg-card border border-border px-3 py-1.5 rounded-md flex items-center justify-center min-w-[80px]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">
+              {NODE_KIND_META[draggedItem.kind]?.label || draggedItem.kind}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1028,12 +1112,18 @@ export default function CryptoGraphEditor() {
   );
 }
 
-function SaveDialogBridge({ triggerRef }: { triggerRef: React.MutableRefObject<((id: string) => void) | null> }) {
+function SaveDialogBridge({
+  triggerRef,
+}: {
+  triggerRef: React.MutableRefObject<((id: string) => void) | null>;
+}) {
   const [nodeId, setNodeId] = useState<string | null>(null);
 
   useEffect(() => {
     triggerRef.current = (id: string) => setNodeId(id);
-    return () => { triggerRef.current = null; };
+    return () => {
+      triggerRef.current = null;
+    };
   }, [triggerRef]);
 
   const node = useGraphStore((s) => {
@@ -1047,7 +1137,9 @@ function SaveDialogBridge({ triggerRef }: { triggerRef: React.MutableRefObject<(
   return (
     <SaveOutputDialog
       open={nodeId !== null}
-      onOpenChange={(open) => { if (!open) setNodeId(null); }}
+      onOpenChange={(open) => {
+        if (!open) setNodeId(null);
+      }}
       node={{
         ...node,
         data: {
