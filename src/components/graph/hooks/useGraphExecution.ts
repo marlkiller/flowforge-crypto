@@ -284,7 +284,7 @@ export function useGraphExecution(
       .sort()
       .join("|");
     const edgesKey = edges
-      .map((e) => `${e.source}>${e.target}:${e.sourceHandle??""}:${e.targetHandle??""}`)
+      .map((e) => `${e.source}>${e.target}:${e.sourceHandle ?? ""}:${e.targetHandle ?? ""}`)
       .sort()
       .join("|");
     return `${activeId}|${edgesKey}|${nodesKey}`;

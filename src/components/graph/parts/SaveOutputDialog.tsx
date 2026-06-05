@@ -24,9 +24,21 @@ const SAVE_FORMATS: {
   mime: string;
   desc: string;
 }[] = [
-  { value: "bin", label: "Raw Binary", ext: ".bin", mime: "application/octet-stream", desc: "Binary" },
+  {
+    value: "bin",
+    label: "Raw Binary",
+    ext: ".bin",
+    mime: "application/octet-stream",
+    desc: "Binary",
+  },
   { value: "hex", label: "Hex Text", ext: ".hex", mime: "text/plain;charset=utf-8", desc: "Hex" },
-  { value: "base64", label: "Base64", ext: ".b64", mime: "text/plain;charset=utf-8", desc: "Base64" },
+  {
+    value: "base64",
+    label: "Base64",
+    ext: ".b64",
+    mime: "text/plain;charset=utf-8",
+    desc: "Base64",
+  },
   { value: "utf8", label: "UTF-8", ext: ".txt", mime: "text/plain;charset=utf-8", desc: "Text" },
 ];
 
@@ -69,18 +81,40 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
       const entryBytes = currentEntry.bytes;
       const slice = entryBytes.slice(0, PREVIEW_LIMIT);
       if (saveFormat === "utf8") {
-        return new TextDecoder().decode(slice) + (entryBytes.length > PREVIEW_LIMIT ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)` : "");
+        return (
+          new TextDecoder().decode(slice) +
+          (entryBytes.length > PREVIEW_LIMIT
+            ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)`
+            : "")
+        );
       }
       if (saveFormat === "hex") {
-        const hex = Array.from(slice).map((b) => b.toString(16).padStart(2, "0")).join(" ");
-        return hex + (entryBytes.length > PREVIEW_LIMIT ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)` : "");
+        const hex = Array.from(slice)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(" ");
+        return (
+          hex +
+          (entryBytes.length > PREVIEW_LIMIT
+            ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)`
+            : "")
+        );
       }
       if (saveFormat === "base64") {
         const b64 = btoa(String.fromCharCode(...slice));
-        return b64 + (entryBytes.length > PREVIEW_LIMIT ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)` : "");
+        return (
+          b64 +
+          (entryBytes.length > PREVIEW_LIMIT
+            ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)`
+            : "")
+        );
       }
       const bytes = entryBytes.slice(0, PREVIEW_LIMIT);
-      return hexDump(bytes) + (entryBytes.length > PREVIEW_LIMIT ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)` : "");
+      return (
+        hexDump(bytes) +
+        (entryBytes.length > PREVIEW_LIMIT
+          ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)`
+          : "")
+      );
     }
     // Single output — preview from the truncated string
     if (saveFormat === "utf8") {
@@ -93,17 +127,28 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
       try {
         const r = parseBytes(previewStr, fmt);
         return r instanceof Uint8Array ? r : new Uint8Array();
-      } catch { return new Uint8Array(); }
+      } catch {
+        return new Uint8Array();
+      }
     })();
     if (saveFormat === "hex") {
-      const hex = Array.from(previewBytes).map((b) => b.toString(16).padStart(2, "0")).join(" ");
-      return hex + (totalBytes > PREVIEW_LIMIT ? `\n... (${totalBytes - PREVIEW_LIMIT} more bytes)` : "");
+      const hex = Array.from(previewBytes)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join(" ");
+      return (
+        hex + (totalBytes > PREVIEW_LIMIT ? `\n... (${totalBytes - PREVIEW_LIMIT} more bytes)` : "")
+      );
     }
     if (saveFormat === "base64") {
       const b64 = btoa(String.fromCharCode(...previewBytes));
-      return b64 + (totalBytes > PREVIEW_LIMIT ? `\n... (${totalBytes - PREVIEW_LIMIT} more bytes)` : "");
+      return (
+        b64 + (totalBytes > PREVIEW_LIMIT ? `\n... (${totalBytes - PREVIEW_LIMIT} more bytes)` : "")
+      );
     }
-    return hexDump(previewBytes) + (totalBytes > PREVIEW_LIMIT ? `\n... (${totalBytes - PREVIEW_LIMIT} more bytes)` : "");
+    return (
+      hexDump(previewBytes) +
+      (totalBytes > PREVIEW_LIMIT ? `\n... (${totalBytes - PREVIEW_LIMIT} more bytes)` : "")
+    );
   })();
 
   const handleSave = async () => {
@@ -116,7 +161,9 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
       try {
         const handle = await (window as any).showSaveFilePicker({
           suggestedName,
-          types: [{ description: currentFmt.desc, accept: { [currentFmt.mime]: [currentFmt.ext] } }],
+          types: [
+            { description: currentFmt.desc, accept: { [currentFmt.mime]: [currentFmt.ext] } },
+          ],
         });
         const writable = await handle.createWritable();
         await writable.write(blob);
@@ -144,13 +191,20 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
   function buildBlob(): Blob {
     if (currentEntry) {
       const entryBytes = currentEntry.bytes;
-      if (saveFormat === "utf8") return new Blob([new TextDecoder().decode(entryBytes)], { type: "text/plain;charset=utf-8" });
+      if (saveFormat === "utf8")
+        return new Blob([new TextDecoder().decode(entryBytes)], {
+          type: "text/plain;charset=utf-8",
+        });
       if (saveFormat === "hex") {
-        const hex = Array.from(entryBytes).map((b) => b.toString(16).padStart(2, "0")).join(" ");
+        const hex = Array.from(entryBytes)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(" ");
         return new Blob([hex], { type: "text/plain;charset=utf-8" });
       }
       if (saveFormat === "base64") {
-        return new Blob([btoa(String.fromCharCode(...entryBytes))], { type: "text/plain;charset=utf-8" });
+        return new Blob([btoa(String.fromCharCode(...entryBytes))], {
+          type: "text/plain;charset=utf-8",
+        });
       }
       return new Blob([new Uint8Array(entryBytes)], { type: "application/octet-stream" });
     }
@@ -161,14 +215,20 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
       try {
         const r = parseBytes(full, fmt);
         return r instanceof Uint8Array ? r : new Uint8Array();
-      } catch { return new Uint8Array(); }
+      } catch {
+        return new Uint8Array();
+      }
     })();
     if (saveFormat === "hex") {
-      const hex = Array.from(fullBytes).map((b) => b.toString(16).padStart(2, "0")).join(" ");
+      const hex = Array.from(fullBytes)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join(" ");
       return new Blob([hex], { type: "text/plain;charset=utf-8" });
     }
     if (saveFormat === "base64") {
-      return new Blob([btoa(String.fromCharCode(...fullBytes))], { type: "text/plain;charset=utf-8" });
+      return new Blob([btoa(String.fromCharCode(...fullBytes))], {
+        type: "text/plain;charset=utf-8",
+      });
     }
     return new Blob([new Uint8Array(fullBytes)], { type: "application/octet-stream" });
   }
@@ -187,7 +247,9 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
           <div className="flex-1 min-h-0 space-y-3">
             {isMultiOutput && outputEntries && (
               <div>
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Output</div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                  Output
+                </div>
                 <div className="flex flex-wrap gap-1.5">
                   {outputEntries.map((entry) => (
                     <button
@@ -211,7 +273,9 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
             </div>
 
             <div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Format</div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                Format
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {SAVE_FORMATS.map((f) => (
                   <button
@@ -223,7 +287,8 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
                         : "bg-muted text-muted-foreground hover:text-foreground hover:bg-accent border border-border"
                     }`}
                   >
-                    {f.label}<span className="ml-1 opacity-60">{f.ext}</span>
+                    {f.label}
+                    <span className="ml-1 opacity-60">{f.ext}</span>
                   </button>
                 ))}
               </div>
@@ -265,10 +330,14 @@ function hexDump(bytes: Uint8Array): string {
   for (let i = 0; i < bytes.length; i += 16) {
     const slice = bytes.slice(i, i + 16);
     const offset = i.toString(16).padStart(8, "0");
-    const hex = Array.from(slice).map((b) => b.toString(16).padStart(2, "0")).join(" ");
+    const hex = Array.from(slice)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join(" ");
     const hexLeft = hex.slice(0, 23);
     const hexRight = hex.slice(23);
-    const ascii = Array.from(slice).map((b) => (b >= 32 && b <= 126 ? String.fromCharCode(b) : ".")).join("");
+    const ascii = Array.from(slice)
+      .map((b) => (b >= 32 && b <= 126 ? String.fromCharCode(b) : "."))
+      .join("");
     lines.push(`${offset}  ${hexLeft.padEnd(23)} ${hexRight.padEnd(23)}  |${ascii.padEnd(16)}|`);
   }
   return lines.join("\n");

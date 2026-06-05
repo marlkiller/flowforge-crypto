@@ -575,10 +575,35 @@ export const DES_META: NodeKindMeta = {
   defaultOutput: "hex",
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
-    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
+    {
+      id: "key",
+      label: "Key",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+      type: "password",
+    },
     { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text" },
-    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
-    { id: "mode", label: "Mode", connectable: false, type: "select", defaultValue: "CBC", options: [{ label: "CBC", value: "CBC" }, { label: "ECB", value: "ECB" }] },
+    {
+      id: "action",
+      label: "Action",
+      connectable: false,
+      type: "select",
+      options: [
+        { label: "Encrypt", value: "encrypt" },
+        { label: "Decrypt", value: "decrypt" },
+      ],
+    },
+    {
+      id: "mode",
+      label: "Mode",
+      connectable: false,
+      type: "select",
+      defaultValue: "CBC",
+      options: [
+        { label: "CBC", value: "CBC" },
+        { label: "ECB", value: "ECB" },
+      ],
+    },
   ],
 };
 
@@ -591,10 +616,35 @@ export const TRIPLEDES_META: NodeKindMeta = {
   defaultOutput: "hex",
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
-    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
+    {
+      id: "key",
+      label: "Key",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+      type: "password",
+    },
     { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text" },
-    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
-    { id: "mode", label: "Mode", connectable: false, type: "select", defaultValue: "CBC", options: [{ label: "CBC", value: "CBC" }, { label: "ECB", value: "ECB" }] },
+    {
+      id: "action",
+      label: "Action",
+      connectable: false,
+      type: "select",
+      options: [
+        { label: "Encrypt", value: "encrypt" },
+        { label: "Decrypt", value: "decrypt" },
+      ],
+    },
+    {
+      id: "mode",
+      label: "Mode",
+      connectable: false,
+      type: "select",
+      defaultValue: "CBC",
+      options: [
+        { label: "CBC", value: "CBC" },
+        { label: "ECB", value: "ECB" },
+      ],
+    },
   ],
 };
 
@@ -607,10 +657,42 @@ export const BLOWFISH_META: NodeKindMeta = {
   defaultOutput: "hex",
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
-    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
-    { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text", visible: (d) => (d["mode"] as string) !== "ECB" },
-    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
-    { id: "mode", label: "Mode", connectable: false, type: "select", defaultValue: "CBC", options: [{ label: "CBC", value: "CBC" }, { label: "ECB", value: "ECB" }] },
+    {
+      id: "key",
+      label: "Key",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+      type: "password",
+    },
+    {
+      id: "iv",
+      label: "IV",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+      type: "text",
+      visible: (d) => (d["mode"] as string) !== "ECB",
+    },
+    {
+      id: "action",
+      label: "Action",
+      connectable: false,
+      type: "select",
+      options: [
+        { label: "Encrypt", value: "encrypt" },
+        { label: "Decrypt", value: "decrypt" },
+      ],
+    },
+    {
+      id: "mode",
+      label: "Mode",
+      connectable: false,
+      type: "select",
+      defaultValue: "CBC",
+      options: [
+        { label: "CBC", value: "CBC" },
+        { label: "ECB", value: "ECB" },
+      ],
+    },
   ],
 };
 
@@ -623,8 +705,23 @@ export const RC4_META: NodeKindMeta = {
   defaultOutput: "hex",
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
-    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
-    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
+    {
+      id: "key",
+      label: "Key",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+      type: "password",
+    },
+    {
+      id: "action",
+      label: "Action",
+      connectable: false,
+      type: "select",
+      options: [
+        { label: "Encrypt", value: "encrypt" },
+        { label: "Decrypt", value: "decrypt" },
+      ],
+    },
   ],
 };
 
@@ -637,9 +734,24 @@ export const RABBIT_META: NodeKindMeta = {
   defaultOutput: "hex",
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
-    { id: "key", label: "Key", connectable: true, acceptTypes: ["hex", "base64"], type: "password" },
+    {
+      id: "key",
+      label: "Key",
+      connectable: true,
+      acceptTypes: ["hex", "base64"],
+      type: "password",
+    },
     { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text" },
-    { id: "action", label: "Action", connectable: false, type: "select", options: [{ label: "Encrypt", value: "encrypt" }, { label: "Decrypt", value: "decrypt" }] },
+    {
+      id: "action",
+      label: "Action",
+      connectable: false,
+      type: "select",
+      options: [
+        { label: "Encrypt", value: "encrypt" },
+        { label: "Decrypt", value: "decrypt" },
+      ],
+    },
   ],
 };
 
@@ -667,9 +779,27 @@ export const JWT_SIGN_META: NodeKindMeta = {
         { label: "ES256 (ECDSA P-256 SHA-256)", value: "ES256" },
       ],
     },
-    { id: "issuer", label: "Issuer (iss)", type: "text", connectable: false, placeholder: "optional..." },
-    { id: "subject", label: "Subject (sub)", type: "text", connectable: false, placeholder: "optional..." },
-    { id: "expiresIn", label: "Expires In (e.g. 2h)", type: "text", connectable: false, defaultValue: "2h" },
+    {
+      id: "issuer",
+      label: "Issuer (iss)",
+      type: "text",
+      connectable: false,
+      placeholder: "optional...",
+    },
+    {
+      id: "subject",
+      label: "Subject (sub)",
+      type: "text",
+      connectable: false,
+      placeholder: "optional...",
+    },
+    {
+      id: "expiresIn",
+      label: "Expires In (e.g. 2h)",
+      type: "text",
+      connectable: false,
+      defaultValue: "2h",
+    },
   ],
 };
 

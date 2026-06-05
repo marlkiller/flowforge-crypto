@@ -3,13 +3,7 @@ import type { GraphNode } from "../types";
 import { bytesToHex, hexToBytes } from "../service";
 import { getField, getParamBytes } from "../utils";
 import CryptoJS from "crypto-js";
-import {
-  DES_META,
-  TRIPLEDES_META,
-  BLOWFISH_META,
-  RC4_META,
-  RABBIT_META,
-} from "./meta";
+import { DES_META, TRIPLEDES_META, BLOWFISH_META, RC4_META, RABBIT_META } from "./meta";
 
 function makeLegacyCipherRunner(algo: "DES" | "TripleDES") {
   return async (node: GraphNode, inputs: Record<string, Uint8Array>) => {
