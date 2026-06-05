@@ -41,13 +41,9 @@ import {
   CornerDownRight,
   GitBranch,
   Download,
-  Layers,
-  Settings2,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { PluginManager } from "./PluginManager";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 // New parts and hooks
 import { ExecutionStatus } from "./parts/ExecutionStatus";
@@ -75,10 +71,8 @@ function InnerEditor({
   onSaveOutputRef: React.MutableRefObject<((id: string) => void) | null>;
 }) {
   const { theme } = useTheme();
-  const isMobile = useIsMobile();
-  const [leftPanelOpen, setLeftPanelOpen] = useState(!isMobile);
-  const [rightPanelOpen, setRightPanelOpen] = useState(!isMobile);
-  const [mobileSheet, setMobileSheet] = useState<"palette" | "inspector" | null>(null);
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
 
   const workflows = useGraphStore((s) => s.workflows);
   const activeId = useGraphStore((s) => s.activeId);
@@ -149,7 +143,6 @@ function InnerEditor({
         const dy = e.clientY - touchStartPos.current.y;
         if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
           setDraggedItem({ kind: touchStartPos.current.kind, x: e.clientX, y: e.clientY });
-          setMobileSheet(null); // auto-close mobile sheet if dragging
         }
       }
     };
@@ -457,81 +450,18 @@ function InnerEditor({
   }, []);
 
   return (
-    <div className="h-screen w-screen bg-background text-foreground font-sans flex">
-      {isMobile ? (
-        /* Mobile: toolbar overlay */
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-3 py-1.5 bg-card/90 backdrop-blur-xl border border-border rounded-full shadow-xl">
-          <button
-            onClick={() => setMobileSheet(mobileSheet === "palette" ? null : "palette")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-          >
-            <Layers className="w-3.5 h-3.5" /> Palette
-          </button>
-          {selectedNode && (
-            <button
-              onClick={() => setMobileSheet(mobileSheet === "inspector" ? null : "inspector")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent text-foreground hover:bg-accent/80 transition-colors"
-            >
-              <Settings2 className="w-3.5 h-3.5" /> Inspector
-            </button>
-          )}
-        </div>
-      ) : (
-        <Sidebar
-          leftPanelOpen={leftPanelOpen}
-          setLeftPanelOpen={setLeftPanelOpen}
-          setPluginDialogOpen={setPluginDialogOpen}
-          onDragStart={interaction.onDragStart}
-          onPointerDownNode={handlePointerDownNode}
-          onAddNode={interaction.addNodeAtCenter}
-          openExportDialog={workflowActions.openExportDialog}
-          openImportDialog={workflowActions.openImportDialog}
-          openShareDialog={workflowActions.openShareDialog}
-        />
-      )}
-
-      <Sheet
-        open={isMobile && mobileSheet === "palette"}
-        onOpenChange={(open) => setMobileSheet(open ? "palette" : null)}
-      >
-        <SheetContent side="bottom" className="h-[85vh] p-0 flex flex-col rounded-t-xl z-[70]">
-          <SheetHeader className="px-4 py-3 border-b border-border">
-            <SheetTitle className="text-left text-sm font-semibold">Palette</SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
-            <Sidebar
-              leftPanelOpen={true}
-              setLeftPanelOpen={() => {}}
-              setPluginDialogOpen={setPluginDialogOpen}
-              onDragStart={interaction.onDragStart}
-              onPointerDownNode={handlePointerDownNode}
-              onAddNode={(kind) => {
-                interaction.addNodeAtCenter(kind);
-                setMobileSheet(null);
-                import("sonner").then((m) => m.toast.success("Node added to center of canvas"));
-              }}
-              openExportDialog={workflowActions.openExportDialog}
-              openImportDialog={workflowActions.openImportDialog}
-              openShareDialog={workflowActions.openShareDialog}
-              isMobile={true}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <Sheet
-        open={isMobile && mobileSheet === "inspector" && !!selectedNode}
-        onOpenChange={(open) => setMobileSheet(open ? "inspector" : null)}
-      >
-        <SheetContent side="bottom" className="h-[85vh] p-0 flex flex-col rounded-t-xl z-[70]">
-          <SheetHeader className="px-4 py-3 border-b border-border">
-            <SheetTitle className="text-left text-sm font-semibold">Inspector</SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
-            {selectedNode && <NodeInspector key={selectedNode.id} node={selectedNode} />}
-          </div>
-        </SheetContent>
-      </Sheet>
+    <div className="h-screen w-screen bg-background text-foreground font-sans flex gap-1">
+      <Sidebar
+        leftPanelOpen={leftPanelOpen}
+        setLeftPanelOpen={setLeftPanelOpen}
+        setPluginDialogOpen={setPluginDialogOpen}
+        onDragStart={interaction.onDragStart}
+        onPointerDownNode={handlePointerDownNode}
+        onAddNode={interaction.addNodeAtCenter}
+        openExportDialog={workflowActions.openExportDialog}
+        openImportDialog={workflowActions.openImportDialog}
+        openShareDialog={workflowActions.openShareDialog}
+      />
 
       <input
         ref={fileInputRef}
@@ -610,7 +540,7 @@ function InnerEditor({
                 showFitView
                 showInteractive
                 className="react-flow-controls-custom"
-                style={{ left: 12, bottom: isMobile ? 64 : 12 }}
+                style={{ left: 12, bottom: 12 }}
               />
               <button
                 onClick={() => {
@@ -619,7 +549,7 @@ function InnerEditor({
                   const w = graphStore.getActive();
                   graphStore.setEdges(w.edges.map((e) => ({ ...e, type: next })));
                 }}
-                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all ${isMobile ? "w-10 h-10" : "w-7 h-7"}`}
+                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all w-7 h-7`}
                 title={
                   edgeType === "smoothstep"
                     ? "Switch to curved edges"
@@ -630,12 +560,12 @@ function InnerEditor({
                     ? "Switch to curved edges"
                     : "Switch to right-angle edges"
                 }
-                style={{ top: 12, right: isMobile ? 104 : 76 }}
+                style={{ top: 12, right: 76 }}
               >
                 {edgeType === "smoothstep" ? (
-                  <CornerDownRight className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+                  <CornerDownRight className="w-4 h-4" />
                 ) : (
-                  <GitBranch className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+                  <GitBranch className="w-4 h-4" />
                 )}
               </button>
               <button
@@ -644,25 +574,25 @@ function InnerEditor({
                   setTimeout(() => rf?.fitView({ padding: 0.3, duration: 200 }), 50);
                 }}
                 disabled={nodes.length === 0}
-                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none ${isMobile ? "w-10 h-10" : "w-7 h-7"}`}
+                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none w-7 h-7`}
                 title="Auto-layout nodes with Dagre"
                 aria-label="Auto-layout nodes with Dagre"
-                style={{ top: 12, right: isMobile ? 58 : 44 }}
+                style={{ top: 12, right: 44 }}
               >
-                <Wand className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+                <Wand className="w-4 h-4" />
               </button>
               <div
                 className="graph-toolbar absolute z-10 flex flex-col items-end"
-                style={{ top: 12, right: isMobile ? 150 : 108 }}
+                style={{ top: 12, right: 108 }}
               >
                 <button
                   onClick={() => setShowFormatPicker((v) => !v)}
                   disabled={nodes.length === 0}
-                  className={`flex items-center justify-center rounded-md border bg-card text-muted-foreground hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none ${isMobile ? "w-10 h-10" : "w-7 h-7"}`}
+                  className={`flex items-center justify-center rounded-md border bg-card text-muted-foreground hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none w-7 h-7`}
                   title={`Export screenshot (${screenshotFormat.toUpperCase()})`}
                   aria-label={`Export screenshot as ${screenshotFormat.toUpperCase()}`}
                 >
-                  <Camera className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+                  <Camera className="w-4 h-4" />
                 </button>
                 {showFormatPicker && (
                   <div className="graph-toolbar absolute top-full right-0 mt-1 flex flex-col rounded-md border bg-card shadow-md overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
@@ -750,10 +680,10 @@ function InnerEditor({
                   interaction.selectionMode
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-card text-muted-foreground border-border hover:bg-accent"
-                } ${isMobile ? "w-10 h-10" : "w-7 h-7"}`}
+                } w-7 h-7`}
                 style={{ top: 12, right: 12 }}
               >
-                <MousePointer2 className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+                <MousePointer2 className="w-4 h-4" />
               </button>
               {nodes.length > 0 && (
                 <MiniMap
@@ -1015,37 +945,35 @@ function InnerEditor({
         />
       </div>
 
-      {/* Right Inspector — hidden on mobile (use sheet instead) */}
-      {!isMobile && (
-        <aside
-          className={`bg-card border-l border-border flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${rightPanelOpen ? "w-80" : "w-8"}`}
+      {/* Right Inspector */}
+      <aside
+        className={`bg-card border-l border-border flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${rightPanelOpen ? "w-80" : "w-8"}`}
+      >
+        <div
+          className={`flex items-center h-8 shrink-0 border-b border-border ${rightPanelOpen ? "gap-2 px-3 min-w-80" : "px-1 justify-center"}`}
         >
-          <div
-            className={`flex items-center h-8 shrink-0 border-b border-border ${rightPanelOpen ? "gap-2 px-3 min-w-80" : "px-1 justify-center"}`}
+          <button
+            onClick={() => setRightPanelOpen(!rightPanelOpen)}
+            className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors shrink-0"
+            aria-label={rightPanelOpen ? "Collapse inspector" : "Expand inspector"}
           >
-            <button
-              onClick={() => setRightPanelOpen(!rightPanelOpen)}
-              className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors shrink-0"
-              aria-label={rightPanelOpen ? "Collapse inspector" : "Expand inspector"}
-            >
-              <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform ${rightPanelOpen ? "" : "-rotate-90"}`}
-              />
-            </button>
-            {rightPanelOpen && (
-              <span className="text-xs font-semibold text-foreground">Inspector</span>
-            )}
-          </div>
-
-          {rightPanelOpen && (
-            <NodeInspector
-              key={selectedNode?.id}
-              node={selectedNode}
-              onSaveOutput={(id) => onSaveOutputRef.current?.(id)}
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform ${rightPanelOpen ? "" : "-rotate-90"}`}
             />
+          </button>
+          {rightPanelOpen && (
+            <span className="text-xs font-semibold text-foreground">Inspector</span>
           )}
-        </aside>
-      )}
+        </div>
+
+        {rightPanelOpen && (
+          <NodeInspector
+            key={selectedNode?.id}
+            node={selectedNode}
+            onSaveOutput={(id) => onSaveOutputRef.current?.(id)}
+          />
+        )}
+      </aside>
 
       <GraphDialogs
         workflows={workflows}

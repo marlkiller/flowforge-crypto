@@ -153,11 +153,11 @@ interface SidebarProps {
   setLeftPanelOpen: (open: boolean) => void;
   setPluginDialogOpen: (open: boolean) => void;
   onDragStart: (e: React.DragEvent, kind: string) => void;
+  onPointerDownNode?: (e: React.PointerEvent, kind: string) => void;
   onAddNode?: (kind: string) => void;
   openExportDialog: () => void;
   openImportDialog: () => void;
   openShareDialog: () => void;
-  isMobile?: boolean;
 }
 
 export function Sidebar({
@@ -170,7 +170,6 @@ export function Sidebar({
   openExportDialog,
   openImportDialog,
   openShareDialog,
-  isMobile = false,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
@@ -198,52 +197,50 @@ export function Sidebar({
 
   return (
     <aside
-      className={`bg-card flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${isMobile ? "w-full border-none" : leftPanelOpen ? "w-66 border-r border-border" : "w-8 border-r border-border"}`}
+      className={`bg-card flex flex-col overflow-hidden transition-all duration-200 shrink-0 ${leftPanelOpen ? "w-66 border-r border-border" : "w-8 border-r border-border"}`}
     >
-      {/* Header — always visible (unless mobile) */}
-      {!isMobile && (
-        <div
-          className={`flex items-center h-8 shrink-0 border-b border-border ${leftPanelOpen ? "gap-2 px-3 min-w-66" : "px-1 justify-center"}`}
+      {/* Header */}
+      <div
+        className={`flex items-center h-8 shrink-0 border-b border-border ${leftPanelOpen ? "gap-2 px-3" : "px-1 justify-center"}`}
+      >
+        <button
+          onClick={() => setLeftPanelOpen(!leftPanelOpen)}
+          className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors shrink-0"
+          aria-label={leftPanelOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
-          <button
-            onClick={() => setLeftPanelOpen(!leftPanelOpen)}
-            className="p-0.5 rounded hover:bg-accent text-muted-foreground transition-colors shrink-0"
-            aria-label={leftPanelOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            <ChevronDown
-              className={`w-3.5 h-3.5 transition-transform ${leftPanelOpen ? "" : "-rotate-90"}`}
-            />
-          </button>
-          {leftPanelOpen && (
-            <>
-              <h1 className="text-xs font-semibold text-foreground truncate min-w-0">
-                FlowForge Crypto
-              </h1>
-              <div className="ml-auto flex items-center gap-1">
-                <button
-                  onClick={() => setPluginDialogOpen(true)}
-                  className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-all group"
-                  title="Plugin Manager"
-                  aria-label="Plugin Manager"
-                >
-                  <Plug className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-                </button>
-                <a
-                  href="https://github.com/marlkiller/flowforge-crypto"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-                  title="View on GitHub"
-                  aria-label="View on GitHub"
-                >
-                  <Github className="w-4 h-4" />
-                </a>
-                <ThemeToggle />
-              </div>
-            </>
-          )}
-        </div>
-      )}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform ${leftPanelOpen ? "" : "-rotate-90"}`}
+          />
+        </button>
+        {leftPanelOpen && (
+          <>
+            <h1 className="text-xs font-semibold text-foreground truncate min-w-0">
+              FlowForge Crypto
+            </h1>
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                onClick={() => setPluginDialogOpen(true)}
+                className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-all group"
+                title="Plugin Manager"
+                aria-label="Plugin Manager"
+              >
+                <Plug className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+              </button>
+              <a
+                href="https://github.com/marlkiller/flowforge-crypto"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                title="View on GitHub"
+                aria-label="View on GitHub"
+              >
+                <Github className="w-4 h-4" />
+              </a>
+              <ThemeToggle />
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Body — collapsible */}
       {leftPanelOpen && (
@@ -299,16 +296,14 @@ export function Sidebar({
                         return (
                           <div
                             key={k.kind}
-                            draggable={!isMobile}
-                            onDragStart={(e) => !isMobile && onDragStart(e, k.kind)}
+                            draggable
+                            onDragStart={(e) => onDragStart(e, k.kind)}
                             onPointerDown={(e) => onPointerDownNode?.(e, k.kind)}
                             onClick={() => onAddNode?.(k.kind)}
                             title={security ? `${k.description} ${security.title}` : k.description}
-                            className={`group/item flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-accent/80 transition-all ${isMobile ? "cursor-pointer touch-none" : "cursor-grab active:cursor-grabbing"} text-[11px]`}
+                            className="group/item flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-accent/80 transition-all cursor-grab active:cursor-grabbing text-[11px]"
                           >
-                            <GripVertical
-                              className={`w-3.5 h-3.5 text-muted-foreground/40 group-hover/item:text-muted-foreground/80 transition-colors shrink-0 ${isMobile ? "hidden" : ""}`}
-                            />
+                            <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 group-hover/item:text-muted-foreground/80 transition-colors shrink-0" />
                             <span className="font-medium text-muted-foreground group-hover/item:text-foreground transition-colors truncate min-w-0">
                               {k.label}
                             </span>
