@@ -905,7 +905,7 @@ function InnerEditor({
 
           {/* Floating Top Tabs */}
           <div className="absolute top-4 inset-x-4 flex sm:justify-center justify-start z-10 pointer-events-none">
-            <div className="flex items-center gap-1 p-1 bg-card/80 backdrop-blur-xl border border-border rounded-lg shadow-md pointer-events-auto max-w-full overflow-x-auto custom-scrollbar">
+            <div className="flex items-center gap-1 p-0.5 bg-card/80 backdrop-blur-xl border border-border rounded-lg shadow-md pointer-events-auto max-w-full overflow-x-auto custom-scrollbar">
               {workflows.map((w) => (
                 <WorkflowTab
                   key={w.id}
@@ -917,18 +917,18 @@ function InnerEditor({
               ))}
               <button
                 onClick={() => graphStore.addWorkflow()}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0 ml-1"
+                className="flex items-center justify-center w-6 h-6 rounded-lg text-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0 ml-0.5"
                 title="New workflow"
               >
-                <Plus className="w-4 h-4" /> New Tab
+                <Plus className="w-4 h-4" />
               </button>
-              <div className="w-px h-4 bg-border mx-1 shrink-0" />
+              <div className="w-px h-3 bg-border mx-0.5 shrink-0" />
               <button
                 onClick={() => setPromptDialogOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+                className="flex items-center justify-center w-6 h-6 rounded-lg text-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
                 title="Generate workflow prompt for AI"
               >
-                <FileText className="w-4 h-4" /> Prompt
+                <FileText className="w-4 h-4" />
               </button>
             </div>
           </div>

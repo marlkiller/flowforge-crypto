@@ -290,7 +290,7 @@ export function Sidebar({
                     <span>{catMeta.label}</span>
                   </button>
                   {!isCatCollapsed && (
-                    <div className="flex flex-col gap-0.5 ml-3.5 border-l border-border/50 pl-3 my-1">
+                    <div className="flex flex-col gap-0.5 ml-2 border-l border-border/50 pl-2 my-0.5">
                       {kinds.map((k) => {
                         const security = k.security ? SECURITY_META[k.security] : null;
                         return (
@@ -301,7 +301,7 @@ export function Sidebar({
                             onPointerDown={(e) => onPointerDownNode?.(e, k.kind)}
                             onClick={() => onAddNode?.(k.kind)}
                             title={security ? `${k.description} ${security.title}` : k.description}
-                            className="group/item flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-accent/80 transition-all cursor-grab active:cursor-grabbing text-[11px]"
+                            className="group/item flex items-center gap-1.5 px-1 py-0.5 rounded-md hover:bg-accent/80 transition-all cursor-grab active:cursor-grabbing text-[11px]"
                           >
                             <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 group-hover/item:text-muted-foreground/80 transition-colors shrink-0" />
                             <span className="font-medium text-muted-foreground group-hover/item:text-foreground transition-colors truncate min-w-0">
