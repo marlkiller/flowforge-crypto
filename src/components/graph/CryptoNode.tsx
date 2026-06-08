@@ -6,7 +6,7 @@ import { File as FileIcon, Link2, ChevronDown } from "lucide-react";
 import { CategoryIcon } from "./parts/CategoryIcon";
 import { memo } from "react";
 import { graphStore } from "./store";
-import { OUTPUT_PREVIEW_BYTES } from "@/lib/crypto/preview";
+import { OUTPUT_PREVIEW_BYTES, formatByteSize } from "@/lib/crypto/preview";
 
 function getHandleStyle(types?: string[]) {
   const type = types?.[0]?.toLowerCase() || "raw";
@@ -32,19 +32,11 @@ function getHandleStyle(types?: string[]) {
   return `${colorClass} ${shapeClass}`;
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  const val = bytes / 1024 ** i;
-  return `${val.toFixed(i === 0 ? 0 : val < 10 ? 2 : 1)} ${units[i]}`;
-}
-
 function formatOutput(output: string) {
   if (output.length <= OUTPUT_PREVIEW_BYTES) return output;
   return (
     output.slice(0, OUTPUT_PREVIEW_BYTES) +
-    `\n\n... [${(output.length / 1024).toFixed(1)}KB total, truncated]`
+    `\n\n... [preview ${formatByteSize(OUTPUT_PREVIEW_BYTES)} of ${formatByteSize(output.length)}, truncated]`
   );
 }
 
@@ -160,7 +152,7 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-medium truncate">{d.fileName}</div>
               {typeof d.fileSize === "number" && (
-                <div className="text-[9px] text-muted-foreground">{formatFileSize(d.fileSize)}</div>
+                <div className="text-[9px] text-muted-foreground">{formatByteSize(d.fileSize)}</div>
               )}
             </div>
           </div>
@@ -194,7 +186,7 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
               Output
               {typeof d.outputBytesLen === "number" && (
                 <span className="ml-1 text-foreground/50 normal-case font-medium">
-                  · {d.outputBytesLen}B
+                  ({formatByteSize(d.outputBytesLen)})
                 </span>
               )}
             </span>
@@ -204,7 +196,7 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
           </div>
           {d.error ? (
             <div className="rounded-md bg-destructive/15 border border-destructive/50 text-destructive px-2.5 py-2 break-all font-mono text-[10px] shadow-inner whitespace-pre-wrap">
-              <span className="font-bold">✕ </span>
+              <span className="font-bold">Error: </span>
               {d.error}
             </div>
           ) : (

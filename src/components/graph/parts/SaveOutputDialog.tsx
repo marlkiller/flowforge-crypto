@@ -11,7 +11,7 @@ import {
 import { Download } from "lucide-react";
 import { parseBytes, type DataFormat } from "@/lib/crypto/service";
 import type { GraphNode } from "@/lib/crypto/types";
-import { OUTPUT_PREVIEW_BYTES, formatOutputPreviewSize } from "@/lib/crypto/preview";
+import { OUTPUT_PREVIEW_BYTES, formatByteSize } from "@/lib/crypto/preview";
 import { toast } from "sonner";
 
 const BINARY_STRING_CHUNK = 0x8000;
@@ -47,11 +47,13 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   node: GraphNode | null;
+  onResolveOutput?: (outputKey?: string) => Promise<{ value: Uint8Array; type?: string }>;
 }
 
-export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
+export function SaveOutputDialog({ open, onOpenChange, node, onResolveOutput }: Props) {
   const [saveFormat, setSaveFormat] = useState<SaveFormat>("bin");
   const [selectedOutput, setSelectedOutput] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const fmt = (node?.data.outputFormat as DataFormat) || "utf8";
   const totalBytes = node?.data.outputBytesLen ?? 0;
@@ -62,7 +64,7 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
   const outputEntries = node?.data.outputEntries;
   const isMultiOutput = !!(outputEntries && outputEntries.length > 1);
   const hasOutput = !!rawFull;
-  const canSave = hasOutput && !outputTruncated;
+  const canSave = hasOutput && !saving;
   const previewStr = hasOutput ? rawFull!.slice(0, OUTPUT_PREVIEW_BYTES) : "";
 
   useEffect(() => {
@@ -79,45 +81,33 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
 
   const currentFmt = SAVE_FORMATS.find((f) => f.value === saveFormat)!;
 
+  const formatRemainingBytes = (previewBytes: number, total: number) => {
+    const remaining = total - previewBytes;
+    return remaining > 0 ? `\n... (${formatByteSize(remaining)} more)` : "";
+  };
+
   const preview = (() => {
     if (currentEntry) {
       const entryBytes = currentEntry.bytes;
+      const entryTotalBytes = currentEntry.byteLength ?? entryBytes.length;
       const slice = entryBytes.slice(0, OUTPUT_PREVIEW_BYTES);
       if (saveFormat === "utf8") {
         return (
-          new TextDecoder().decode(slice) +
-          (entryBytes.length > OUTPUT_PREVIEW_BYTES
-            ? `\n... (${entryBytes.length - OUTPUT_PREVIEW_BYTES} more bytes)`
-            : "")
+          new TextDecoder().decode(slice) + formatRemainingBytes(slice.length, entryTotalBytes)
         );
       }
       if (saveFormat === "hex") {
         const hex = Array.from(slice)
           .map((b) => b.toString(16).padStart(2, "0"))
           .join(" ");
-        return (
-          hex +
-          (entryBytes.length > OUTPUT_PREVIEW_BYTES
-            ? `\n... (${entryBytes.length - OUTPUT_PREVIEW_BYTES} more bytes)`
-            : "")
-        );
+        return hex + formatRemainingBytes(slice.length, entryTotalBytes);
       }
       if (saveFormat === "base64") {
         const b64 = bytesToBase64(slice);
-        return (
-          b64 +
-          (entryBytes.length > OUTPUT_PREVIEW_BYTES
-            ? `\n... (${entryBytes.length - OUTPUT_PREVIEW_BYTES} more bytes)`
-            : "")
-        );
+        return b64 + formatRemainingBytes(slice.length, entryTotalBytes);
       }
       const bytes = entryBytes.slice(0, OUTPUT_PREVIEW_BYTES);
-      return (
-        hexDump(bytes) +
-        (entryBytes.length > OUTPUT_PREVIEW_BYTES
-          ? `\n... (${entryBytes.length - OUTPUT_PREVIEW_BYTES} more bytes)`
-          : "")
-      );
+      return hexDump(bytes) + formatRemainingBytes(bytes.length, entryTotalBytes);
     }
     // Single output: preview from the truncated string.
     if (saveFormat === "utf8") {
@@ -140,112 +130,108 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
         .join(" ");
       return (
         hex +
-        (totalBytes > OUTPUT_PREVIEW_BYTES
-          ? `\n... (${totalBytes - OUTPUT_PREVIEW_BYTES} more bytes)`
-          : "")
+        formatRemainingBytes(Math.min(parsedPreviewBytes.length, OUTPUT_PREVIEW_BYTES), totalBytes)
       );
     }
     if (saveFormat === "base64") {
       const b64 = bytesToBase64(parsedPreviewBytes);
       return (
         b64 +
-        (totalBytes > OUTPUT_PREVIEW_BYTES
-          ? `\n... (${totalBytes - OUTPUT_PREVIEW_BYTES} more bytes)`
-          : "")
+        formatRemainingBytes(Math.min(parsedPreviewBytes.length, OUTPUT_PREVIEW_BYTES), totalBytes)
       );
     }
     return (
       hexDump(parsedPreviewBytes) +
-      (totalBytes > OUTPUT_PREVIEW_BYTES
-        ? `\n... (${totalBytes - OUTPUT_PREVIEW_BYTES} more bytes)`
-        : "")
+      formatRemainingBytes(Math.min(parsedPreviewBytes.length, OUTPUT_PREVIEW_BYTES), totalBytes)
     );
   })();
 
   const handleSave = async () => {
     if (!hasOutput) return;
-    if (outputTruncated) {
-      toast.error("Only a preview is available for this large output");
-      return;
-    }
-    const blob = buildBlob();
-    const suffix = currentEntry ? `_${currentEntry.key}` : "";
-    const suggestedName = `output${suffix}${currentFmt.ext}`;
 
-    if ("showSaveFilePicker" in window) {
-      try {
-        const handle = await (window as any).showSaveFilePicker({
-          suggestedName,
-          types: [
-            { description: currentFmt.desc, accept: { [currentFmt.mime]: [currentFmt.ext] } },
-          ],
-        });
-        const writable = await handle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        toast.success("File saved");
-        onOpenChange(false);
-        return;
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
-        toast.error("Save failed, falling back to download...");
+    setSaving(true);
+    try {
+      const bytes = await resolveSaveBytes();
+      const blob = buildBlob(bytes);
+      const suffix = currentEntry ? `_${currentEntry.key}` : "";
+      const suggestedName = `output${suffix}${currentFmt.ext}`;
+
+      if ("showSaveFilePicker" in window) {
+        try {
+          const handle = await (window as any).showSaveFilePicker({
+            suggestedName,
+            types: [
+              { description: currentFmt.desc, accept: { [currentFmt.mime]: [currentFmt.ext] } },
+            ],
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          toast.success("File saved");
+          onOpenChange(false);
+          return;
+        } catch (err: any) {
+          if (err.name === "AbortError") return;
+          toast.error("Save failed, falling back to download...");
+        }
       }
-    }
 
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = suggestedName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    onOpenChange(false);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = suggestedName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      onOpenChange(false);
+    } catch (err) {
+      toast.error("Save failed", {
+        description: err instanceof Error ? err.message : "Unknown error",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  function buildBlob(): Blob {
-    if (currentEntry) {
-      const entryBytes = currentEntry.bytes;
-      if (saveFormat === "utf8")
-        return new Blob([new TextDecoder().decode(entryBytes)], {
-          type: "text/plain;charset=utf-8",
-        });
-      if (saveFormat === "hex") {
-        const hex = Array.from(entryBytes)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(" ");
-        return new Blob([hex], { type: "text/plain;charset=utf-8" });
-      }
-      if (saveFormat === "base64") {
-        return new Blob([bytesToBase64(entryBytes)], {
-          type: "text/plain;charset=utf-8",
-        });
-      }
-      return new Blob([new Uint8Array(entryBytes)], { type: "application/octet-stream" });
+  async function resolveSaveBytes(): Promise<Uint8Array> {
+    if (onResolveOutput) {
+      return onResolveOutput(currentEntry?.key).then((r) => r.value);
     }
+    if (currentEntry) {
+      return currentEntry.bytes;
+    }
+
     // Single output: parse the full string at save time.
     const full = node!.data.output as string;
-    if (saveFormat === "utf8") return new Blob([full], { type: "text/plain;charset=utf-8" });
-    const fullBytes = (() => {
-      try {
-        const r = parseBytes(full, fmt);
-        return r instanceof Uint8Array ? r : new Uint8Array();
-      } catch {
-        return new Uint8Array();
-      }
-    })();
+    try {
+      const parsed = parseBytes(full, fmt);
+      if (parsed instanceof Uint8Array) return parsed;
+      if (typeof parsed === "boolean") return new Uint8Array([parsed ? 1 : 0]);
+    } catch {
+      // Fall through to UTF-8 bytes for display strings that are not parseable in the selected format.
+    }
+    return new TextEncoder().encode(full);
+  }
+
+  function buildBlob(bytes: Uint8Array): Blob {
+    if (saveFormat === "utf8") {
+      return new Blob([new TextDecoder().decode(bytes)], {
+        type: "text/plain;charset=utf-8",
+      });
+    }
     if (saveFormat === "hex") {
-      const hex = Array.from(fullBytes)
+      const hex = Array.from(bytes)
         .map((b) => b.toString(16).padStart(2, "0"))
         .join(" ");
       return new Blob([hex], { type: "text/plain;charset=utf-8" });
     }
     if (saveFormat === "base64") {
-      return new Blob([bytesToBase64(fullBytes)], {
+      return new Blob([bytesToBase64(bytes)], {
         type: "text/plain;charset=utf-8",
       });
     }
-    return new Blob([new Uint8Array(fullBytes)], { type: "application/octet-stream" });
+    return new Blob([new Uint8Array(bytes)], { type: "application/octet-stream" });
   }
 
   return (
@@ -310,11 +296,11 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
             </div>
 
             <div className="text-[10px] text-muted-foreground">
-              {totalBytes} bytes total
+              {formatByteSize(totalBytes)} total
               {totalBytes > OUTPUT_PREVIEW_BYTES
-                ? ` · Preview shows first ${formatOutputPreviewSize(OUTPUT_PREVIEW_BYTES)}`
+                ? ` · Preview shows first ${formatByteSize(OUTPUT_PREVIEW_BYTES)}`
                 : ""}
-              {outputTruncated ? " · Save is disabled for preview-only output" : ""}
+              {outputTruncated ? " · Full output will be generated when saving" : ""}
             </div>
           </div>
         ) : (
@@ -335,7 +321,7 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
             className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium transition-colors disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5" />
-            {outputTruncated ? "Preview Only" : "Save As..."}
+            {saving ? "Saving..." : "Save As..."}
           </button>
         </DialogFooter>
       </DialogContent>

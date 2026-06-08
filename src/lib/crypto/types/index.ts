@@ -82,7 +82,13 @@ export interface NodeData extends Record<string, unknown> {
   outputBytesLen?: number;
   outputTruncated?: boolean;
   error?: string;
-  outputEntries?: { key: string; label: string; bytes: Uint8Array }[];
+  outputEntries?: {
+    key: string;
+    label: string;
+    bytes: Uint8Array;
+    byteLength?: number;
+    truncated?: boolean;
+  }[];
   fileRefId?: string;
   fileName?: string;
   fileSize?: number;

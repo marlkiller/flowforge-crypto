@@ -12,7 +12,7 @@ import {
 import { toast } from "sonner";
 import type { DataValue, NodeExecutionLog, GraphNode } from "@/lib/crypto/types";
 import { formatBytes, type DataFormat } from "@/lib/crypto/service";
-import { OUTPUT_PREVIEW_BYTES, formatOutputPreviewSize } from "@/lib/crypto/preview";
+import { OUTPUT_PREVIEW_BYTES, formatByteSize } from "@/lib/crypto/preview";
 
 interface Props {
   logs: NodeExecutionLog[];
@@ -47,7 +47,12 @@ function formatDataValuePreview(dv: DataValue, fmt: DataFormat, label?: string):
     dv.value instanceof Uint8Array ? formatBytes(dv.value, fmt, label) : String(dv.value);
   if (!dv.truncated) return text;
   const previewBytes = dv.value instanceof Uint8Array ? dv.value.byteLength : text.length;
-  return `${text}\n\n... [preview ${previewBytes} of ${dv.byteLength ?? previewBytes} bytes]`;
+  const totalBytes = dv.byteLength ?? previewBytes;
+  return `${text}\n\n... [preview ${formatByteSize(previewBytes)} of ${formatByteSize(totalBytes)}]`;
+}
+
+function formatLogOutputSize(log: NodeExecutionLog): string {
+  return formatByteSize(log.outputBytesLen ?? log.outputBytes?.byteLength ?? 0);
 }
 
 const MIN_H = 32;
@@ -208,7 +213,7 @@ export const OutputConsole = memo(function OutputConsole({
                           })()
                         : (log.error ?? "");
                     const params = log.params ? `\n${log.params}` : "";
-                    return `#${i + 1} ${log.label} · ${log.kind} · ${log.status.toUpperCase()} · ${log.outputBytesLen ?? log.outputBytes?.byteLength ?? 0}B · ${log.duration.toFixed(1)}ms${params}\n${out}`;
+                    return `#${i + 1} ${log.label} · ${log.kind} · ${log.status.toUpperCase()} · ${formatLogOutputSize(log)} · ${log.duration.toFixed(1)}ms${params}\n${out}`;
                   })
                   .join("\n\n---\n\n");
                 navigator.clipboard.writeText(text).then(
@@ -375,7 +380,7 @@ const LogEntry = memo(function LogEntry({
         </span>
         {log.status !== "skipped" && (
           <span className="text-muted-foreground font-mono text-[10px]">
-            {log.outputBytesLen ?? log.outputBytes?.byteLength ?? 0}B · {log.duration.toFixed(1)}ms
+            {formatLogOutputSize(log)} · {log.duration.toFixed(1)}ms
           </span>
         )}
       </div>
@@ -391,7 +396,7 @@ const LogEntry = memo(function LogEntry({
           {log.status === "success" && log.outputs ? (
             outputText.length > outputLimit ? (
               outputText.slice(0, outputLimit) +
-              `\n\n... [preview ${formatOutputPreviewSize(outputLimit)} of formatted output]`
+              `\n\n... [preview ${formatByteSize(outputLimit)} of formatted output]`
             ) : (
               outputText
             )

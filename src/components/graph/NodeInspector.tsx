@@ -9,7 +9,7 @@ import {
 import type { GraphNode, NodeInputMeta } from "@/lib/crypto/types";
 import type { DataFormat } from "@/lib/crypto/service";
 import { storeFile } from "@/lib/crypto/fileStore";
-import { OUTPUT_PREVIEW_BYTES } from "@/lib/crypto/preview";
+import { OUTPUT_PREVIEW_BYTES, formatByteSize } from "@/lib/crypto/preview";
 import { Trash2, File, Upload, Link2, Settings2, Download } from "lucide-react";
 
 interface Props {
@@ -17,19 +17,11 @@ interface Props {
   onSaveOutput?: (nodeId: string) => void;
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  const val = bytes / 1024 ** i;
-  return `${val.toFixed(i === 0 ? 0 : val < 10 ? 2 : 1)} ${units[i]}`;
-}
-
 function truncateOutput(output: string) {
   if (output.length <= OUTPUT_PREVIEW_BYTES) return output;
   return (
     output.slice(0, OUTPUT_PREVIEW_BYTES) +
-    `\n\n... [${(output.length / 1024).toFixed(1)}KB total, truncated]`
+    `\n\n... [preview ${formatByteSize(OUTPUT_PREVIEW_BYTES)} of ${formatByteSize(output.length)}, truncated]`
   );
 }
 
@@ -126,7 +118,7 @@ export function NodeInspector({ node, onSaveOutput }: Props) {
                   </div>
                   {typeof d["fileSize"] === "number" && (
                     <div className="text-[10px] text-muted-foreground">
-                      {formatFileSize(d["fileSize"])}
+                      {formatByteSize(d["fileSize"])}
                     </div>
                   )}
                 </div>
@@ -195,7 +187,7 @@ export function NodeInspector({ node, onSaveOutput }: Props) {
                       </button>
                     )}
                     <span className="text-foreground bg-background px-1.5 py-0.5 rounded border border-border">
-                      {formatFileSize(d.outputBytesLen)}
+                      {formatByteSize(d.outputBytesLen)}
                     </span>
                   </div>
                 </div>

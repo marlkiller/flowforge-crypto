@@ -4,6 +4,7 @@ import { NODE_KIND_META } from "@/lib/crypto/registry";
 import type { GraphEdge, GraphNode, NodeExecutionLog, ExecutionResult } from "@/lib/crypto/types";
 import { formatBytes } from "@/lib/crypto/service";
 import { getStoredFile } from "@/lib/crypto/fileStore";
+import { formatByteSize } from "@/lib/crypto/preview";
 import { toast } from "sonner";
 
 const EXECUTION_DEBOUNCE_MS = 500;
@@ -19,7 +20,7 @@ function formatOutputValue(
   const text = formatBytes(value, fmt, label);
   if (!truncated) return text;
   const total = byteLength ?? value.byteLength;
-  return `${text}\n\n... [preview ${value.byteLength} of ${total} bytes]`;
+  return `${text}\n\n... [preview ${formatByteSize(value.byteLength)} of ${formatByteSize(total)}]`;
 }
 
 export function useGraphExecution(
@@ -207,7 +208,15 @@ export function useGraphExecution(
         let output = "";
         let outputBytesLen: number | undefined = undefined;
         let outputTruncated = false;
-        let outputEntries: { key: string; label: string; bytes: Uint8Array }[] | undefined;
+        let outputEntries:
+          | {
+              key: string;
+              label: string;
+              bytes: Uint8Array;
+              byteLength?: number;
+              truncated?: boolean;
+            }[]
+          | undefined;
 
         if (outputs) {
           const entries = Object.entries(outputs);
@@ -264,11 +273,13 @@ export function useGraphExecution(
 
             // Store raw entries for multi-output save dialog
             outputEntries = entries
-              .filter(([_, dv]) => dv?.value instanceof Uint8Array && !dv.truncated)
+              .filter(([_, dv]) => dv?.value instanceof Uint8Array)
               .map(([k, dv]) => ({
                 key: k,
                 label: getLabel(k),
                 bytes: dv.value as Uint8Array,
+                byteLength: dv.byteLength,
+                truncated: !!dv.truncated,
               }));
           }
         }
