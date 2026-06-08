@@ -66,7 +66,11 @@ const nodeTypes = {
   cryptoGroup: GroupNode,
 };
 
-type ExportOutputResult = { value: Uint8Array; type?: string };
+type ExportOutputWorkerResponse = {
+  id: number;
+  value?: Uint8Array;
+  error?: string;
+};
 
 function InnerEditor({
   onSaveOutputRef,
@@ -1066,7 +1070,7 @@ function SaveDialogBridge({
   });
 
   const resolveOutput = useCallback(
-    (outputKey?: string): Promise<ExportOutputResult> => {
+    (outputKey?: string): Promise<Uint8Array> => {
       if (!nodeId) {
         return Promise.reject(new Error("No node selected"));
       }
@@ -1111,7 +1115,7 @@ function SaveDialogBridge({
           reject(new Error("Save output timed out"));
         }, 60000);
 
-        worker.onmessage = (event: MessageEvent) => {
+        worker.onmessage = (event: MessageEvent<ExportOutputWorkerResponse>) => {
           if (event.data?.id !== id) return;
           window.clearTimeout(timeout);
           worker.terminate();
@@ -1119,10 +1123,11 @@ function SaveDialogBridge({
             reject(new Error(event.data.error));
             return;
           }
-          resolve({
-            value: event.data.value as Uint8Array,
-            type: event.data.type as string | undefined,
-          });
+          if (!event.data.value) {
+            reject(new Error("Save output worker returned no data"));
+            return;
+          }
+          resolve(event.data.value);
         };
         worker.onerror = () => {
           window.clearTimeout(timeout);

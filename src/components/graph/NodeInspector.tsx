@@ -9,20 +9,12 @@ import {
 import type { GraphNode, NodeInputMeta } from "@/lib/crypto/types";
 import type { DataFormat } from "@/lib/crypto/service";
 import { storeFile } from "@/lib/crypto/fileStore";
-import { OUTPUT_PREVIEW_BYTES, formatByteSize } from "@/lib/crypto/preview";
+import { formatByteSize, truncateOutputPreview } from "@/lib/crypto/preview";
 import { Trash2, File, Upload, Link2, Settings2, Download } from "lucide-react";
 
 interface Props {
   node: GraphNode | null;
   onSaveOutput?: (nodeId: string) => void;
-}
-
-function truncateOutput(output: string) {
-  if (output.length <= OUTPUT_PREVIEW_BYTES) return output;
-  return (
-    output.slice(0, OUTPUT_PREVIEW_BYTES) +
-    `\n\n... [preview ${formatByteSize(OUTPUT_PREVIEW_BYTES)} of ${formatByteSize(output.length)}, truncated]`
-  );
 }
 
 export function NodeInspector({ node, onSaveOutput }: Props) {
@@ -199,7 +191,7 @@ export function NodeInspector({ node, onSaveOutput }: Props) {
               ) : (
                 <pre className="mt-1 rounded-lg bg-background border border-border text-foreground p-2.5 break-all whitespace-pre-wrap font-mono text-[11px] min-h-[80px] max-h-80 overflow-auto shadow-inner custom-scrollbar leading-relaxed">
                   {d.output ? (
-                    truncateOutput(d.output)
+                    truncateOutputPreview(d.output)
                   ) : (
                     <span className="text-muted-foreground italic">Pipeline waiting to run...</span>
                   )}

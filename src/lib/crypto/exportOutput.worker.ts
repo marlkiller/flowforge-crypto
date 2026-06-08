@@ -65,19 +65,19 @@ onmessage = async (
     if (output.value instanceof Uint8Array) {
       const bytes = output.value;
       const transfer = bytes.buffer as ArrayBuffer;
-      workerPostMessage({ id, value: bytes, type: output.type }, [transfer]);
+      workerPostMessage({ id, value: bytes }, [transfer]);
       return;
     }
 
     if (typeof output.value === "boolean") {
       const bytes = new Uint8Array([output.value ? 1 : 0]);
-      workerPostMessage({ id, value: bytes, type: "bool" }, [bytes.buffer]);
+      workerPostMessage({ id, value: bytes }, [bytes.buffer]);
       return;
     }
 
     if (typeof output.value === "string") {
       const bytes = new TextEncoder().encode(output.value);
-      workerPostMessage({ id, value: bytes, type: output.type }, [bytes.buffer]);
+      workerPostMessage({ id, value: bytes }, [bytes.buffer]);
       return;
     }
 

@@ -192,7 +192,7 @@ export const OutputConsole = memo(function OutputConsole({
               onClick={() => {
                 const text = logs
                   .map((log, i) => {
-                    const fmt = (log.outputFormat ?? "utf8") as any;
+                    const fmt = (log.outputFormat ?? "utf8") as DataFormat;
                     const out =
                       log.status === "success" && log.outputs
                         ? (() => {
@@ -322,7 +322,7 @@ const LogEntry = memo(function LogEntry({
 
   const outputText = (() => {
     if (log.status !== "success" || !log.outputs) return "";
-    const fmt = (log.outputFormat ?? "utf8") as any;
+    const fmt = (log.outputFormat ?? "utf8") as DataFormat;
     const entries = Object.entries(log.outputs);
 
     const getLabel = (key: string) => {

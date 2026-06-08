@@ -7,3 +7,11 @@ export function formatByteSize(bytes: number): string {
   const val = bytes / 1024 ** i;
   return `${val.toFixed(i === 0 ? 0 : val < 10 ? 2 : 1)} ${units[i]}`;
 }
+
+export function truncateOutputPreview(output: string): string {
+  if (output.length <= OUTPUT_PREVIEW_BYTES) return output;
+  return (
+    output.slice(0, OUTPUT_PREVIEW_BYTES) +
+    `\n\n... [preview ${formatByteSize(OUTPUT_PREVIEW_BYTES)} of ${formatByteSize(output.length)}, truncated]`
+  );
+}

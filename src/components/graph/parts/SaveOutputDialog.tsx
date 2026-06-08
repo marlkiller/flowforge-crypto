@@ -18,6 +18,16 @@ const BINARY_STRING_CHUNK = 0x8000;
 
 type SaveFormat = "bin" | "hex" | "base64" | "utf8";
 
+interface SaveFilePickerWindow extends Window {
+  showSaveFilePicker?: (options: {
+    suggestedName?: string;
+    types?: {
+      description: string;
+      accept: Record<string, string[]>;
+    }[];
+  }) => Promise<FileSystemFileHandle>;
+}
+
 const SAVE_FORMATS: {
   value: SaveFormat;
   label: string;
@@ -47,7 +57,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   node: GraphNode | null;
-  onResolveOutput?: (outputKey?: string) => Promise<{ value: Uint8Array; type?: string }>;
+  onResolveOutput?: (outputKey?: string) => Promise<Uint8Array>;
 }
 
 export function SaveOutputDialog({ open, onOpenChange, node, onResolveOutput }: Props) {
@@ -156,9 +166,10 @@ export function SaveOutputDialog({ open, onOpenChange, node, onResolveOutput }: 
       const suffix = currentEntry ? `_${currentEntry.key}` : "";
       const suggestedName = `output${suffix}${currentFmt.ext}`;
 
-      if ("showSaveFilePicker" in window) {
+      const savePicker = (window as SaveFilePickerWindow).showSaveFilePicker;
+      if (savePicker) {
         try {
-          const handle = await (window as any).showSaveFilePicker({
+          const handle = await savePicker({
             suggestedName,
             types: [
               { description: currentFmt.desc, accept: { [currentFmt.mime]: [currentFmt.ext] } },
@@ -170,8 +181,8 @@ export function SaveOutputDialog({ open, onOpenChange, node, onResolveOutput }: 
           toast.success("File saved");
           onOpenChange(false);
           return;
-        } catch (err: any) {
-          if (err.name === "AbortError") return;
+        } catch (err) {
+          if (err instanceof DOMException && err.name === "AbortError") return;
           toast.error("Save failed, falling back to download...");
         }
       }
@@ -196,7 +207,7 @@ export function SaveOutputDialog({ open, onOpenChange, node, onResolveOutput }: 
 
   async function resolveSaveBytes(): Promise<Uint8Array> {
     if (onResolveOutput) {
-      return onResolveOutput(currentEntry?.key).then((r) => r.value);
+      return onResolveOutput(currentEntry?.key);
     }
     if (currentEntry) {
       return currentEntry.bytes;

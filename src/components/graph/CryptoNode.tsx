@@ -6,7 +6,7 @@ import { File as FileIcon, Link2, ChevronDown } from "lucide-react";
 import { CategoryIcon } from "./parts/CategoryIcon";
 import { memo } from "react";
 import { graphStore } from "./store";
-import { OUTPUT_PREVIEW_BYTES, formatByteSize } from "@/lib/crypto/preview";
+import { formatByteSize, truncateOutputPreview } from "@/lib/crypto/preview";
 
 function getHandleStyle(types?: string[]) {
   const type = types?.[0]?.toLowerCase() || "raw";
@@ -30,14 +30,6 @@ function getHandleStyle(types?: string[]) {
   }
 
   return `${colorClass} ${shapeClass}`;
-}
-
-function formatOutput(output: string) {
-  if (output.length <= OUTPUT_PREVIEW_BYTES) return output;
-  return (
-    output.slice(0, OUTPUT_PREVIEW_BYTES) +
-    `\n\n... [preview ${formatByteSize(OUTPUT_PREVIEW_BYTES)} of ${formatByteSize(output.length)}, truncated]`
-  );
 }
 
 export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
@@ -202,7 +194,7 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
           ) : (
             <div className="rounded-md bg-background border border-border text-foreground px-2.5 py-1.5 break-all font-mono max-h-20 overflow-auto text-[10px] shadow-inner custom-scrollbar whitespace-pre-wrap">
               {d.output ? (
-                formatOutput(d.output)
+                truncateOutputPreview(d.output)
               ) : (
                 <span className="text-muted-foreground italic">No output yet</span>
               )}
