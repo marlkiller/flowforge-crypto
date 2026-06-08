@@ -17,7 +17,6 @@ import {
   type Node as RFNode,
   type Viewport,
 } from "@xyflow/react";
-import { toCanvas } from "html-to-image";
 import "@xyflow/react/dist/style.css";
 
 import { CryptoNode } from "./CryptoNode";
@@ -28,48 +27,30 @@ import { OutputConsole } from "./OutputConsole";
 import { graphStore, useGraphStore } from "./store";
 import { loadExternalNode, NODE_KIND_META } from "@/lib/crypto/registry";
 import type { GraphEdge, GraphNode } from "@/lib/crypto/types";
-import {
-  Plus,
-  Trash2,
-  Copy,
-  ChevronDown,
-  MousePointer2,
-  Loader2,
-  FileText,
-  Wand,
-  Camera,
-  CornerDownRight,
-  GitBranch,
-  Download,
-} from "lucide-react";
+import { Plus, ChevronDown, Loader2, FileText } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { PluginManager } from "./PluginManager";
 
 // New parts and hooks
+import { CanvasToolbar } from "./parts/CanvasToolbar";
 import { ExecutionStatus } from "./parts/ExecutionStatus";
 import { WorkflowTab } from "./parts/WorkflowTab";
 import { GraphDialogs } from "./parts/GraphDialogs";
+import { GraphContextMenus } from "./parts/GraphContextMenus";
 import { Sidebar } from "./parts/Sidebar";
 import { PromptDialog } from "./parts/PromptDialog";
-import { SaveOutputDialog } from "./parts/SaveOutputDialog";
+import { SaveOutputBridge } from "./parts/SaveOutputBridge";
 
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
+import { useNodeGrouping } from "./hooks/useNodeGrouping";
+import { useScreenshotExport } from "./hooks/useScreenshotExport";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
-import { getStoredFile } from "@/lib/crypto/fileStore";
-
-import { toast } from "sonner";
 
 const nodeTypes = {
   crypto: CryptoNode,
   note: NoteNode,
   cryptoGroup: GroupNode,
-};
-
-type ExportOutputWorkerResponse = {
-  id: number;
-  value?: Uint8Array;
-  error?: string;
 };
 
 function InnerEditor({
@@ -102,22 +83,14 @@ function InnerEditor({
   const selectedEdgeId = active.selectedEdgeId;
 
   const [edgeType, setEdgeType] = useState<"smoothstep" | "default">("smoothstep");
-  const [screenshotFormat, setScreenshotFormat] = useState<"png" | "jpeg" | "webp">("png");
-  const [showFormatPicker, setShowFormatPicker] = useState(false);
-  const [isShutterActive, setIsShutterActive] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [rf, setRf] = useState<ReactFlowInstance | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
   const [promptDialogOpen, setPromptDialogOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (selectedGroup && !nodes.some((n) => n.id === selectedGroup)) {
-      setSelectedGroup(null);
-    }
-  }, [nodes, selectedGroup]);
+  const { groups, selectedGroup, selectedNonGroupNodes, setSelectedGroup, assignNodeToGroup } =
+    useNodeGrouping(nodes);
 
   // Logic extracted to hooks
   const { execRunning, execLogs, errorCount, execute } = useGraphExecution(
@@ -128,6 +101,13 @@ function InnerEditor({
   );
   const interaction = useGraphInteraction(nodes, edges, wrapperRef);
   const workflowActions = useWorkflowActions(workflows);
+  const {
+    screenshotFormat,
+    showFormatPicker,
+    isShutterActive,
+    setShowFormatPicker,
+    captureScreenshot,
+  } = useScreenshotExport(wrapperRef, rf);
 
   // --- Mobile & Pointer Drag and Drop Logic ---
   const touchStartPos = useRef<{ x: number; y: number; kind: string } | null>(null);
@@ -405,57 +385,8 @@ function InnerEditor({
   }, []);
 
   const ctxNode = interaction.contextMenu
-    ? nodes.find((n) => n.id === interaction.contextMenu!.nodeId)
+    ? (nodes.find((n) => n.id === interaction.contextMenu!.nodeId) ?? null)
     : null;
-
-  const groups = useMemo(() => nodes.filter((n) => n.data.kind === "group"), [nodes]);
-  const selectedNonGroupNodes = useMemo(
-    () => nodes.filter((n) => n.selected && n.data.kind !== "group"),
-    [nodes],
-  );
-
-  const setNodeGroup = useCallback((nodeId: string, groupId: string | null) => {
-    graphStore.snapshot();
-    const w = graphStore.getActive();
-    const node = w.nodes.find((n) => n.id === nodeId);
-    if (!node) return;
-
-    if (groupId) {
-      const group = w.nodes.find((n) => n.id === groupId);
-      if (!group) return;
-      let absX = node.position.x;
-      let absY = node.position.y;
-      if (node.parentId) {
-        const p = w.nodes.find((n) => n.id === node.parentId);
-        if (p) {
-          absX += p.position.x;
-          absY += p.position.y;
-        }
-      }
-      graphStore.setNodes(
-        w.nodes.map((n) =>
-          n.id === nodeId
-            ? {
-                ...n,
-                position: { x: absX - group.position.x, y: absY - group.position.y },
-                parentId: groupId,
-                extent: "parent" as const,
-              }
-            : n,
-        ),
-      );
-    } else if (node.parentId) {
-      const parent = w.nodes.find((n) => n.id === node.parentId);
-      const newPos = parent
-        ? { x: node.position.x + parent.position.x, y: node.position.y + parent.position.y }
-        : node.position;
-      graphStore.setNodes(
-        w.nodes.map((n) =>
-          n.id === nodeId ? { ...n, position: newPos, parentId: undefined, extent: undefined } : n,
-        ),
-      );
-    }
-  }, []);
 
   return (
     <div className="h-screen w-screen bg-background text-foreground font-sans flex gap-1">
@@ -550,149 +481,26 @@ function InnerEditor({
                 className="react-flow-controls-custom"
                 style={{ left: 12, bottom: 12 }}
               />
-              <button
-                onClick={() => {
+              <CanvasToolbar
+                edgeType={edgeType}
+                nodeCount={nodes.length}
+                selectionMode={interaction.selectionMode}
+                screenshotFormat={screenshotFormat}
+                showFormatPicker={showFormatPicker}
+                onToggleEdgeType={() => {
                   const next = edgeType === "smoothstep" ? "default" : "smoothstep";
                   setEdgeType(next);
                   const w = graphStore.getActive();
                   graphStore.setEdges(w.edges.map((e) => ({ ...e, type: next })));
                 }}
-                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all w-7 h-7`}
-                title={
-                  edgeType === "smoothstep"
-                    ? "Switch to curved edges"
-                    : "Switch to right-angle edges"
-                }
-                aria-label={
-                  edgeType === "smoothstep"
-                    ? "Switch to curved edges"
-                    : "Switch to right-angle edges"
-                }
-                style={{ top: 12, right: 76 }}
-              >
-                {edgeType === "smoothstep" ? (
-                  <CornerDownRight className="w-4 h-4" />
-                ) : (
-                  <GitBranch className="w-4 h-4" />
-                )}
-              </button>
-              <button
-                onClick={() => {
+                onAutoLayout={() => {
                   graphStore.reflowLayout();
                   setTimeout(() => rf?.fitView({ padding: 0.3, duration: 200 }), 50);
                 }}
-                disabled={nodes.length === 0}
-                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border bg-card text-muted-foreground border-border hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none w-7 h-7`}
-                title="Auto-layout nodes with Dagre"
-                aria-label="Auto-layout nodes with Dagre"
-                style={{ top: 12, right: 44 }}
-              >
-                <Wand className="w-4 h-4" />
-              </button>
-              <div
-                className="graph-toolbar absolute z-10 flex flex-col items-end"
-                style={{ top: 12, right: 108 }}
-              >
-                <button
-                  onClick={() => setShowFormatPicker((v) => !v)}
-                  disabled={nodes.length === 0}
-                  className={`flex items-center justify-center rounded-md border bg-card text-muted-foreground hover:bg-accent shadow-md transition-all disabled:opacity-30 disabled:pointer-events-none w-7 h-7`}
-                  title={`Export screenshot (${screenshotFormat.toUpperCase()})`}
-                  aria-label={`Export screenshot as ${screenshotFormat.toUpperCase()}`}
-                >
-                  <Camera className="w-4 h-4" />
-                </button>
-                {showFormatPicker && (
-                  <div className="graph-toolbar absolute top-full right-0 mt-1 flex flex-col rounded-md border bg-card shadow-md overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
-                    {(["png", "jpeg", "webp"] as const).map((fmt) => (
-                      <button
-                        key={fmt}
-                        onClick={async () => {
-                          setScreenshotFormat(fmt);
-                          setShowFormatPicker(false);
-                          if (!wrapperRef.current || !rf) return;
-
-                          const renderer = wrapperRef.current.querySelector(
-                            ".react-flow",
-                          ) as HTMLElement | null;
-                          if (!renderer) return;
-
-                          const capture = async () => {
-                            // 1. Shutter Flash (CSS GPU Animation)
-                            setIsShutterActive(true);
-                            // 2. Breath for 150ms to let animations start
-                            await new Promise((r) => setTimeout(r, 150));
-
-                            const options = {
-                              backgroundColor:
-                                getComputedStyle(document.body).backgroundColor || "#09090b",
-                              pixelRatio: 4, // Ultra-HD resolution
-                              skipFonts: false,
-                              style: { transform: "scale(1)" },
-                              filter: (node: HTMLElement) => {
-                                const cls = node.getAttribute?.("class") || "";
-
-                                if (cls.includes("graph-toolbar")) return false;
-                                return !["minimap", "controls", "panel", "attribution"].some((e) =>
-                                  cls.includes(`react-flow__${e}`),
-                                );
-                              },
-                            };
-
-                            // Use toCanvas -> toBlob for better stability and performance at high pixelRatio
-                            const canvas = await toCanvas(renderer, options);
-                            const blob = await new Promise<Blob | null>((resolve) =>
-                              canvas.toBlob(
-                                resolve,
-                                `image/${fmt === "jpeg" ? "jpeg" : fmt}`,
-                                fmt === "png" ? undefined : 0.95,
-                              ),
-                            );
-
-                            if (!blob) throw new Error("Capture failed");
-                            const dataUrl = URL.createObjectURL(blob);
-
-                            const a = document.createElement("a");
-                            a.href = dataUrl;
-                            a.download = `flowforge-crypto-${Date.now()}.${fmt}`;
-                            a.click();
-
-                            // Cleanup
-                            setTimeout(() => URL.revokeObjectURL(dataUrl), 2000);
-                            setIsShutterActive(false);
-                          };
-
-                          toast.promise(capture(), {
-                            loading: `Capturing ${fmt.toUpperCase()}...`,
-                            success: "Snapshot exported successfully!",
-                            error: "Capture failed. Try a different format.",
-                          });
-                        }}
-                        className={`px-3 py-1.5 text-[11px] text-left whitespace-nowrap hover:bg-accent transition-all ${fmt === screenshotFormat ? "bg-accent font-bold text-primary" : "text-muted-foreground"}`}
-                      >
-                        {fmt.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => interaction.setSelectionMode((v) => !v)}
-                title={
-                  interaction.selectionMode ? "Switch to pan mode" : "Switch to selection mode"
-                }
-                aria-label={
-                  interaction.selectionMode ? "Switch to pan mode" : "Switch to selection mode"
-                }
-                className={`graph-toolbar absolute z-10 flex items-center justify-center rounded-md border shadow-md transition-all cursor-pointer ${
-                  interaction.selectionMode
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-muted-foreground border-border hover:bg-accent"
-                } w-7 h-7`}
-                style={{ top: 12, right: 12 }}
-              >
-                <MousePointer2 className="w-4 h-4" />
-              </button>
+                onToggleFormatPicker={() => setShowFormatPicker((v) => !v)}
+                onCaptureScreenshot={captureScreenshot}
+                onToggleSelectionMode={() => interaction.setSelectionMode((v) => !v)}
+              />
               {nodes.length > 0 && (
                 <MiniMap
                   pannable
@@ -729,186 +537,26 @@ function InnerEditor({
               </div>
             )}
 
-            {/* Node context menu */}
-            {interaction.contextMenu && ctxNode && (
-              <div
-                className="absolute z-50 w-40 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
-                style={{ left: interaction.contextMenu.x, top: interaction.contextMenu.y }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="px-2.5 py-1.5 border-b border-border/50 text-[9px] text-muted-foreground uppercase tracking-wider truncate font-semibold">
-                  {ctxNode.data.label}
-                </div>
-                <button
-                  onClick={() => {
-                    interaction.copySelected();
-                    interaction.setContextMenu(null);
-                  }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent transition-colors"
-                >
-                  <Copy className="w-3 h-3" /> Copy
-                </button>
-                <button
-                  onClick={interaction.copyOutput}
-                  disabled={!ctxNode.data.output}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
-                >
-                  <Copy className="w-3 h-3" /> Copy output
-                </button>
-                <button
-                  onClick={() => {
-                    onSaveOutputRef.current?.(ctxNode.id);
-                    interaction.setContextMenu(null);
-                  }}
-                  disabled={!ctxNode.data.output}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
-                >
-                  <Download className="w-3 h-3" /> Save output
-                </button>
-                <button
-                  onClick={interaction.duplicateNode}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent transition-colors"
-                >
-                  <Copy className="w-3 h-3" /> Duplicate
-                </button>
-                {ctxNode.data.kind !== "group" && groups.length > 0 && (
-                  <>
-                    <div className="my-0.5 border-t border-border/50" />
-                    <div className="px-2.5 py-1 text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">
-                      Assign to Group
-                    </div>
-                    {groups.map((g) => (
-                      <button
-                        key={g.id}
-                        onClick={() => {
-                          setNodeGroup(ctxNode.id, ctxNode.parentId === g.id ? null : g.id);
-                          interaction.setContextMenu(null);
-                        }}
-                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent transition-colors ${ctxNode.parentId === g.id ? "text-primary" : ""}`}
-                      >
-                        <div className="w-2 h-2 rounded-full bg-primary/40 shrink-0" />
-                        {g.data.label as string}
-                        {ctxNode.parentId === g.id && <span className="ml-auto text-[9px]">✓</span>}
-                      </button>
-                    ))}
-                    {ctxNode.parentId && (
-                      <button
-                        onClick={() => {
-                          setNodeGroup(ctxNode.id, null);
-                          interaction.setContextMenu(null);
-                        }}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" /> Clear Group
-                      </button>
-                    )}
-                  </>
-                )}
-                <div className="my-0.5 border-t border-border/50" />
-                <button
-                  onClick={interaction.deleteNode}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-destructive hover:bg-destructive/10 transition-colors"
-                >
-                  <Trash2 className="w-3 h-3" /> Delete
-                </button>
-              </div>
-            )}
-
-            {/* Edge context menu */}
-            {interaction.contextMenu && interaction.contextMenu.edgeId && (
-              <div
-                className="absolute z-50 w-28 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
-                style={{ left: interaction.contextMenu.x, top: interaction.contextMenu.y }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={interaction.deleteEdge}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-destructive hover:bg-destructive/10 transition-colors"
-                >
-                  <Trash2 className="w-3 h-3" /> Disconnect
-                </button>
-              </div>
-            )}
-
-            {/* Multi-select context menu */}
-            {interaction.contextMenu && interaction.contextMenu.multi && (
-              <div
-                className="absolute z-50 w-40 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg py-0.5 backdrop-blur-xl"
-                style={{ left: interaction.contextMenu.x, top: interaction.contextMenu.y }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="px-2.5 py-1.5 border-b border-border/50 text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">
-                  {rf?.getNodes().some((n) => n.selected)
-                    ? `${rf.getNodes().filter((n) => n.selected).length} selected`
-                    : "Selection"}
-                </div>
-                <button
-                  onClick={interaction.copySelected}
-                  disabled={!rf?.getNodes().some((n) => n.selected)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
-                >
-                  <Copy className="w-3 h-3" /> Copy
-                </button>
-                <button
-                  onClick={interaction.pasteClipboard}
-                  disabled={!interaction.clipboard}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
-                >
-                  <Copy className="w-3 h-3" /> Paste
-                </button>
-                <button
-                  onClick={interaction.duplicateSelected}
-                  disabled={!rf?.getNodes().some((n) => n.selected)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
-                >
-                  <Copy className="w-3 h-3" /> Duplicate
-                </button>
-                {selectedNonGroupNodes.length > 0 && groups.length > 0 && (
-                  <>
-                    <div className="my-0.5 border-t border-border/50" />
-                    <div className="px-2.5 py-1 text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">
-                      Assign to Group
-                    </div>
-                    {groups.map((g) => (
-                      <button
-                        key={g.id}
-                        onClick={() => {
-                          for (const n of selectedNonGroupNodes) {
-                            setNodeGroup(n.id, n.parentId === g.id ? null : g.id);
-                          }
-                          interaction.setContextMenu(null);
-                        }}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-accent transition-colors"
-                      >
-                        <div className="w-2 h-2 rounded-full bg-primary/40 shrink-0" />
-                        {g.data.label as string}
-                      </button>
-                    ))}
-                    {selectedNonGroupNodes.some((n) => n.parentId) && (
-                      <button
-                        onClick={() => {
-                          for (const n of selectedNonGroupNodes) {
-                            if (n.parentId) setNodeGroup(n.id, null);
-                          }
-                          interaction.setContextMenu(null);
-                        }}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" /> Clear Group
-                      </button>
-                    )}
-                  </>
-                )}
-                <div className="my-0.5 border-t border-border/50" />
-                <button
-                  onClick={interaction.deleteSelected}
-                  disabled={!rf?.getNodes().some((n) => n.selected)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-destructive hover:bg-destructive/10 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
-                >
-                  <Trash2 className="w-3 h-3" /> Delete
-                </button>
-              </div>
-            )}
+            <GraphContextMenus
+              contextMenu={interaction.contextMenu}
+              node={ctxNode}
+              groups={groups}
+              selectedNonGroupNodes={selectedNonGroupNodes}
+              hasSelection={!!rf?.getNodes().some((n) => n.selected)}
+              selectedCount={rf?.getNodes().filter((n) => n.selected).length ?? 0}
+              hasClipboard={!!interaction.clipboard}
+              onClose={() => interaction.setContextMenu(null)}
+              onCopySelected={interaction.copySelected}
+              onCopyOutput={interaction.copyOutput}
+              onSaveOutput={(id) => onSaveOutputRef.current?.(id)}
+              onDuplicateNode={interaction.duplicateNode}
+              onDeleteNode={interaction.deleteNode}
+              onDeleteEdge={interaction.deleteEdge}
+              onPaste={interaction.pasteClipboard}
+              onDuplicateSelected={interaction.duplicateSelected}
+              onDeleteSelected={interaction.deleteSelected}
+              onAssignNodeGroup={assignNodeToGroup}
+            />
           </div>
 
           {/* Floating Top Tabs */}
@@ -1044,127 +692,7 @@ export default function CryptoGraphEditor() {
   return (
     <ReactFlowProvider>
       <InnerEditor onSaveOutputRef={saveDialogTriggerRef} />
-      <SaveDialogBridge triggerRef={saveDialogTriggerRef} />
+      <SaveOutputBridge triggerRef={saveDialogTriggerRef} />
     </ReactFlowProvider>
-  );
-}
-
-function SaveDialogBridge({
-  triggerRef,
-}: {
-  triggerRef: React.MutableRefObject<((id: string) => void) | null>;
-}) {
-  const [nodeId, setNodeId] = useState<string | null>(null);
-
-  useEffect(() => {
-    triggerRef.current = (id: string) => setNodeId(id);
-    return () => {
-      triggerRef.current = null;
-    };
-  }, [triggerRef]);
-
-  const node = useGraphStore((s) => {
-    if (!nodeId) return null;
-    const active = s.workflows.find((w) => w.id === s.activeId);
-    return active?.nodes.find((n) => n.id === nodeId) ?? null;
-  });
-
-  const resolveOutput = useCallback(
-    (outputKey?: string): Promise<Uint8Array> => {
-      if (!nodeId) {
-        return Promise.reject(new Error("No node selected"));
-      }
-
-      const active = graphStore.getActive();
-      const selectedIds = new Set<string>([nodeId]);
-      const queue = [nodeId];
-      for (const id of queue) {
-        for (const edge of active.edges) {
-          if (edge.target === id && !selectedIds.has(edge.source)) {
-            selectedIds.add(edge.source);
-            queue.push(edge.source);
-          }
-        }
-      }
-
-      const selectedEdges = active.edges.filter(
-        (edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target),
-      );
-      const selectedNodes = active.nodes.filter((n) => selectedIds.has(n.id));
-      const nodes = selectedNodes.map((n) => {
-        if (n.data.kind === "file") {
-          return { ...n, data: { ...n.data, fileBytes: undefined } };
-        }
-        return n;
-      });
-      const fileTransfers: [string, File][] = [];
-      for (const n of selectedNodes) {
-        if (n.data.kind !== "file" || typeof n.data.fileRefId !== "string") continue;
-        const file = getStoredFile(n.data.fileRefId);
-        if (file) fileTransfers.push([n.id, file]);
-      }
-
-      return new Promise((resolve, reject) => {
-        const worker = new Worker(
-          new URL("../../lib/crypto/exportOutput.worker.ts", import.meta.url),
-          { type: "module" },
-        );
-        const id = Date.now();
-        const timeout = window.setTimeout(() => {
-          worker.terminate();
-          reject(new Error("Save output timed out"));
-        }, 60000);
-
-        worker.onmessage = (event: MessageEvent<ExportOutputWorkerResponse>) => {
-          if (event.data?.id !== id) return;
-          window.clearTimeout(timeout);
-          worker.terminate();
-          if (event.data.error) {
-            reject(new Error(event.data.error));
-            return;
-          }
-          if (!event.data.value) {
-            reject(new Error("Save output worker returned no data"));
-            return;
-          }
-          resolve(event.data.value);
-        };
-        worker.onerror = () => {
-          window.clearTimeout(timeout);
-          worker.terminate();
-          reject(new Error("Save output worker crashed"));
-        };
-
-        worker.postMessage({
-          id,
-          nodes,
-          edges: selectedEdges,
-          targetNodeId: nodeId,
-          outputKey,
-          pluginUrls: graphStore.getAllPluginUrls(),
-          fileTransfers,
-        });
-      });
-    },
-    [nodeId],
-  );
-
-  if (!node) return null;
-
-  return (
-    <SaveOutputDialog
-      open={nodeId !== null}
-      onOpenChange={(open) => {
-        if (!open) setNodeId(null);
-      }}
-      node={{
-        ...node,
-        data: {
-          ...node.data,
-          fileBytes: undefined,
-        },
-      }}
-      onResolveOutput={resolveOutput}
-    />
   );
 }

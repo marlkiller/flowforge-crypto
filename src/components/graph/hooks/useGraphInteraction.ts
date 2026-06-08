@@ -6,6 +6,14 @@ import { removeStoredFile } from "@/lib/crypto/fileStore";
 import type { GraphEdge, GraphNode } from "@/lib/crypto/types";
 import { toast } from "sonner";
 
+export type GraphContextMenuState = {
+  x: number;
+  y: number;
+  nodeId?: string;
+  edgeId?: string;
+  multi?: boolean;
+};
+
 export function useGraphInteraction(
   nodes: GraphNode[],
   _edges: GraphEdge[],
@@ -15,13 +23,7 @@ export function useGraphInteraction(
   const [selectionMode, setSelectionMode] = useState(false);
   const clipboardRef = useRef<{ nodes: GraphNode[]; edges: GraphEdge[] } | null>(null);
 
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    nodeId?: string;
-    edgeId?: string;
-    multi?: boolean;
-  } | null>(null);
+  const [contextMenu, setContextMenu] = useState<GraphContextMenuState | null>(null);
 
   const withoutFileRef = useCallback((node: GraphNode): GraphNode => {
     if (node.data.kind !== "file") return node;
