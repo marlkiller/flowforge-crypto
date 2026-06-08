@@ -43,6 +43,7 @@ import { SaveOutputBridge } from "./parts/SaveOutputBridge";
 
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
+import { useGraphSelection } from "./hooks/useGraphSelection";
 import { useNodeGrouping } from "./hooks/useNodeGrouping";
 import { useScreenshotExport } from "./hooks/useScreenshotExport";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
@@ -101,6 +102,7 @@ function InnerEditor({
     selectedGroup,
   );
   const interaction = useGraphInteraction(nodes, edges, wrapperRef);
+  const selection = useGraphSelection(rf, nodes, edges, active.selectedNodeId, selectedEdgeId);
   const workflowActions = useWorkflowActions(workflows);
   const {
     screenshotFormat,
@@ -287,21 +289,6 @@ function InnerEditor({
     [rf, nodes],
   );
 
-  // Get selected edges based on selected node or directly selected edges
-  const selectedEdgeIds = useMemo(() => {
-    const ids = new Set<string>();
-    edges.forEach((e) => {
-      if (e.id === selectedEdgeId || e.selected) {
-        ids.add(e.id);
-      }
-      // Also check if connected to selected node
-      if (selectedNode && (e.source === selectedNode.id || e.target === selectedNode.id)) {
-        ids.add(e.id);
-      }
-    });
-    return ids;
-  }, [edges, selectedNode, selectedEdgeId]);
-
   const edgesWithState = useMemo(() => {
     return edges.map((edge) => {
       const sourceNode = nodes.find((n) => n.id === edge.source);
@@ -330,7 +317,9 @@ function InnerEditor({
       }
 
       const hasError = !!sourceNode?.data.error;
-      const isSelected = edge.selected || selectedEdgeIds.has(edge.id);
+      const isConnectedToSelectedNode =
+        selectedNode && (edge.source === selectedNode.id || edge.target === selectedNode.id);
+      const isSelected = selection.selectedEdgeIds.has(edge.id) || !!isConnectedToSelectedNode;
       return {
         ...edge,
         selected: isSelected,
@@ -349,7 +338,7 @@ function InnerEditor({
         },
       };
     });
-  }, [edges, nodes, selectedEdgeIds]);
+  }, [edges, nodes, selectedNode, selection.selectedEdgeIds]);
 
   // 4. Handle workflow switching (Stable instance model)
   useEffect(() => {
@@ -388,15 +377,6 @@ function InnerEditor({
   const ctxNode = interaction.contextMenu
     ? (nodes.find((n) => n.id === interaction.contextMenu!.nodeId) ?? null)
     : null;
-  const rfSelectedIds = new Set(
-    rf
-      ?.getNodes()
-      .filter((n) => n.selected)
-      .map((n) => n.id) ?? [],
-  );
-  const currentSelectedNonGroupNodes = nodes.filter(
-    (n) => rfSelectedIds.has(n.id) && n.data.kind !== "group",
-  );
 
   return (
     <div className="h-screen w-screen bg-background text-foreground font-sans flex gap-1">
@@ -551,9 +531,9 @@ function InnerEditor({
               contextMenu={interaction.contextMenu}
               node={ctxNode}
               groups={groups}
-              selectedNonGroupNodes={currentSelectedNonGroupNodes}
-              hasSelection={!!rf?.getNodes().some((n) => n.selected)}
-              selectedCount={rf?.getNodes().filter((n) => n.selected).length ?? 0}
+              selectedNonGroupNodes={selection.selectedNonGroupNodes}
+              hasSelection={selection.hasSelection}
+              selectedCount={selection.selectedNodeCount}
               hasClipboard={!!interaction.clipboard}
               onClose={() => interaction.setContextMenu(null)}
               onCopySelected={interaction.copySelected}

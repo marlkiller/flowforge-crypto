@@ -3,6 +3,7 @@ import { useReactFlow, type Node as RFNode } from "@xyflow/react";
 import { graphStore } from "../store";
 import { newNodeId, makeNode } from "@/lib/crypto/factory";
 import { removeStoredFile } from "@/lib/crypto/fileStore";
+import { findContainingGroup, moveNodeIntoGroup, moveNodeToCanvas } from "../utils/grouping";
 import type { GraphEdge, GraphNode } from "@/lib/crypto/types";
 import { toast } from "sonner";
 
@@ -172,43 +173,15 @@ export function useGraphInteraction(
       );
       selectedIds.add(node.id);
       const groups = allNodes.filter((g) => g.data.kind === "group");
-      const nodeW = (node.width ?? 100) as number;
-      const nodeH = (node.height ?? 40) as number;
-
-      // Compute absolute center position of the anchor node
-      let absX = node.position.x;
-      let absY = node.position.y;
-      if (node.parentId) {
-        const parent = allNodes.find((n) => n.id === node.parentId);
-        if (parent) {
-          absX += parent.position.x;
-          absY += parent.position.y;
-        }
-      }
-      const nodeCx = absX + nodeW / 2;
-      const nodeCy = absY + nodeH / 2;
-
-      let bestGroup: string | null = null;
-      for (const g of groups) {
-        const gw = (g.width ?? 200) as number;
-        const gh = (g.height ?? 100) as number;
-        if (
-          nodeCx >= g.position.x &&
-          nodeCx <= g.position.x + gw &&
-          nodeCy >= g.position.y &&
-          nodeCy <= g.position.y + gh
-        ) {
-          bestGroup = g.id;
-          break;
-        }
-      }
+      const bestGroup = findContainingGroup(node as GraphNode, groups, allNodes);
+      const bestGroupId = bestGroup?.id ?? null;
 
       // Check if any selected node's group affiliation would change
       let needsUpdate = false;
       for (const sid of selectedIds) {
         const n = allNodes.find((nd) => nd.id === sid);
         if (!n) continue;
-        if (bestGroup !== (n.parentId ?? null)) {
+        if (bestGroupId !== (n.parentId ?? null)) {
           needsUpdate = true;
           break;
         }
@@ -219,42 +192,15 @@ export function useGraphInteraction(
       const w = graphStore.getActive();
 
       if (bestGroup) {
-        const group = allNodes.find((nd) => nd.id === bestGroup)!;
         graphStore.setNodes(
-          w.nodes.map((n) => {
-            if (!selectedIds.has(n.id)) return n;
-            let aX = n.position.x;
-            let aY = n.position.y;
-            if (n.parentId) {
-              const p = allNodes.find((nd) => nd.id === n.parentId);
-              if (p) {
-                aX += p.position.x;
-                aY += p.position.y;
-              }
-            }
-            return {
-              ...n,
-              position: { x: aX - group.position.x, y: aY - group.position.y },
-              parentId: bestGroup,
-              extent: "parent" as const,
-            };
-          }),
+          w.nodes.map((n) =>
+            selectedIds.has(n.id) ? moveNodeIntoGroup(n, bestGroup, allNodes) : n,
+          ),
         );
       } else {
         // Leaving a group — convert all selected children to absolute
         graphStore.setNodes(
-          w.nodes.map((n) => {
-            if (!selectedIds.has(n.id) || !n.parentId) return n;
-            const p = allNodes.find((nd) => nd.id === n.parentId);
-            return {
-              ...n,
-              position: p
-                ? { x: n.position.x + p.position.x, y: n.position.y + p.position.y }
-                : n.position,
-              parentId: undefined,
-              extent: undefined,
-            };
-          }),
+          w.nodes.map((n) => (selectedIds.has(n.id) ? moveNodeToCanvas(n, allNodes) : n)),
         );
       }
     },

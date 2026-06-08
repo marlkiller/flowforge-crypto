@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Copy, Download, Trash2 } from "lucide-react";
 
 import type { GraphContextMenuState } from "../hooks/useGraphInteraction";
@@ -46,7 +46,7 @@ function PositionedContextMenu({
   const ref = useRef<HTMLDivElement | null>(null);
   const [position, setPosition] = useState({ left: contextMenu.x, top: contextMenu.y });
 
-  useLayoutEffect(() => {
+  const updatePosition = useCallback(() => {
     const el = ref.current;
     const parent = el?.offsetParent as HTMLElement | null;
     if (!el || !parent) return;
@@ -71,6 +71,24 @@ function PositionedContextMenu({
 
     setPosition({ left, top });
   }, [contextMenu]);
+
+  useLayoutEffect(() => {
+    updatePosition();
+
+    const el = ref.current;
+    const parent = el?.offsetParent as HTMLElement | null;
+    if (!el) return;
+
+    const resizeObserver = new ResizeObserver(updatePosition);
+    resizeObserver.observe(el);
+    if (parent) resizeObserver.observe(parent);
+    window.addEventListener("resize", updatePosition);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [updatePosition]);
 
   return (
     <div

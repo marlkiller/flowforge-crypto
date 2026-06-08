@@ -2,38 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { graphStore } from "../store";
 import type { GraphNode } from "@/lib/crypto/types";
-
-function getAbsolutePosition(node: GraphNode, nodes: GraphNode[]) {
-  if (!node.parentId) return node.position;
-
-  const parent = nodes.find((n) => n.id === node.parentId);
-  if (!parent) return node.position;
-
-  return {
-    x: node.position.x + parent.position.x,
-    y: node.position.y + parent.position.y,
-  };
-}
-
-function moveNodeIntoGroup(node: GraphNode, group: GraphNode, nodes: GraphNode[]): GraphNode {
-  const abs = getAbsolutePosition(node, nodes);
-  return {
-    ...node,
-    position: { x: abs.x - group.position.x, y: abs.y - group.position.y },
-    parentId: group.id,
-    extent: "parent" as const,
-  };
-}
-
-function moveNodeToCanvas(node: GraphNode, nodes: GraphNode[]): GraphNode {
-  if (!node.parentId) return node;
-  return {
-    ...node,
-    position: getAbsolutePosition(node, nodes),
-    parentId: undefined,
-    extent: undefined,
-  };
-}
+import { moveNodeIntoGroup, moveNodeToCanvas } from "../utils/grouping";
 
 export function useNodeGrouping(nodes: GraphNode[]) {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
