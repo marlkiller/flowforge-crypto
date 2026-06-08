@@ -3,6 +3,7 @@ import "./setup";
 import { executeGraph } from "./executor";
 import { loadExternalNode } from "./registry";
 import { OUTPUT_PREVIEW_BYTES } from "./preview";
+import { logger } from "../logger";
 
 function sanitizeDataValue(value: DataValue): DataValue {
   if (!(value.value instanceof Uint8Array) || value.value.byteLength <= OUTPUT_PREVIEW_BYTES) {
@@ -62,7 +63,13 @@ onmessage = async (
 
     // Pre-load all plugins in the worker
     if (pluginUrls && pluginUrls.length > 0) {
-      await Promise.all(pluginUrls.map((url) => loadExternalNode(url).catch(() => {})));
+      await Promise.all(
+        pluginUrls.map((url) =>
+          loadExternalNode(url).catch((error) => {
+            logger.warn("Failed to preload plugin in executor worker", { url, error });
+          }),
+        ),
+      );
     }
 
     const result = await executeGraph(nodes, edges);

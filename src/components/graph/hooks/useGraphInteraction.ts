@@ -268,6 +268,20 @@ export function useGraphInteraction(
       const wrapper = wrapperRef.current;
       if (!wrapper) return;
       const rect = wrapper.getBoundingClientRect();
+      const selectedNodes = rf.getNodes().filter((n) => n.selected);
+      const keepMultiSelection =
+        selectedNodes.length > 1 && selectedNodes.some((selected) => selected.id === node.id);
+
+      if (keepMultiSelection) {
+        setContextMenu({
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+          multi: true,
+        });
+        graphStore.setEdgeSelected(null);
+        return;
+      }
+
       setContextMenu({
         x: event.clientX - rect.left,
         y: event.clientY - rect.top,
@@ -276,7 +290,7 @@ export function useGraphInteraction(
       graphStore.setSelected(node.id);
       graphStore.bringToFront(node.id);
     },
-    [wrapperRef],
+    [rf, wrapperRef],
   );
 
   const onEdgeClick = useCallback((event: React.MouseEvent, edge: GraphEdge) => {

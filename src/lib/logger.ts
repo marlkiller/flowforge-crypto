@@ -11,14 +11,35 @@ interface LogEntry {
   [key: string]: unknown;
 }
 
+function normalizeMeta(meta?: Record<string, unknown>): Record<string, unknown> | undefined {
+  if (!meta) return undefined;
+
+  return Object.fromEntries(
+    Object.entries(meta).map(([key, value]) => {
+      if (value instanceof Error) {
+        return [
+          key,
+          {
+            name: value.name,
+            message: value.message,
+            stack: value.stack,
+          },
+        ];
+      }
+      return [key, value];
+    }),
+  );
+}
+
 function log(level: LogLevel, message: string, meta?: Record<string, unknown>) {
   if (LOG_LEVELS[level] < LOG_LEVELS[currentLevel]) return;
 
+  const normalizedMeta = normalizeMeta(meta);
   const entry: LogEntry = {
     level,
     message,
     timestamp: new Date().toISOString(),
-    ...meta,
+    ...normalizedMeta,
   };
 
   if (import.meta.env.SSR) {
@@ -35,7 +56,15 @@ function log(level: LogLevel, message: string, meta?: Record<string, unknown>) {
           : level === "info"
             ? "color:#3b82f6"
             : "color:#6b7280";
-    console.debug(`%c${prefix}%c ${message}`, style, "", meta ?? "");
+    const method =
+      level === "error"
+        ? console.error
+        : level === "warn"
+          ? console.warn
+          : level === "info"
+            ? console.info
+            : console.debug;
+    method(`%c${prefix}%c ${message}`, style, "", normalizedMeta ?? "");
   }
 }
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { graphStore, useGraphStore } from "../store";
 import { getStoredFile } from "@/lib/crypto/fileStore";
+import { logger } from "@/lib/logger";
 import { SaveOutputDialog } from "./SaveOutputDialog";
 
 type ExportOutputWorkerResponse = {
@@ -73,6 +74,13 @@ export function SaveOutputBridge({
         const id = Date.now();
         const timeout = window.setTimeout(() => {
           worker.terminate();
+          logger.error("Save output timed out", {
+            nodeId,
+            outputKey,
+            timeoutMs: 60000,
+            nodeCount: nodes.length,
+            edgeCount: selectedEdges.length,
+          });
           reject(new Error("Save output timed out"));
         }, 60000);
 
@@ -81,18 +89,34 @@ export function SaveOutputBridge({
           window.clearTimeout(timeout);
           worker.terminate();
           if (event.data.error) {
+            logger.error("Save output worker returned an error", {
+              nodeId,
+              outputKey,
+              error: event.data.error,
+            });
             reject(new Error(event.data.error));
             return;
           }
           if (!event.data.value) {
+            logger.error("Save output worker returned no data", { nodeId, outputKey });
             reject(new Error("Save output worker returned no data"));
             return;
           }
+          logger.info("Output saved from worker", {
+            nodeId,
+            outputKey,
+            byteLength: event.data.value.byteLength,
+          });
           resolve(event.data.value);
         };
-        worker.onerror = () => {
+        worker.onerror = (event) => {
           window.clearTimeout(timeout);
           worker.terminate();
+          logger.error("Save output worker crashed", {
+            nodeId,
+            outputKey,
+            error: event instanceof ErrorEvent ? (event.error ?? event.message) : event,
+          });
           reject(new Error("Save output worker crashed"));
         };
 

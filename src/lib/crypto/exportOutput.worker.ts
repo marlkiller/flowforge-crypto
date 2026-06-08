@@ -2,6 +2,7 @@ import type { DataValue, GraphEdge, GraphNode } from "./types";
 import "./setup";
 import { executeGraph } from "./executor";
 import { loadExternalNode } from "./registry";
+import { logger } from "../logger";
 
 const workerPostMessage = globalThis.postMessage.bind(globalThis) as (
   message: unknown,
@@ -40,7 +41,13 @@ onmessage = async (
     }
 
     if (pluginUrls && pluginUrls.length > 0) {
-      await Promise.all(pluginUrls.map((url) => loadExternalNode(url).catch(() => {})));
+      await Promise.all(
+        pluginUrls.map((url) =>
+          loadExternalNode(url).catch((error) => {
+            logger.warn("Failed to preload plugin in export output worker", { url, error });
+          }),
+        ),
+      );
     }
 
     const result = await executeGraph(nodes, edges);

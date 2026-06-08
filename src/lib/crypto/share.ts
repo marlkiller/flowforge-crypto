@@ -1,6 +1,7 @@
 import type { Workflow } from "@/components/graph/store";
 import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
 import { NODE_KIND_META } from "@/lib/crypto/registry";
+import { logger } from "@/lib/logger";
 import LZString from "lz-string";
 
 const PREFIX = "share=";
@@ -172,7 +173,7 @@ export function decodeWorkflows(encoded: string): SharedWorkflow[] {
     }
     return results;
   } catch (e) {
-    console.error("Failed to decode workflows:", e);
+    logger.error("Failed to decode shared workflows", { error: e });
     return [];
   }
 }

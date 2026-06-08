@@ -46,6 +46,7 @@ import { useGraphInteraction } from "./hooks/useGraphInteraction";
 import { useNodeGrouping } from "./hooks/useNodeGrouping";
 import { useScreenshotExport } from "./hooks/useScreenshotExport";
 import { useWorkflowActions } from "./hooks/useWorkflowActions";
+import { logger } from "@/lib/logger";
 
 const nodeTypes = {
   crypto: CryptoNode,
@@ -89,7 +90,7 @@ function InnerEditor({
 
   const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
   const [promptDialogOpen, setPromptDialogOpen] = useState(false);
-  const { groups, selectedGroup, selectedNonGroupNodes, setSelectedGroup, assignNodeToGroup } =
+  const { groups, selectedGroup, setSelectedGroup, assignNodeToGroup, assignNodesToGroup } =
     useNodeGrouping(nodes);
 
   // Logic extracted to hooks
@@ -379,7 +380,7 @@ function InnerEditor({
       try {
         await loadExternalNode(url);
       } catch (e) {
-        console.error(`Failed to autoload plugin ${url}:`, e);
+        logger.warn("Failed to autoload plugin", { url, error: e });
       }
     });
   }, []);
@@ -387,6 +388,15 @@ function InnerEditor({
   const ctxNode = interaction.contextMenu
     ? (nodes.find((n) => n.id === interaction.contextMenu!.nodeId) ?? null)
     : null;
+  const rfSelectedIds = new Set(
+    rf
+      ?.getNodes()
+      .filter((n) => n.selected)
+      .map((n) => n.id) ?? [],
+  );
+  const currentSelectedNonGroupNodes = nodes.filter(
+    (n) => rfSelectedIds.has(n.id) && n.data.kind !== "group",
+  );
 
   return (
     <div className="h-screen w-screen bg-background text-foreground font-sans flex gap-1">
@@ -541,7 +551,7 @@ function InnerEditor({
               contextMenu={interaction.contextMenu}
               node={ctxNode}
               groups={groups}
-              selectedNonGroupNodes={selectedNonGroupNodes}
+              selectedNonGroupNodes={currentSelectedNonGroupNodes}
               hasSelection={!!rf?.getNodes().some((n) => n.selected)}
               selectedCount={rf?.getNodes().filter((n) => n.selected).length ?? 0}
               hasClipboard={!!interaction.clipboard}
@@ -556,6 +566,7 @@ function InnerEditor({
               onDuplicateSelected={interaction.duplicateSelected}
               onDeleteSelected={interaction.deleteSelected}
               onAssignNodeGroup={assignNodeToGroup}
+              onAssignNodesGroup={assignNodesToGroup}
             />
           </div>
 

@@ -5,6 +5,7 @@ import type { GraphEdge, GraphNode, NodeExecutionLog, ExecutionResult } from "@/
 import { formatBytes } from "@/lib/crypto/service";
 import { getStoredFile } from "@/lib/crypto/fileStore";
 import { formatByteSize } from "@/lib/crypto/preview";
+import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 
 const EXECUTION_DEBOUNCE_MS = 500;
@@ -39,6 +40,16 @@ export function useGraphExecution(
     Map<number, { resolve: (r: ExecutionResult) => void; reject: (e: Error) => void }>
   >(new Map());
   const isExecutingRef = useRef(false);
+  const executionContextRef = useRef({
+    activeId,
+    nodeCount: nodes.length,
+    edgeCount: edges.length,
+  });
+  executionContextRef.current = {
+    activeId,
+    nodeCount: nodes.length,
+    edgeCount: edges.length,
+  };
 
   // Worker lifecycle
   useEffect(() => {
@@ -55,7 +66,13 @@ export function useGraphExecution(
         else p.resolve({ outputs: new Map(outputs), errors: new Map(errors), order, logs });
       };
       w.onerror = (err) => {
-        console.error("[executor] worker crashed:", err);
+        const ctx = executionContextRef.current;
+        logger.error("Executor worker crashed", {
+          error: err instanceof ErrorEvent ? (err.error ?? err.message) : err,
+          activeId: ctx.activeId,
+          nodeCount: ctx.nodeCount,
+          edgeCount: ctx.edgeCount,
+        });
         executePendingRef.current.forEach((p) => p.reject(new Error("Worker crashed")));
         executePendingRef.current.clear();
       };
@@ -65,7 +82,13 @@ export function useGraphExecution(
         executeWorkerRef.current = null;
       };
     } catch (e) {
-      console.error("[executor] failed to create worker:", e);
+      const ctx = executionContextRef.current;
+      logger.error("Failed to create executor worker", {
+        error: e,
+        activeId: ctx.activeId,
+        nodeCount: ctx.nodeCount,
+        edgeCount: ctx.edgeCount,
+      });
     }
   }, []);
 
@@ -101,6 +124,13 @@ export function useGraphExecution(
         const timeout = setTimeout(() => {
           if (executePendingRef.current.has(id)) {
             executePendingRef.current.delete(id);
+            logger.error("Graph execution timed out", {
+              executionId: id,
+              timeoutMs: EXECUTION_TIMEOUT_MS,
+              nodeCount: nodes.length,
+              edgeCount: edges.length,
+              pluginCount: pluginUrls.length,
+            });
             reject(new Error(`Execution timed out (${EXECUTION_TIMEOUT_MS / 1000}s)`));
           }
         }, EXECUTION_TIMEOUT_MS);
@@ -198,6 +228,13 @@ export function useGraphExecution(
       setExecLogs(result.logs);
       const errors = Array.from(result.errors.values());
       setErrorCount(errors.length);
+      logger.debug("Graph execution completed", {
+        activeId,
+        selectedGroup,
+        nodeCount: filteredNodes.length,
+        edgeCount: filteredEdges.length,
+        errorCount: errors.length,
+      });
 
       const cur = graphStore.getActive().nodes;
       const next: GraphNode[] = cur.map((n) => {
@@ -299,7 +336,13 @@ export function useGraphExecution(
       });
       if (next.some((n, i) => n !== cur[i])) graphStore.setNodes(next);
     } catch (error) {
-      console.error("[executor] execution failed:", error);
+      logger.error("Graph execution failed", {
+        error,
+        activeId,
+        selectedGroup,
+        nodeCount: filteredNodes.length,
+        edgeCount: filteredEdges.length,
+      });
       if (executeWorkerRef.current) {
         toast.error("Execution failed", {
           description: error instanceof Error ? error.message : "Unknown error",
@@ -309,7 +352,7 @@ export function useGraphExecution(
       isExecutingRef.current = false;
       setExecRunning(false);
     }
-  }, [workerExecute, selectedGroup]);
+  }, [activeId, workerExecute, selectedGroup]);
 
   // Stable key for auto-execution — only changes on structural/config changes, NOT on node drag.
   const fullKey = useMemo(() => {

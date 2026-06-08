@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { graphStore, useGraphStore } from "./store";
 import { Plus, Trash2, Globe, Loader2, CheckCircle2, AlertCircle, Code2, Zap } from "lucide-react";
 import { loadExternalNode } from "@/lib/crypto/registry";
+import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -64,9 +65,11 @@ export function PluginManager({
     try {
       await loadExternalNode(targetUrl);
       graphStore.addPluginUrl(targetUrl, persist);
+      logger.info("Plugin loaded", { url: targetUrl, persisted: persist });
       setNewUrl("");
       return targetUrl;
     } catch (e) {
+      logger.error("Failed to load plugin", { url: targetUrl, persisted: persist, error: e });
       toast.error(`Failed to load plugin: ${(e as Error).message}`);
       return null;
     } finally {
@@ -94,6 +97,7 @@ export function PluginManager({
         toast.success("Code injected successfully");
       }
     } catch (e) {
+      logger.error("Plugin code injection failed", { error: e });
       toast.error(`Injection failed: ${(e as Error).message}`);
     } finally {
       setLoading(false);
@@ -102,6 +106,7 @@ export function PluginManager({
 
   const handleRemove = (url: string) => {
     graphStore.removePluginUrl(url);
+    logger.info("Plugin removed", { url });
     toast.info("Plugin removed. Reload to completely unload implementation.");
   };
 

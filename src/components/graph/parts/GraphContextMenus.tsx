@@ -22,6 +22,7 @@ type GraphContextMenusProps = {
   onDuplicateSelected: () => void;
   onDeleteSelected: () => void;
   onAssignNodeGroup: (nodeId: string, groupId: string | null) => void;
+  onAssignNodesGroup: (nodeIds: string[], groupId: string | null) => void;
 };
 
 const menuClass =
@@ -49,6 +50,7 @@ export function GraphContextMenus({
   onDuplicateSelected,
   onDeleteSelected,
   onAssignNodeGroup,
+  onAssignNodesGroup,
 }: GraphContextMenusProps) {
   if (!contextMenu) return null;
 
@@ -183,9 +185,11 @@ export function GraphContextMenus({
               <button
                 key={g.id}
                 onClick={() => {
-                  for (const n of selectedNonGroupNodes) {
-                    onAssignNodeGroup(n.id, n.parentId === g.id ? null : g.id);
-                  }
+                  const allInGroup = selectedNonGroupNodes.every((n) => n.parentId === g.id);
+                  onAssignNodesGroup(
+                    selectedNonGroupNodes.map((n) => n.id),
+                    allInGroup ? null : g.id,
+                  );
                   onClose();
                 }}
                 className={menuItemClass}
@@ -197,9 +201,10 @@ export function GraphContextMenus({
             {selectedNonGroupNodes.some((n) => n.parentId) && (
               <button
                 onClick={() => {
-                  for (const n of selectedNonGroupNodes) {
-                    if (n.parentId) onAssignNodeGroup(n.id, null);
-                  }
+                  onAssignNodesGroup(
+                    selectedNonGroupNodes.filter((n) => n.parentId).map((n) => n.id),
+                    null,
+                  );
                   onClose();
                 }}
                 className={`${menuItemClass} text-destructive hover:bg-destructive/10`}

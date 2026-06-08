@@ -4,6 +4,7 @@ import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
 import "@/lib/crypto/setup";
 import { NODE_KIND_META } from "@/lib/crypto/registry";
 import { removeStoredFile } from "@/lib/crypto/fileStore";
+import { logger } from "@/lib/logger";
 
 import { initGroupCounter } from "@/lib/crypto/factory";
 
@@ -426,7 +427,12 @@ export const graphStore = {
       const layouted = getLayoutedNodes(w.nodes, w.edges);
       patchActive({ nodes: layouted.nodes, edges: layouted.edges });
     } catch (e) {
-      console.warn("[layout] dagre layout failed (possibly cyclic graph):", e);
+      logger.warn("Dagre layout failed", {
+        error: e,
+        workflowId: w.id,
+        nodeCount: w.nodes.length,
+        edgeCount: w.edges.length,
+      });
     }
   },
 
