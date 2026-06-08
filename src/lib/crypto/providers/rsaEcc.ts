@@ -1,6 +1,22 @@
 import { registerProvider, CryptoService, toPEM, type MacProvider, parseBytes } from "../service";
 import forge from "node-forge";
 
+type ForgePkiWithSubjectPublicKeyInfo = typeof forge.pki & {
+  publicKeyToSubjectPublicKeyInfo(publicKey: forge.pki.PublicKey): forge.asn1.Asn1;
+};
+
+const forgePki = forge.pki as ForgePkiWithSubjectPublicKeyInfo;
+
+function forgeDerBuffer(bytes: Uint8Array): forge.util.ByteBuffer {
+  return forge.util.createBuffer(forge.util.binary.raw.encode(bytes), "raw");
+}
+
+function forgeBytesToUint8Array(bytes: string): Uint8Array {
+  const out = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) out[i] = bytes.charCodeAt(i);
+  return out;
+}
+
 /**
  * Ensures key bytes are raw DER.
  * If input is a UTF-8 PEM string (wrapped in Uint8Array), decodes it.
@@ -71,7 +87,7 @@ registerProvider({
     const raw = ensureRawKey(keyRaw);
     let publicKey: forge.pki.rsa.PublicKey;
     try {
-      const asn1 = forge.asn1.fromDer(forge.util.createBuffer(raw));
+      const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
       try {
         publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
       } catch {
@@ -101,7 +117,7 @@ registerProvider({
     const raw = ensureRawKey(keyRaw);
     let privateKey: forge.pki.rsa.PrivateKey;
     try {
-      const asn1 = forge.asn1.fromDer(forge.util.createBuffer(raw));
+      const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
       try {
         privateKey = forge.pki.privateKeyFromAsn1(asn1) as forge.pki.rsa.PrivateKey;
       } catch {
@@ -146,14 +162,11 @@ registerProvider({
           (raw[1] < 0x80 && raw[2] === 0x02 && raw[3] === 0x01 && raw[4] === 0x00));
 
       if (isPkcs1) {
-        const privateKey = forge.pki.privateKeyFromAsn1(
-          forge.asn1.fromDer(forge.util.createBuffer(raw)),
-        );
+        const privateKey = forge.pki.privateKeyFromAsn1(forge.asn1.fromDer(forgeDerBuffer(raw)));
         const asn1 = forge.pki.privateKeyToAsn1(privateKey);
         const privateKeyInfo = forge.pki.wrapRsaPrivateKey(asn1);
         const der = forge.asn1.toDer(privateKeyInfo).getBytes();
-        pkcs8 = new Uint8Array(der.length);
-        for (let i = 0; i < der.length; i++) pkcs8[i] = der.charCodeAt(i);
+        pkcs8 = forgeBytesToUint8Array(der);
       }
 
       const key = await CryptoService.importRSAKey("pkcs8", pkcs8, "RSASSA-PKCS1-v1_5", hashAlgo, [
@@ -166,9 +179,7 @@ registerProvider({
 
     // Fallback to forge
     try {
-      const privateKey = forge.pki.privateKeyFromAsn1(
-        forge.asn1.fromDer(forge.util.createBuffer(raw)),
-      );
+      const privateKey = forge.pki.privateKeyFromAsn1(forge.asn1.fromDer(forgeDerBuffer(raw)));
       const md = (forge.md as any)[hashAlgo.toLowerCase().replace("-", "")]?.create();
       if (!md) throw new Error(`Unsupported hash algorithm: ${hashAlgo}`);
       md.update(forge.util.binary.raw.encode(data));
@@ -194,14 +205,10 @@ registerProvider({
 
       if (isPkcs1Pub) {
         try {
-          const publicKey = forge.pki.publicKeyFromAsn1(
-            forge.asn1.fromDer(forge.util.createBuffer(raw)),
-          );
-          const asn1 = forge.pki.publicKeyToAsn1(publicKey);
-          const spkiAsn1 = forge.pki.wrapRsaPublicKey(asn1);
+          const publicKey = forge.pki.publicKeyFromAsn1(forge.asn1.fromDer(forgeDerBuffer(raw)));
+          const spkiAsn1 = forgePki.publicKeyToSubjectPublicKeyInfo(publicKey);
           const der = forge.asn1.toDer(spkiAsn1).getBytes();
-          spki = new Uint8Array(der.length);
-          for (let i = 0; i < der.length; i++) spki[i] = der.charCodeAt(i);
+          spki = forgeBytesToUint8Array(der);
         } catch {
           // Ignore conversion error and let importRSAKey try the raw bytes
         }
@@ -222,9 +229,7 @@ registerProvider({
 
     // Fallback to forge
     try {
-      const publicKey = forge.pki.publicKeyFromAsn1(
-        forge.asn1.fromDer(forge.util.createBuffer(raw)),
-      );
+      const publicKey = forge.pki.publicKeyFromAsn1(forge.asn1.fromDer(forgeDerBuffer(raw)));
       const md = (forge.md as any)[hashAlgo.toLowerCase().replace("-", "")]?.create();
       if (!md) throw new Error(`Unsupported hash algorithm: ${hashAlgo}`);
       md.update(forge.util.binary.raw.encode(data));

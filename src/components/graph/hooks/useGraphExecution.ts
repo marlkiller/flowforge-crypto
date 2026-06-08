@@ -262,13 +262,11 @@ export function useGraphExecution(
   }, [workerExecute, selectedGroup]);
 
   // Stable key for auto-execution — only changes on structural/config changes, NOT on node drag.
-  const execKeyRef = useRef("");
-  const prevNodesKeyRef = useRef("");
   const fullKey = useMemo(() => {
     const nodesKey = nodes
       .map((n) => {
         const meta = NODE_KIND_META[n.data.kind];
-        const config: Record<string, any> = { k: n.data.kind, f: n.data.outputFormat };
+        const config: Record<string, unknown> = { k: n.data.kind, f: n.data.outputFormat };
         if (meta?.inputs) {
           for (const input of meta.inputs) {
             if (input.type != null) {
@@ -289,18 +287,13 @@ export function useGraphExecution(
       .join("|");
     return `${activeId}|${edgesKey}|${nodesKey}`;
   }, [nodes, edges, activeId]);
-  if (fullKey !== prevNodesKeyRef.current) {
-    prevNodesKeyRef.current = fullKey;
-    execKeyRef.current = fullKey;
-  }
-
   useEffect(() => {
-    if (!execKeyRef.current) return;
+    if (!fullKey) return;
     const t = setTimeout(() => {
       execute();
     }, EXECUTION_DEBOUNCE_MS);
     return () => clearTimeout(t);
-  }, [execKeyRef.current, execute]);
+  }, [fullKey, execute]);
 
   return { execRunning, execLogs, errorCount, execute };
 }

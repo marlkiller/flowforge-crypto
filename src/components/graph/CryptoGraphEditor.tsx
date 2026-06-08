@@ -366,14 +366,15 @@ function InnerEditor({
   // 4. Handle workflow switching (Stable instance model)
   useEffect(() => {
     if (!rf) return;
-    if (active.viewport) {
-      rf.setViewport(active.viewport);
+    const viewport = graphStore.getActive().viewport;
+    if (viewport) {
+      rf.setViewport(viewport);
     }
   }, [activeId, rf]); // Stable length: 2
 
   // 5. Handle major graph changes (Templates, Imports, Shared Links)
   useEffect(() => {
-    if (!rf || nodes.length === 0) return;
+    if (!rf || graphStore.getActive().nodes.length === 0) return;
 
     // For new/imported graphs (indicated by graphKey bump), fit view
     const t = setTimeout(() => {

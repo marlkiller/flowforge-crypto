@@ -290,12 +290,9 @@ export function useGraphInteraction(
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const kind = e.dataTransfer.getData("application/x-crypto-kind");
+  const addNodeAtPosition = useCallback((kind: string, position: { x: number; y: number }) => {
     if (!kind) return;
-    const absPos = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
-    const n = makeNode(kind, absPos);
+    const n = makeNode(kind, position);
     graphStore.snapshot();
 
     // Check if dropped inside a group (groups cannot nest)
@@ -306,8 +303,8 @@ export function useGraphInteraction(
       return;
     }
     const groups = allNodes.filter((g) => g.data.kind === "group" && g.id !== n.id);
-    const nodeCx = absPos.x + 50;
-    const nodeCy = absPos.y + 20;
+    const nodeCx = position.x + 50;
+    const nodeCy = position.y + 20;
     for (const g of groups) {
       const gw = (g.width ?? 200) as number;
       const gh = (g.height ?? 100) as number;
@@ -318,10 +315,7 @@ export function useGraphInteraction(
         nodeCy <= g.position.y + gh
       ) {
         // Inside group → convert to relative position
-        n.position = {
-          x: absPos.x - g.position.x,
-          y: absPos.y - g.position.y,
-        };
+        n.position = { x: position.x - g.position.x, y: position.y - g.position.y };
         n.parentId = g.id;
         n.extent = "parent" as const;
         break;
@@ -330,7 +324,36 @@ export function useGraphInteraction(
 
     graphStore.setNodes([...allNodes, n]);
     graphStore.setSelected(n.id);
-  };
+  }, []);
+
+  const onDropTouch = useCallback(
+    (kind: string, position: { x: number; y: number }) => {
+      addNodeAtPosition(kind, position);
+    },
+    [addNodeAtPosition],
+  );
+
+  const addNodeAtCenter = useCallback(
+    (kind: string) => {
+      const wrapper = wrapperRef.current;
+      const rect = wrapper?.getBoundingClientRect();
+      const point = rect
+        ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+        : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      addNodeAtPosition(kind, rf.screenToFlowPosition(point));
+    },
+    [addNodeAtPosition, rf, wrapperRef],
+  );
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const kind = e.dataTransfer.getData("application/x-crypto-kind");
+      if (!kind) return;
+      addNodeAtPosition(kind, rf.screenToFlowPosition({ x: e.clientX, y: e.clientY }));
+    },
+    [addNodeAtPosition, rf],
+  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -434,6 +457,8 @@ export function useGraphInteraction(
     onDragStart,
     onDragOver,
     onDrop,
+    onDropTouch,
+    addNodeAtCenter,
     duplicateSelected,
     copySelected,
     pasteClipboard,

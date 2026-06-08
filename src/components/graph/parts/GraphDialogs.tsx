@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, type RefObject } from "react";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,7 @@ interface GraphDialogsProps {
   setImportText: (text: string) => void;
   handleImportText: () => void;
   handleImportConfirm: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
 
   shareDialogOpen: boolean;
   setShareDialogOpen: (open: boolean) => void;
