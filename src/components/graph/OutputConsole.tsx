@@ -1,8 +1,18 @@
 import { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Play, ChevronDown, GripHorizontal, Loader2, Copy, Timer, Layers } from "lucide-react";
+import {
+  Play,
+  ChevronDown,
+  GripHorizontal,
+  Loader2,
+  Copy,
+  Timer,
+  Layers,
+  Download,
+} from "lucide-react";
 import { toast } from "sonner";
-import type { NodeExecutionLog, GraphNode } from "@/lib/crypto/types";
-import { formatBytes } from "@/lib/crypto/service";
+import type { DataValue, NodeExecutionLog, GraphNode } from "@/lib/crypto/types";
+import { formatBytes, type DataFormat } from "@/lib/crypto/service";
+import { OUTPUT_PREVIEW_BYTES, formatOutputPreviewSize } from "@/lib/crypto/preview";
 
 interface Props {
   logs: NodeExecutionLog[];
@@ -11,6 +21,7 @@ interface Props {
   nodes: GraphNode[];
   selectedGroup: string | null;
   onGroupChange: (groupId: string | null) => void;
+  onSaveOutput: (nodeId: string) => void;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -30,6 +41,14 @@ const STATUS_BG: Record<string, string> = {
   error: "bg-destructive/10",
   skipped: "bg-muted",
 };
+
+function formatDataValuePreview(dv: DataValue, fmt: DataFormat, label?: string): string {
+  const text =
+    dv.value instanceof Uint8Array ? formatBytes(dv.value, fmt, label) : String(dv.value);
+  if (!dv.truncated) return text;
+  const previewBytes = dv.value instanceof Uint8Array ? dv.value.byteLength : text.length;
+  return `${text}\n\n... [preview ${previewBytes} of ${dv.byteLength ?? previewBytes} bytes]`;
+}
 
 const MIN_H = 32;
 const MAX_H = window.innerHeight * 0.6;
@@ -54,6 +73,7 @@ export const OutputConsole = memo(function OutputConsole({
   nodes,
   selectedGroup,
   onGroupChange,
+  onSaveOutput,
 }: Props) {
   const groups = useMemo(() => {
     return nodes.filter((n) => n.data.kind === "group");
@@ -177,23 +197,18 @@ export const OutputConsole = memo(function OutputConsole({
                               (entries[0][0] === "default" || entries[0][0] === "data")
                             ) {
                               const dv = entries[0][1];
-                              return dv.value instanceof Uint8Array
-                                ? formatBytes(dv.value, fmt)
-                                : String(dv.value);
+                              return formatDataValuePreview(dv, fmt);
                             }
                             return entries
                               .map(([k, dv]) => {
-                                const val =
-                                  dv.value instanceof Uint8Array
-                                    ? formatBytes(dv.value, fmt)
-                                    : String(dv.value);
+                                const val = formatDataValuePreview(dv, fmt);
                                 return `${k.toUpperCase()}:\n${val}`;
                               })
                               .join("\n\n");
                           })()
                         : (log.error ?? "");
                     const params = log.params ? `\n${log.params}` : "";
-                    return `#${i + 1} ${log.label} · ${log.kind} · ${log.status.toUpperCase()} · ${log.outputBytes?.byteLength ?? 0}B · ${log.duration.toFixed(1)}ms${params}\n${out}`;
+                    return `#${i + 1} ${log.label} · ${log.kind} · ${log.status.toUpperCase()} · ${log.outputBytesLen ?? log.outputBytes?.byteLength ?? 0}B · ${log.duration.toFixed(1)}ms${params}\n${out}`;
                   })
                   .join("\n\n---\n\n");
                 navigator.clipboard.writeText(text).then(
@@ -273,6 +288,7 @@ export const OutputConsole = memo(function OutputConsole({
                   log={log}
                   index={i}
                   groupLabel={groupLabelByNodeId.get(log.nodeId)}
+                  onSaveOutput={onSaveOutput}
                 />
               ));
             })()
@@ -283,21 +299,21 @@ export const OutputConsole = memo(function OutputConsole({
   );
 }, areConsolePropsEqual);
 
-const MAX_OUTPUT_LEN = 512;
-
 const LogEntry = memo(function LogEntry({
   log,
   index,
   groupLabel,
+  onSaveOutput,
 }: {
   log: NodeExecutionLog;
   index: number;
   groupLabel?: string;
+  onSaveOutput: (nodeId: string) => void;
 }) {
-  const [showFull, setShowFull] = useState(false);
   const fmtMatch = log.params?.match(/^(?:input|output)Format:(\w+)$/);
   const formatVal = fmtMatch?.[1] ?? log.outputFormat;
   const showParams = log.params && !fmtMatch;
+  const outputLimit = OUTPUT_PREVIEW_BYTES;
 
   const outputText = (() => {
     if (log.status !== "success" || !log.outputs) return "";
@@ -315,14 +331,11 @@ const LogEntry = memo(function LogEntry({
 
     if (entries.length === 1 && (entries[0][0] === "default" || entries[0][0] === "data")) {
       const dv = entries[0][1];
-      return dv.value instanceof Uint8Array ? formatBytes(dv.value, fmt) : String(dv.value);
+      return formatDataValuePreview(dv, fmt);
     } else {
       return entries
         .map(([k, dv]) => {
-          const val =
-            dv.value instanceof Uint8Array
-              ? formatBytes(dv.value, fmt, getLabel(k))
-              : String(dv.value);
+          const val = formatDataValuePreview(dv, fmt, getLabel(k));
           return `${k.toUpperCase()}:\n${val}`;
         })
         .join("\n\n");
@@ -362,7 +375,7 @@ const LogEntry = memo(function LogEntry({
         </span>
         {log.status !== "skipped" && (
           <span className="text-muted-foreground font-mono text-[10px]">
-            {log.outputBytes?.byteLength ?? 0}B · {log.duration.toFixed(1)}ms
+            {log.outputBytesLen ?? log.outputBytes?.byteLength ?? 0}B · {log.duration.toFixed(1)}ms
           </span>
         )}
       </div>
@@ -376,24 +389,23 @@ const LogEntry = memo(function LogEntry({
       {(log.status === "success" || log.status === "error") && (
         <div className="mt-1 text-[11px] font-mono leading-relaxed whitespace-pre-wrap break-all">
           {log.status === "success" && log.outputs ? (
-            showFull ? (
-              outputText
-            ) : outputText.length > MAX_OUTPUT_LEN ? (
-              outputText.slice(0, MAX_OUTPUT_LEN) +
-              `\n\n... [${(outputText.length / 1024).toFixed(1)}KB total]`
+            outputText.length > outputLimit ? (
+              outputText.slice(0, outputLimit) +
+              `\n\n... [preview ${formatOutputPreviewSize(outputLimit)} of formatted output]`
             ) : (
               outputText
             )
           ) : log.status === "error" && log.error ? (
             <span className="text-destructive">{log.error}</span>
           ) : null}
-          {outputText.length > MAX_OUTPUT_LEN && (
+          {log.status === "success" && log.outputs && (
             <div className="mt-2">
               <button
-                onClick={() => setShowFull(!showFull)}
-                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => onSaveOutput(log.nodeId)}
+                className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
               >
-                [{showFull ? "collapse" : "show full"}]
+                <Download className="w-3 h-3" />
+                [save output]
               </button>
             </div>
           )}

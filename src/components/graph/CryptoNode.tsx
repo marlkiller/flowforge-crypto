@@ -6,6 +6,7 @@ import { File as FileIcon, Link2, ChevronDown } from "lucide-react";
 import { CategoryIcon } from "./parts/CategoryIcon";
 import { memo } from "react";
 import { graphStore } from "./store";
+import { OUTPUT_PREVIEW_BYTES } from "@/lib/crypto/preview";
 
 function getHandleStyle(types?: string[]) {
   const type = types?.[0]?.toLowerCase() || "raw";
@@ -31,12 +32,18 @@ function getHandleStyle(types?: string[]) {
   return `${colorClass} ${shapeClass}`;
 }
 
-const MAX_OUTPUT_LEN = 256;
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const val = bytes / 1024 ** i;
+  return `${val.toFixed(i === 0 ? 0 : val < 10 ? 2 : 1)} ${units[i]}`;
+}
 
 function formatOutput(output: string) {
-  if (output.length <= MAX_OUTPUT_LEN) return output;
+  if (output.length <= OUTPUT_PREVIEW_BYTES) return output;
   return (
-    output.slice(0, MAX_OUTPUT_LEN) +
+    output.slice(0, OUTPUT_PREVIEW_BYTES) +
     `\n\n... [${(output.length / 1024).toFixed(1)}KB total, truncated]`
   );
 }
@@ -150,7 +157,12 @@ export const CryptoNode = memo(({ id, data, selected }: NodeProps) => {
         {d.kind === "file" && Boolean(d.fileName) && (
           <div className="flex items-center gap-2 p-2 rounded-lg border border-border bg-background shadow-sm text-foreground">
             <FileIcon className="w-4 h-4 text-primary shrink-0" />
-            <span className="text-[10px] font-medium truncate">{d["fileName"] as string}</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-medium truncate">{d.fileName}</div>
+              {typeof d.fileSize === "number" && (
+                <div className="text-[9px] text-muted-foreground">{formatFileSize(d.fileSize)}</div>
+              )}
+            </div>
           </div>
         )}
 

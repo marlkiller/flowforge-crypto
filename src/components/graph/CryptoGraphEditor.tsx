@@ -943,6 +943,7 @@ function InnerEditor({
           nodes={nodes}
           selectedGroup={selectedGroup}
           onGroupChange={setSelectedGroup}
+          onSaveOutput={(id) => onSaveOutputRef.current?.(id)}
         />
       </div>
 

@@ -8,15 +8,14 @@ import {
 } from "@/lib/crypto/registry";
 import type { GraphNode, NodeInputMeta } from "@/lib/crypto/types";
 import type { DataFormat } from "@/lib/crypto/service";
-import { useState } from "react";
+import { storeFile } from "@/lib/crypto/fileStore";
+import { OUTPUT_PREVIEW_BYTES } from "@/lib/crypto/preview";
 import { Trash2, File, Upload, Link2, Settings2, Download } from "lucide-react";
 
 interface Props {
   node: GraphNode | null;
   onSaveOutput?: (nodeId: string) => void;
 }
-
-const MAX_OUTPUT_LEN = 512;
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -27,15 +26,14 @@ function formatFileSize(bytes: number): string {
 }
 
 function truncateOutput(output: string) {
-  if (output.length <= MAX_OUTPUT_LEN) return output;
+  if (output.length <= OUTPUT_PREVIEW_BYTES) return output;
   return (
-    output.slice(0, MAX_OUTPUT_LEN) +
+    output.slice(0, OUTPUT_PREVIEW_BYTES) +
     `\n\n... [${(output.length / 1024).toFixed(1)}KB total, truncated]`
   );
 }
 
 export function NodeInspector({ node, onSaveOutput }: Props) {
-  const [showFullOutput, setShowFullOutput] = useState(false);
   if (!node) {
     return (
       <aside className="h-full w-full rounded-xl border border-border bg-card/80 backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center p-4 text-center">
@@ -122,9 +120,16 @@ export function NodeInspector({ node, onSaveOutput }: Props) {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 p-2 rounded-lg border border-border bg-background shadow-sm text-foreground">
                 <File className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-xs font-medium truncate">
-                  {(d["fileName"] as string) || "No file selected"}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium truncate">
+                    {(d["fileName"] as string) || "No file selected"}
+                  </div>
+                  {typeof d["fileSize"] === "number" && (
+                    <div className="text-[10px] text-muted-foreground">
+                      {formatFileSize(d["fileSize"])}
+                    </div>
+                  )}
+                </div>
               </div>
               <input
                 type="file"
@@ -133,14 +138,8 @@ export function NodeInspector({ node, onSaveOutput }: Props) {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    update({
-                      fileName: file.name,
-                      fileBytes: new Uint8Array(reader.result as ArrayBuffer),
-                    });
-                  };
-                  reader.readAsArrayBuffer(file);
+                  update({ ...storeFile(file) });
+                  e.target.value = "";
                 }}
               />
               <label
@@ -195,14 +194,6 @@ export function NodeInspector({ node, onSaveOutput }: Props) {
                         <Download className="w-3 h-3" /> Save
                       </button>
                     )}
-                    {d.output && d.output.length > MAX_OUTPUT_LEN && (
-                      <button
-                        onClick={() => setShowFullOutput(!showFullOutput)}
-                        className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        [{showFullOutput ? "collapse" : "show full"}]
-                      </button>
-                    )}
                     <span className="text-foreground bg-background px-1.5 py-0.5 rounded border border-border">
                       {formatFileSize(d.outputBytesLen)}
                     </span>
@@ -216,11 +207,7 @@ export function NodeInspector({ node, onSaveOutput }: Props) {
               ) : (
                 <pre className="mt-1 rounded-lg bg-background border border-border text-foreground p-2.5 break-all whitespace-pre-wrap font-mono text-[11px] min-h-[80px] max-h-80 overflow-auto shadow-inner custom-scrollbar leading-relaxed">
                   {d.output ? (
-                    showFullOutput ? (
-                      d.output
-                    ) : (
-                      truncateOutput(d.output)
-                    )
+                    truncateOutput(d.output)
                   ) : (
                     <span className="text-muted-foreground italic">Pipeline waiting to run...</span>
                   )}

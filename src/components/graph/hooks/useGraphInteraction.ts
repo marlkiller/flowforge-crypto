@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useReactFlow, type Node as RFNode } from "@xyflow/react";
 import { graphStore } from "../store";
 import { newNodeId, makeNode } from "@/lib/crypto/factory";
+import { removeStoredFile } from "@/lib/crypto/fileStore";
 import type { GraphEdge, GraphNode } from "@/lib/crypto/types";
 import { toast } from "sonner";
 
@@ -21,6 +22,20 @@ export function useGraphInteraction(
     edgeId?: string;
     multi?: boolean;
   } | null>(null);
+
+  const withoutFileRef = useCallback((node: GraphNode): GraphNode => {
+    if (node.data.kind !== "file") return node;
+    const {
+      fileRefId: _fileRefId,
+      fileName: _fileName,
+      fileSize: _fileSize,
+      fileType: _fileType,
+      fileLastModified: _fileLastModified,
+      fileBytes: _fileBytes,
+      ...data
+    } = node.data;
+    return { ...node, data };
+  }, []);
 
   const onPaneClick = useCallback(() => {
     graphStore.setSelected(null);
@@ -52,12 +67,12 @@ export function useGraphInteraction(
     const dupNodes: GraphNode[] = selected.map((n) => {
       const newId = newNodeId();
       idMap.set(n.id, newId);
-      return {
+      return withoutFileRef({
         ...n,
         id: newId,
         position: { x: n.position.x + 60, y: n.position.y + 60 },
         selected: false,
-      } as GraphNode;
+      } as GraphNode);
     });
     const dupEdges: GraphEdge[] = graphStore
       .getActive()
@@ -75,7 +90,7 @@ export function useGraphInteraction(
       edges: [...cur.edges, ...dupEdges],
     });
     setContextMenu(null);
-  }, [rf]);
+  }, [rf, withoutFileRef]);
 
   const copySelected = useCallback(() => {
     const selected = rf.getNodes().filter((n) => n.selected);
@@ -85,11 +100,11 @@ export function useGraphInteraction(
       .getActive()
       .edges.filter((ed) => ids.has(ed.source) && ids.has(ed.target));
     clipboardRef.current = {
-      nodes: JSON.parse(JSON.stringify(selected)) as GraphNode[],
+      nodes: (JSON.parse(JSON.stringify(selected)) as GraphNode[]).map(withoutFileRef),
       edges: JSON.parse(JSON.stringify(copiedEdges)) as GraphEdge[],
     };
     setContextMenu(null);
-  }, [rf]);
+  }, [rf, withoutFileRef]);
 
   const pasteClipboard = useCallback(() => {
     if (!clipboardRef.current) return;
@@ -97,12 +112,12 @@ export function useGraphInteraction(
     const pastedNodes: GraphNode[] = clipboardRef.current.nodes.map((n) => {
       const newId = newNodeId();
       idMap.set(n.id, newId);
-      return {
+      return withoutFileRef({
         ...n,
         id: newId,
         position: { x: n.position.x + 60, y: n.position.y + 60 },
         selected: false,
-      };
+      });
     });
     const pastedEdges: GraphEdge[] = clipboardRef.current.edges.map((e) => ({
       ...e,
@@ -118,13 +133,16 @@ export function useGraphInteraction(
       edges: [...cur.edges, ...pastedEdges],
     });
     setContextMenu(null);
-  }, []);
+  }, [withoutFileRef]);
 
   const deleteSelected = useCallback(() => {
     const selected = rf.getNodes().filter((n) => n.selected);
     if (!selected || selected.length === 0) return;
     const ids = new Set(selected.map((n) => n.id));
     const w = graphStore.getActive();
+    w.nodes.forEach((n) => {
+      if (ids.has(n.id)) removeStoredFile(n.data.fileRefId);
+    });
     graphStore.setActiveGraph({
       nodes: w.nodes.filter((n) => !ids.has(n.id)),
       edges: w.edges.filter((e) => !ids.has(e.source) && !ids.has(e.target)),

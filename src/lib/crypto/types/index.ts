@@ -80,8 +80,15 @@ export interface NodeData extends Record<string, unknown> {
   outputFormat?: DataFormat;
   output?: string;
   outputBytesLen?: number;
+  outputTruncated?: boolean;
   error?: string;
   outputEntries?: { key: string; label: string; bytes: Uint8Array }[];
+  fileRefId?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
+  fileLastModified?: number;
+  fileBytes?: Uint8Array;
 }
 
 export type GraphNode = Node<NodeData>;
@@ -92,6 +99,8 @@ export type DataType = DataFormat | "cryptokey" | "bool" | "json" | "raw";
 export interface DataValue {
   type: DataType;
   value: any; // Uint8Array for raw, string for hex/utf8/etc, CryptoKey for cryptokey
+  byteLength?: number;
+  truncated?: boolean;
 }
 
 export interface NodeExecutionLog {
@@ -100,6 +109,7 @@ export interface NodeExecutionLog {
   kind: string;
   status: "success" | "error" | "skipped";
   outputBytes?: Uint8Array;
+  outputBytesLen?: number;
   outputs?: Record<string, DataValue>;
   outputFormat?: string;
   error?: string;

@@ -3,9 +3,24 @@ import { graphStore } from "../store";
 import { NODE_KIND_META } from "@/lib/crypto/registry";
 import type { GraphEdge, GraphNode, NodeExecutionLog, ExecutionResult } from "@/lib/crypto/types";
 import { formatBytes } from "@/lib/crypto/service";
+import { getStoredFile } from "@/lib/crypto/fileStore";
 import { toast } from "sonner";
 
 const EXECUTION_DEBOUNCE_MS = 500;
+const EXECUTION_TIMEOUT_MS = 60000;
+
+function formatOutputValue(
+  value: Uint8Array,
+  fmt: Parameters<typeof formatBytes>[1],
+  label: string,
+  truncated?: boolean,
+  byteLength?: number,
+): string {
+  const text = formatBytes(value, fmt, label);
+  if (!truncated) return text;
+  const total = byteLength ?? value.byteLength;
+  return `${text}\n\n... [preview ${value.byteLength} of ${total} bytes]`;
+}
 
 export function useGraphExecution(
   activeId: string,
@@ -54,22 +69,40 @@ export function useGraphExecution(
   }, []);
 
   const workerExecute = useCallback(
-    (nodes: GraphNode[], edges: GraphEdge[]): Promise<ExecutionResult> => {
+    async (nodes: GraphNode[], edges: GraphEdge[]): Promise<ExecutionResult> => {
+      const worker = executeWorkerRef.current;
+      if (!worker) {
+        throw new Error("Worker not initialized");
+      }
+
+      const id = ++executeIdRef.current;
+      const pluginUrls = graphStore.getAllPluginUrls();
+
+      // Pass File handles to the worker; the worker reads bytes so large files avoid main-thread state/allocation.
+      const fileTransfers: [string, File][] = [];
+      const strippedNodes = await Promise.all(
+        nodes.map((n) => {
+          if (n.data.kind === "file") {
+            const fileRefId = n.data.fileRefId;
+            if (typeof fileRefId === "string") {
+              const file = getStoredFile(fileRefId);
+              if (file) {
+                fileTransfers.push([n.id, file]);
+              }
+            }
+            return { ...n, data: { ...n.data, fileBytes: undefined } };
+          }
+          return n;
+        }),
+      );
+
       return new Promise((resolve, reject) => {
-        const worker = executeWorkerRef.current;
-        if (!worker) {
-          return reject(new Error("Worker not initialized"));
-        }
-
-        const id = ++executeIdRef.current;
-        const pluginUrls = graphStore.getAllPluginUrls();
-
         const timeout = setTimeout(() => {
           if (executePendingRef.current.has(id)) {
             executePendingRef.current.delete(id);
-            reject(new Error("Execution timed out (15s)"));
+            reject(new Error(`Execution timed out (${EXECUTION_TIMEOUT_MS / 1000}s)`));
           }
-        }, 15000);
+        }, EXECUTION_TIMEOUT_MS);
 
         executePendingRef.current.set(id, {
           resolve: (r) => {
@@ -81,22 +114,14 @@ export function useGraphExecution(
             reject(e);
           },
         });
-        // Extract fileBytes for zero-copy transfer (keep originals intact in store)
-        const fileTransfers: [string, Uint8Array][] = [];
-        const transferables: ArrayBuffer[] = [];
-        const strippedNodes = nodes.map((n) => {
-          if (n.data.fileBytes instanceof Uint8Array) {
-            const copy = n.data.fileBytes.slice();
-            fileTransfers.push([n.id, copy]);
-            transferables.push(copy.buffer);
-            return { ...n, data: { ...n.data, fileBytes: undefined } };
-          }
-          return n;
+
+        worker.postMessage({
+          id,
+          nodes: strippedNodes,
+          edges,
+          pluginUrls,
+          fileTransfers,
         });
-        worker.postMessage(
-          { id, nodes: strippedNodes, edges, pluginUrls, fileTransfers },
-          transferables,
-        );
       });
     },
     [],
@@ -181,6 +206,7 @@ export function useGraphExecution(
 
         let output = "";
         let outputBytesLen: number | undefined = undefined;
+        let outputTruncated = false;
         let outputEntries: { key: string; label: string; bytes: Uint8Array }[] | undefined;
 
         if (outputs) {
@@ -198,12 +224,19 @@ export function useGraphExecution(
             const dv = entries[0][1];
             output =
               dv && dv.value instanceof Uint8Array
-                ? formatBytes(dv.value, fmt, getLabel(entries[0][0]))
+                ? formatOutputValue(
+                    dv.value,
+                    fmt,
+                    getLabel(entries[0][0]),
+                    dv.truncated,
+                    dv.byteLength,
+                  )
                 : dv
                   ? String(dv.value)
                   : "";
             if (dv && dv.value instanceof Uint8Array) {
-              outputBytesLen = dv.value.byteLength;
+              outputBytesLen = dv.byteLength ?? dv.value.byteLength;
+              outputTruncated = !!dv.truncated;
             } else if (dv && typeof dv.value === "boolean") {
               outputBytesLen = 1;
             }
@@ -212,7 +245,7 @@ export function useGraphExecution(
               .map(([k, dv]) => {
                 const val =
                   dv && dv.value instanceof Uint8Array
-                    ? formatBytes(dv.value, fmt, getLabel(k))
+                    ? formatOutputValue(dv.value, fmt, getLabel(k), dv.truncated, dv.byteLength)
                     : dv
                       ? String(dv.value)
                       : "";
@@ -221,15 +254,17 @@ export function useGraphExecution(
               .join("\n\n");
 
             const totalBytes = entries.reduce((acc, [_, dv]) => {
-              if (dv && dv.value instanceof Uint8Array) return acc + dv.value.byteLength;
+              if (dv && dv.value instanceof Uint8Array)
+                return acc + (dv.byteLength ?? dv.value.byteLength);
               if (dv && typeof dv.value === "boolean") return acc + 1;
               return acc;
             }, 0);
             outputBytesLen = totalBytes;
+            outputTruncated = entries.some(([_, dv]) => !!dv?.truncated);
 
             // Store raw entries for multi-output save dialog
             outputEntries = entries
-              .filter(([_, dv]) => dv?.value instanceof Uint8Array)
+              .filter(([_, dv]) => dv?.value instanceof Uint8Array && !dv.truncated)
               .map(([k, dv]) => ({
                 key: k,
                 label: getLabel(k),
@@ -242,10 +277,14 @@ export function useGraphExecution(
         if (
           prev.output === output &&
           prev.error === error &&
-          prev.outputBytesLen === outputBytesLen
+          prev.outputBytesLen === outputBytesLen &&
+          prev.outputTruncated === outputTruncated
         )
           return n;
-        return { ...n, data: { ...prev, output, outputEntries, error, outputBytesLen } };
+        return {
+          ...n,
+          data: { ...prev, output, outputEntries, error, outputBytesLen, outputTruncated },
+        };
       });
       if (next.some((n, i) => n !== cur[i])) graphStore.setNodes(next);
     } catch (error) {
@@ -275,7 +314,10 @@ export function useGraphExecution(
           }
         }
         if (n.data.kind === "file") {
+          config.fileRefId = n.data.fileRefId;
           config.fileName = n.data.fileName;
+          config.fileSize = n.data.fileSize;
+          config.fileLastModified = n.data.fileLastModified;
         }
         return `${n.id}:${JSON.stringify(config)}`;
       })

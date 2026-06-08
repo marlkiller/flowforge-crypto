@@ -11,9 +11,10 @@ import {
 import { Download } from "lucide-react";
 import { parseBytes, type DataFormat } from "@/lib/crypto/service";
 import type { GraphNode } from "@/lib/crypto/types";
+import { OUTPUT_PREVIEW_BYTES, formatOutputPreviewSize } from "@/lib/crypto/preview";
 import { toast } from "sonner";
 
-const PREVIEW_LIMIT = 4096;
+const BINARY_STRING_CHUNK = 0x8000;
 
 type SaveFormat = "bin" | "hex" | "base64" | "utf8";
 
@@ -54,13 +55,15 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
 
   const fmt = (node?.data.outputFormat as DataFormat) || "utf8";
   const totalBytes = node?.data.outputBytesLen ?? 0;
+  const outputTruncated = !!node?.data.outputTruncated;
 
-  // Only keep a small preview string inside React — full data stays in the store
+  // Only keep a small preview string inside React; full data stays in the store.
   const rawFull = node?.data.output as string | undefined;
   const outputEntries = node?.data.outputEntries;
   const isMultiOutput = !!(outputEntries && outputEntries.length > 1);
   const hasOutput = !!rawFull;
-  const previewStr = hasOutput ? rawFull!.slice(0, PREVIEW_LIMIT) : "";
+  const canSave = hasOutput && !outputTruncated;
+  const previewStr = hasOutput ? rawFull!.slice(0, OUTPUT_PREVIEW_BYTES) : "";
 
   useEffect(() => {
     if (outputEntries?.length) {
@@ -79,12 +82,12 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
   const preview = (() => {
     if (currentEntry) {
       const entryBytes = currentEntry.bytes;
-      const slice = entryBytes.slice(0, PREVIEW_LIMIT);
+      const slice = entryBytes.slice(0, OUTPUT_PREVIEW_BYTES);
       if (saveFormat === "utf8") {
         return (
           new TextDecoder().decode(slice) +
-          (entryBytes.length > PREVIEW_LIMIT
-            ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)`
+          (entryBytes.length > OUTPUT_PREVIEW_BYTES
+            ? `\n... (${entryBytes.length - OUTPUT_PREVIEW_BYTES} more bytes)`
             : "")
         );
       }
@@ -94,36 +97,36 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
           .join(" ");
         return (
           hex +
-          (entryBytes.length > PREVIEW_LIMIT
-            ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)`
+          (entryBytes.length > OUTPUT_PREVIEW_BYTES
+            ? `\n... (${entryBytes.length - OUTPUT_PREVIEW_BYTES} more bytes)`
             : "")
         );
       }
       if (saveFormat === "base64") {
-        const b64 = btoa(String.fromCharCode(...slice));
+        const b64 = bytesToBase64(slice);
         return (
           b64 +
-          (entryBytes.length > PREVIEW_LIMIT
-            ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)`
+          (entryBytes.length > OUTPUT_PREVIEW_BYTES
+            ? `\n... (${entryBytes.length - OUTPUT_PREVIEW_BYTES} more bytes)`
             : "")
         );
       }
-      const bytes = entryBytes.slice(0, PREVIEW_LIMIT);
+      const bytes = entryBytes.slice(0, OUTPUT_PREVIEW_BYTES);
       return (
         hexDump(bytes) +
-        (entryBytes.length > PREVIEW_LIMIT
-          ? `\n... (${entryBytes.length - PREVIEW_LIMIT} more bytes)`
+        (entryBytes.length > OUTPUT_PREVIEW_BYTES
+          ? `\n... (${entryBytes.length - OUTPUT_PREVIEW_BYTES} more bytes)`
           : "")
       );
     }
-    // Single output — preview from the truncated string
+    // Single output: preview from the truncated string.
     if (saveFormat === "utf8") {
-      return rawFull && rawFull.length > PREVIEW_LIMIT
-        ? previewStr + `\n... (${rawFull.length - PREVIEW_LIMIT} more chars)`
+      return rawFull && rawFull.length > OUTPUT_PREVIEW_BYTES
+        ? previewStr + `\n... (${rawFull.length - OUTPUT_PREVIEW_BYTES} more chars)`
         : previewStr;
     }
     // For bin/hex/base64, parse the truncated preview string
-    const previewBytes = (() => {
+    const parsedPreviewBytes = (() => {
       try {
         const r = parseBytes(previewStr, fmt);
         return r instanceof Uint8Array ? r : new Uint8Array();
@@ -132,27 +135,39 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
       }
     })();
     if (saveFormat === "hex") {
-      const hex = Array.from(previewBytes)
+      const hex = Array.from(parsedPreviewBytes)
         .map((b) => b.toString(16).padStart(2, "0"))
         .join(" ");
       return (
-        hex + (totalBytes > PREVIEW_LIMIT ? `\n... (${totalBytes - PREVIEW_LIMIT} more bytes)` : "")
+        hex +
+        (totalBytes > OUTPUT_PREVIEW_BYTES
+          ? `\n... (${totalBytes - OUTPUT_PREVIEW_BYTES} more bytes)`
+          : "")
       );
     }
     if (saveFormat === "base64") {
-      const b64 = btoa(String.fromCharCode(...previewBytes));
+      const b64 = bytesToBase64(parsedPreviewBytes);
       return (
-        b64 + (totalBytes > PREVIEW_LIMIT ? `\n... (${totalBytes - PREVIEW_LIMIT} more bytes)` : "")
+        b64 +
+        (totalBytes > OUTPUT_PREVIEW_BYTES
+          ? `\n... (${totalBytes - OUTPUT_PREVIEW_BYTES} more bytes)`
+          : "")
       );
     }
     return (
-      hexDump(previewBytes) +
-      (totalBytes > PREVIEW_LIMIT ? `\n... (${totalBytes - PREVIEW_LIMIT} more bytes)` : "")
+      hexDump(parsedPreviewBytes) +
+      (totalBytes > OUTPUT_PREVIEW_BYTES
+        ? `\n... (${totalBytes - OUTPUT_PREVIEW_BYTES} more bytes)`
+        : "")
     );
   })();
 
   const handleSave = async () => {
     if (!hasOutput) return;
+    if (outputTruncated) {
+      toast.error("Only a preview is available for this large output");
+      return;
+    }
     const blob = buildBlob();
     const suffix = currentEntry ? `_${currentEntry.key}` : "";
     const suggestedName = `output${suffix}${currentFmt.ext}`;
@@ -202,13 +217,13 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
         return new Blob([hex], { type: "text/plain;charset=utf-8" });
       }
       if (saveFormat === "base64") {
-        return new Blob([btoa(String.fromCharCode(...entryBytes))], {
+        return new Blob([bytesToBase64(entryBytes)], {
           type: "text/plain;charset=utf-8",
         });
       }
       return new Blob([new Uint8Array(entryBytes)], { type: "application/octet-stream" });
     }
-    // Single output — parse the full string at save time
+    // Single output: parse the full string at save time.
     const full = node!.data.output as string;
     if (saveFormat === "utf8") return new Blob([full], { type: "text/plain;charset=utf-8" });
     const fullBytes = (() => {
@@ -226,7 +241,7 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
       return new Blob([hex], { type: "text/plain;charset=utf-8" });
     }
     if (saveFormat === "base64") {
-      return new Blob([btoa(String.fromCharCode(...fullBytes))], {
+      return new Blob([bytesToBase64(fullBytes)], {
         type: "text/plain;charset=utf-8",
       });
     }
@@ -296,7 +311,10 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
 
             <div className="text-[10px] text-muted-foreground">
               {totalBytes} bytes total
-              {totalBytes > PREVIEW_LIMIT ? ` · Preview shows first ${PREVIEW_LIMIT} bytes` : ""}
+              {totalBytes > OUTPUT_PREVIEW_BYTES
+                ? ` · Preview shows first ${formatOutputPreviewSize(OUTPUT_PREVIEW_BYTES)}`
+                : ""}
+              {outputTruncated ? " · Save is disabled for preview-only output" : ""}
             </div>
           </div>
         ) : (
@@ -313,11 +331,11 @@ export function SaveOutputDialog({ open, onOpenChange, node }: Props) {
           </DialogClose>
           <button
             onClick={handleSave}
-            disabled={!hasOutput}
+            disabled={!canSave}
             className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium transition-colors disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5" />
-            Save As...
+            {outputTruncated ? "Preview Only" : "Save As..."}
           </button>
         </DialogFooter>
       </DialogContent>
@@ -341,4 +359,13 @@ function hexDump(bytes: Uint8Array): string {
     lines.push(`${offset}  ${hexLeft.padEnd(23)} ${hexRight.padEnd(23)}  |${ascii.padEnd(16)}|`);
   }
   return lines.join("\n");
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += BINARY_STRING_CHUNK) {
+    const chunk = bytes.subarray(i, i + BINARY_STRING_CHUNK);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
 }

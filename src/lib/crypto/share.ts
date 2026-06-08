@@ -44,7 +44,18 @@ function minifyNode(n: GraphNode) {
     i: n.id,
     p: [Math.round(n.position.x), Math.round(n.position.y)],
     d: Object.entries(n.data).reduce((acc, [k, v]) => {
-      if (["fileBytes", "output", "error", "outputBytesLen", "measured", "selected"].includes(k))
+      if (
+        [
+          "fileBytes",
+          "fileRefId",
+          "output",
+          "error",
+          "outputBytesLen",
+          "outputTruncated",
+          "measured",
+          "selected",
+        ].includes(k)
+      )
         return acc;
       if (k === "outputFormat" && v === "hex") return acc;
       if ((k === "type" || k === "t") && v === "crypto") return acc;

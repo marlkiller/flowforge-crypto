@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
 import "@/lib/crypto/setup";
 import { NODE_KIND_META } from "@/lib/crypto/registry";
+import { removeStoredFile } from "@/lib/crypto/fileStore";
 
 import { initGroupCounter } from "@/lib/crypto/factory";
 
@@ -34,7 +35,12 @@ function persistState(s: State) {
         ...w,
         nodes: w.nodes.map((n) => ({
           ...n,
-          data: { ...n.data, fileBytes: undefined, outputEntries: undefined },
+          data: {
+            ...n.data,
+            fileBytes: undefined,
+            fileRefId: undefined,
+            outputEntries: undefined,
+          },
         })),
       })),
     };
@@ -57,10 +63,12 @@ function loadPersistedState(): State | null {
       w.nodes.forEach((n) => {
         if (n.data) {
           n.data.fileBytes = undefined;
+          n.data.fileRefId = undefined;
           n.data.outputEntries = undefined;
           n.data.output = undefined;
           n.data.error = undefined;
           n.data.outputBytesLen = undefined;
+          n.data.outputTruncated = undefined;
         }
       });
     });
@@ -178,6 +186,24 @@ function patchActive(patch: Partial<Workflow>) {
     workflows: state.workflows.map((w) => (w.id === state.activeId ? { ...w, ...sorted } : w)),
   };
   emit();
+}
+
+function releaseNodeFile(node: GraphNode | undefined) {
+  removeStoredFile(node?.data.fileRefId);
+}
+
+function stripFileRefData(node: GraphNode): GraphNode {
+  if (node.data.kind !== "file") return node;
+  const {
+    fileRefId: _fileRefId,
+    fileName: _fileName,
+    fileSize: _fileSize,
+    fileType: _fileType,
+    fileLastModified: _fileLastModified,
+    fileBytes: _fileBytes,
+    ...data
+  } = node.data;
+  return { ...node, data };
 }
 
 // Undo/redo stacks (not persisted)
@@ -347,6 +373,7 @@ export const graphStore = {
     snapshot();
     const w = active();
     const node = w.nodes.find((n) => n.id === id);
+    releaseNodeFile(node);
     const isGroup = node?.data.kind === "group";
     const nextNodes = isGroup
       ? w.nodes
@@ -385,7 +412,7 @@ export const graphStore = {
       data: { ...n.data },
     };
     patchActive({
-      nodes: [...w.nodes, dup],
+      nodes: [...w.nodes, stripFileRefData(dup)],
       selectedNodeId: newId,
     });
   },
@@ -416,10 +443,12 @@ export const graphStore = {
         data: {
           ...n.data,
           fileBytes: undefined,
+          fileRefId: undefined,
           outputEntries: undefined,
           output: undefined,
           error: undefined,
           outputBytesLen: undefined,
+          outputTruncated: undefined,
         },
       })),
     }));
@@ -435,10 +464,12 @@ export const graphStore = {
       nodes.forEach((n: GraphNode) => {
         if (n.data) {
           n.data.fileBytes = undefined;
+          n.data.fileRefId = undefined;
           n.data.outputEntries = undefined;
           n.data.output = undefined;
           n.data.error = undefined;
           n.data.outputBytesLen = undefined;
+          n.data.outputTruncated = undefined;
         }
       });
       cleaned.push({

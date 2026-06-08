@@ -54,7 +54,7 @@ registerNodeDef("file", {
   },
   runner: (node) => {
     const fileBytes = node.data["fileBytes"] as Uint8Array | undefined;
-    if (!fileBytes) throw new Error("No file selected");
+    if (!fileBytes) throw new Error("No file selected or file is no longer available");
     return fileBytes;
   },
 });
