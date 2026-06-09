@@ -133,24 +133,12 @@ export function encodeWorkflows(workflows: Workflow[]): string {
 
 export function decodeWorkflows(encoded: string): SharedWorkflow[] {
   try {
-    let json = "";
-    if (encoded.startsWith("%7B") || encoded.startsWith("{")) {
-      // Legacy or uncompressed JSON
-      json = decodeURIComponent(atob(encoded));
-    } else {
-      // LZ-String compressed
-      const decompressed = LZString.decompressFromEncodedURIComponent(encoded);
-      if (!decompressed) {
-        // Fallback for old Base64/URI encoded strings
-        json = decodeURIComponent(atob(encoded));
-      } else {
-        json = decompressed;
-      }
+    const decompressed = LZString.decompressFromEncodedURIComponent(encoded);
+    if (!decompressed) {
+      return [];
     }
+    const parsed = JSON.parse(decompressed);
 
-    const parsed = JSON.parse(json);
-
-    // Handle v2 (minified)
     if (parsed.v === 2) {
       return parsed.w.map((w: any) => ({
         name: w.n,
@@ -159,19 +147,7 @@ export function decodeWorkflows(encoded: string): SharedWorkflow[] {
       }));
     }
 
-    // Handle v1 (legacy)
-    const list = parsed.workflows ?? [parsed];
-    const results: SharedWorkflow[] = [];
-    for (const item of list) {
-      if (!item.nodes || !item.edges) continue;
-      const nodes = item.nodes.filter(
-        (n: any) => n.data && (NODE_KIND_META[n.data.kind] || n.type === "note"),
-      );
-      if (nodes.length > 0) {
-        results.push({ name: item.name || "Shared Workflow", nodes, edges: item.edges || [] });
-      }
-    }
-    return results;
+    return [];
   } catch (e) {
     logger.error("Failed to decode shared workflows", { error: e });
     return [];

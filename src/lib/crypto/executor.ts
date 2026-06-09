@@ -42,9 +42,7 @@ export async function executeNode(
   }
 
   try {
-    // Create a proxy that unwraps .value for legacy runners,
-    // but keep an escape hatch for type-aware utilities.
-    const proxyInputs = new Proxy(inputs, {
+    const unwrappedInputs = new Proxy(inputs, {
       get(target, prop) {
         if (prop === "__raw") return target;
         const val = target[prop as string];
@@ -55,7 +53,7 @@ export async function executeNode(
       },
     });
 
-    const result = await runner(node, proxyInputs as any);
+    const result = await runner(node, unwrappedInputs as any);
 
     const wrap = (val: any): DataValue => {
       // Already a DataValue?
@@ -224,7 +222,6 @@ export async function executeGraph(
       const result = await executeNode(node, nodeInputs);
       outputs.set(id, result);
 
-      // For logging and backwards compatibility in UI:
       const firstOutput = Object.values(result)[0];
       if (firstOutput && firstOutput.value instanceof Uint8Array) {
         log.outputBytes = firstOutput.value;
