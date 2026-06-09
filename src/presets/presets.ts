@@ -1,5 +1,11 @@
 import { makeNode } from "@/lib/crypto/factory";
-import type { WorkflowSeed } from "./seeds";
+import type { GraphNode, GraphEdge } from "@/lib/crypto/types";
+
+export interface WorkflowSeed {
+  name: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
 
 export function getAesGcmPreset(): WorkflowSeed {
   const srcData = makeNode("input", { x: 50, y: 50 }, { text: "hello world", label: "Plaintext" });
