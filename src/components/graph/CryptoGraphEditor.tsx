@@ -102,7 +102,7 @@ function InnerEditor({
     selectedGroup,
   );
   const interaction = useGraphInteraction(nodes, edges, wrapperRef);
-  const selection = useGraphSelection(rf, nodes, edges, active.selectedNodeId, selectedEdgeId);
+  const selection = useGraphSelection(nodes, edges, active.selectedNodeId, selectedEdgeId);
   const workflowActions = useWorkflowActions(workflows);
   const {
     screenshotFormat,
@@ -322,7 +322,6 @@ function InnerEditor({
       const isSelected = selection.selectedEdgeIds.has(edge.id) || !!isConnectedToSelectedNode;
       return {
         ...edge,
-        selected: isSelected,
         animated: !hasError,
         zIndex: isSelected ? 100 : undefined,
         style: {
