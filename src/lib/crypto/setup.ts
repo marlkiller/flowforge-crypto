@@ -31,6 +31,7 @@ import {
   RSA_META,
   RSA_SIGN_META,
   RSA_VERIFY_META,
+  RSA_EXTRACT_META,
   SM2_KEYGEN_META,
   SM2_SIGN_META,
   SM2_VERIFY_META,
@@ -79,6 +80,7 @@ registerLazyNode("rsa_keygen", RSA_KEYGEN_META, () => import("./nodes/rsa"));
 registerLazyNode("rsa", RSA_META, () => import("./nodes/rsa"));
 registerLazyNode("rsa_sign", RSA_SIGN_META, () => import("./nodes/rsa"));
 registerLazyNode("rsa_verify", RSA_VERIFY_META, () => import("./nodes/rsa"));
+registerLazyNode("rsa_extract", RSA_EXTRACT_META, () => import("./nodes/rsa"));
 
 // SM2
 registerLazyNode("sm2_keygen", SM2_KEYGEN_META, () => import("./nodes/sm"));

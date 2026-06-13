@@ -80,68 +80,131 @@ registerProvider({
   },
 });
 
+function rawModPow(
+  data: Uint8Array,
+  n: forge.jsbn.BigInteger,
+  exp: forge.jsbn.BigInteger,
+): Uint8Array {
+  const m = new forge.jsbn.BigInteger(
+    forge.util.bytesToHex(forge.util.binary.raw.encode(data)),
+    16,
+  );
+  if (m.compareTo(n) >= 0) throw new Error("Data too large for key modulus");
+  const result = m.modPow(exp, n);
+  const nBytes = (n.bitLength() + 7) >> 3;
+  const hex = result.toString(16).padStart(nBytes * 2, "0");
+  const resultHex = hex.length > nBytes * 2 ? hex.slice(-nBytes * 2) : hex;
+  return new Uint8Array(resultHex.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
+}
+
 registerProvider({
   type: "rsa",
   name: "RAW",
-  async encrypt(keyRaw, data) {
-    const raw = ensureRawKey(keyRaw);
-    let publicKey: forge.pki.rsa.PublicKey;
-    try {
-      const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
+  async encrypt(keyRaw, data, params) {
+    let n: forge.jsbn.BigInteger;
+    let e: forge.jsbn.BigInteger;
+
+    if (params?.modulusN && params?.publicExponentE) {
+      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
+    } else {
+      const raw = ensureRawKey(keyRaw);
+      let publicKey: forge.pki.rsa.PublicKey;
       try {
+        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
         publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
       } catch {
-        publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
+        publicKey = forge.pki.publicKeyFromPem(toPEM(raw, "PUBLIC KEY")) as forge.pki.rsa.PublicKey;
       }
-    } catch {
-      publicKey = forge.pki.publicKeyFromPem(toPEM(raw, "PUBLIC KEY")) as forge.pki.rsa.PublicKey;
+      n = publicKey.n;
+      e = publicKey.e;
     }
 
-    const n = publicKey.n;
-    const e = publicKey.e;
-    const m = new forge.jsbn.BigInteger(
-      forge.util.bytesToHex(forge.util.binary.raw.encode(data)),
-      16,
-    );
-
-    if (m.compareTo(n) >= 0) throw new Error("Data too large for key modulus");
-
-    const c = m.modPow(e, n);
-
-    const nBytes = (n.bitLength() + 7) >> 3;
-    const hex = c.toString(16).padStart(nBytes * 2, "0");
-    const resultHex = hex.length > nBytes * 2 ? hex.slice(-nBytes * 2) : hex;
-    return new Uint8Array(resultHex.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
+    return rawModPow(data, n, e);
   },
-  async decrypt(keyRaw, data) {
-    const raw = ensureRawKey(keyRaw);
-    let privateKey: forge.pki.rsa.PrivateKey;
-    try {
-      const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
+  async decrypt(keyRaw, data, params) {
+    let n: forge.jsbn.BigInteger;
+    let d: forge.jsbn.BigInteger;
+
+    if (params?.modulusN && params?.privateExponentD) {
+      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
+    } else {
+      const raw = ensureRawKey(keyRaw);
+      let privateKey: forge.pki.rsa.PrivateKey;
       try {
+        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
         privateKey = forge.pki.privateKeyFromAsn1(asn1) as forge.pki.rsa.PrivateKey;
       } catch {
-        privateKey = forge.pki.privateKeyFromAsn1(asn1) as forge.pki.rsa.PrivateKey;
+        privateKey = forge.pki.privateKeyFromPem(
+          toPEM(raw, "PRIVATE KEY"),
+        ) as forge.pki.rsa.PrivateKey;
       }
-    } catch {
-      privateKey = forge.pki.privateKeyFromPem(
-        toPEM(raw, "PRIVATE KEY"),
-      ) as forge.pki.rsa.PrivateKey;
+      n = privateKey.n;
+      d = privateKey.d;
     }
 
-    const n = privateKey.n;
-    const d = privateKey.d;
-    const c = new forge.jsbn.BigInteger(
+    return rawModPow(data, n, d);
+  },
+});
+
+registerProvider({
+  type: "mac",
+  name: "RAW",
+  async sign(keyRaw, data, params) {
+    let n: forge.jsbn.BigInteger;
+    let d: forge.jsbn.BigInteger;
+
+    if (params?.modulusN && params?.privateExponentD) {
+      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
+    } else {
+      const raw = ensureRawKey(keyRaw);
+      let privateKey: forge.pki.rsa.PrivateKey;
+      try {
+        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
+        privateKey = forge.pki.privateKeyFromAsn1(asn1) as forge.pki.rsa.PrivateKey;
+      } catch {
+        privateKey = forge.pki.privateKeyFromPem(
+          toPEM(raw, "PRIVATE KEY"),
+        ) as forge.pki.rsa.PrivateKey;
+      }
+      n = privateKey.n;
+      d = privateKey.d;
+    }
+
+    return rawModPow(data, n, d);
+  },
+  async verify(keyRaw, signature, data, params) {
+    let n: forge.jsbn.BigInteger;
+    let e: forge.jsbn.BigInteger;
+
+    if (params?.modulusN && params?.publicExponentE) {
+      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
+    } else {
+      const raw = ensureRawKey(keyRaw);
+      let publicKey: forge.pki.rsa.PublicKey;
+      try {
+        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
+        publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
+      } catch {
+        publicKey = forge.pki.publicKeyFromPem(toPEM(raw, "PUBLIC KEY")) as forge.pki.rsa.PublicKey;
+      }
+      n = publicKey.n;
+      e = publicKey.e;
+    }
+
+    const mPrimed = rawModPow(signature, n, e);
+    const mOrig = new forge.jsbn.BigInteger(
       forge.util.bytesToHex(forge.util.binary.raw.encode(data)),
       16,
     );
-
-    const m = c.modPow(d, n);
-
-    const nBytes = (n.bitLength() + 7) >> 3;
-    const hex = m.toString(16).padStart(nBytes * 2, "0");
-    const resultHex = hex.length > nBytes * 2 ? hex.slice(-nBytes * 2) : hex;
-    return new Uint8Array(resultHex.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
+    const mPrimeInt = new forge.jsbn.BigInteger(
+      forge.util.bytesToHex(forge.util.binary.raw.encode(mPrimed)),
+      16,
+    );
+    return mPrimeInt.equals(mOrig);
   },
 });
 

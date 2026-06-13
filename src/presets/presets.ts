@@ -2516,6 +2516,134 @@ export function getCustomBasePreset(): WorkflowSeed {
   };
 }
 
+function getRsaExtractRawPreset(): WorkflowSeed {
+  const keyGen = makeNode(
+    "rsa_keygen",
+    { x: 50, y: 50 },
+    { algorithm: "RSA-OAEP", label: "RSA Key Gen" },
+  );
+  const extract = makeNode("rsa_extract", { x: 350, y: 50 }, { label: "Extract Components" });
+  const outN = makeNode("output", { x: 700, y: 0 }, { label: "Modulus (n)", outputFormat: "hex" });
+  const outE = makeNode(
+    "output",
+    { x: 700, y: 60 },
+    { label: "Public Exp (e)", outputFormat: "hex" },
+  );
+  const outD = makeNode(
+    "output",
+    { x: 700, y: 120 },
+    { label: "Private Exp (d)", outputFormat: "hex" },
+  );
+
+  const input = makeNode(
+    "input",
+    { x: 50, y: 250 },
+    { text: "hello world - raw rsa", label: "Message" },
+  );
+  const rsaSign = makeNode("rsa_sign", { x: 350, y: 250 }, { algorithm: "RAW", label: "RAW Sign" });
+  const rsaVerify = makeNode(
+    "rsa_verify",
+    { x: 700, y: 250 },
+    { algorithm: "RAW", label: "RAW Verify" },
+  );
+  const outSign = makeNode(
+    "output",
+    { x: 1050, y: 200 },
+    { label: "Signature", outputFormat: "hex" },
+  );
+  const outResult = makeNode("output", { x: 1050, y: 300 }, { label: "Verify Result" });
+
+  return {
+    name: "RSA Extract Components + RAW Sign/Verify",
+    nodes: [keyGen, extract, outN, outE, outD, input, rsaSign, rsaVerify, outSign, outResult],
+    edges: [
+      {
+        id: "e1",
+        source: keyGen.id,
+        target: extract.id,
+        sourceHandle: "privateKey",
+        targetHandle: "keyData",
+        animated: true,
+      },
+      {
+        id: "e2",
+        source: extract.id,
+        target: outN.id,
+        sourceHandle: "modulusN",
+        targetHandle: "data",
+        animated: true,
+      },
+      {
+        id: "e3",
+        source: extract.id,
+        target: outE.id,
+        sourceHandle: "publicExponentE",
+        targetHandle: "data",
+        animated: true,
+      },
+      {
+        id: "e4",
+        source: extract.id,
+        target: outD.id,
+        sourceHandle: "privateExponentD",
+        targetHandle: "data",
+        animated: true,
+      },
+
+      { id: "r1", source: input.id, target: rsaSign.id, targetHandle: "data", animated: true },
+      {
+        id: "r2",
+        source: extract.id,
+        target: rsaSign.id,
+        sourceHandle: "modulusN",
+        targetHandle: "modulusN",
+        animated: true,
+      },
+      {
+        id: "r3",
+        source: extract.id,
+        target: rsaSign.id,
+        sourceHandle: "privateExponentD",
+        targetHandle: "privateExponentD",
+        animated: true,
+      },
+      { id: "r4", source: rsaSign.id, target: outSign.id, targetHandle: "data", animated: true },
+
+      { id: "r5", source: input.id, target: rsaVerify.id, targetHandle: "data", animated: true },
+      {
+        id: "r6",
+        source: extract.id,
+        target: rsaVerify.id,
+        sourceHandle: "modulusN",
+        targetHandle: "modulusN",
+        animated: true,
+      },
+      {
+        id: "r7",
+        source: extract.id,
+        target: rsaVerify.id,
+        sourceHandle: "publicExponentE",
+        targetHandle: "publicExponentE",
+        animated: true,
+      },
+      {
+        id: "r8",
+        source: rsaSign.id,
+        target: rsaVerify.id,
+        targetHandle: "signature",
+        animated: true,
+      },
+      {
+        id: "r9",
+        source: rsaVerify.id,
+        target: outResult.id,
+        targetHandle: "data",
+        animated: true,
+      },
+    ],
+  };
+}
+
 export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string }[] = [
   {
     label: "RNCryptor v3 Deep Dive (Hi + Lo)",
@@ -2526,6 +2654,11 @@ export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string 
     label: "RSA Full Suite (Encrypt & Sign)",
     seed: getRsaFullSuitePreset(),
     keywords: "rsa encrypt decrypt sign verify asymmetric",
+  },
+  {
+    label: "RSA Extract + RAW Sign/Verify",
+    seed: getRsaExtractRawPreset(),
+    keywords: "rsa extract components raw sign verify n d e pem",
   },
 
   {
