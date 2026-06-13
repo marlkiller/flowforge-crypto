@@ -1,11 +1,4 @@
-import {
-  registerProvider,
-  CryptoService,
-  toPEM,
-  type MacProvider,
-  type AlgorithmProvider,
-  parseBytes,
-} from "../service";
+import { registerProvider, CryptoService, toPEM, type MacProvider, parseBytes } from "../service";
 import forge from "node-forge";
 
 type ForgePkiWithSubjectPublicKeyInfo = typeof forge.pki & {
@@ -186,7 +179,7 @@ registerProvider({
     );
     return mPrimeInt.equals(mOrig);
   },
-} as AlgorithmProvider);
+});
 
 registerProvider({
   type: "mac",

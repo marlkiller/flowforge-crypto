@@ -163,6 +163,13 @@ export interface RsaProvider {
   name: string; // e.g. "RSA-OAEP"
   encrypt(key: Uint8Array, data: Uint8Array, params?: Record<string, unknown>): Promise<Uint8Array>;
   decrypt(key: Uint8Array, data: Uint8Array, params?: Record<string, unknown>): Promise<Uint8Array>;
+  sign?(key: Uint8Array, data: Uint8Array, params?: Record<string, unknown>): Promise<Uint8Array>;
+  verify?(
+    key: Uint8Array,
+    signature: Uint8Array,
+    data: Uint8Array,
+    params?: Record<string, unknown>,
+  ): Promise<boolean>;
 }
 
 export interface MacProvider {
