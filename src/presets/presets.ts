@@ -2540,11 +2540,15 @@ function getRsaExtractRawPreset(): WorkflowSeed {
     { x: 50, y: 250 },
     { text: "hello world - raw rsa", label: "Message" },
   );
-  const rsaSign = makeNode("rsa_sign", { x: 350, y: 250 }, { algorithm: "RAW", label: "RAW Sign" });
+  const rsaSign = makeNode(
+    "rsa_sign",
+    { x: 350, y: 250 },
+    { algorithm: "RAW", keyMode: "components", label: "RAW Sign" },
+  );
   const rsaVerify = makeNode(
     "rsa_verify",
     { x: 700, y: 250 },
-    { algorithm: "RAW", label: "RAW Verify" },
+    { algorithm: "RAW", keyMode: "components", label: "RAW Verify" },
   );
   const outSign = makeNode(
     "output",
