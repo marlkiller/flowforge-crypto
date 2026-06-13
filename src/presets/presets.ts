@@ -2450,6 +2450,72 @@ function getGroupDemoPreset(): WorkflowSeed {
   };
 }
 
+export function getCustomBasePreset(): WorkflowSeed {
+  const srcInput = makeNode(
+    "input",
+    { x: 50, y: 240 },
+    { text: "Hello +World /test?=", label: "Source Text" },
+  );
+
+  // Path 1 — Standard alphabet (alphabetPreset="" uses default)
+  const b64Std = makeNode("base64", { x: 400, y: 50 }, { mode: "encode", label: "B64 Standard" });
+  const outStd = makeNode(
+    "output",
+    { x: 750, y: 50 },
+    { label: "Standard B64", outputFormat: "utf8" },
+  );
+
+  // Path 2 — Preset non-standard alphabet (URL-safe) + decode round-trip
+  const b64Url = makeNode(
+    "base64",
+    { x: 400, y: 200 },
+    { mode: "encode", alphabetPreset: "url_safe", label: "B64 URL-safe Preset" },
+  );
+  const b64Dec = makeNode(
+    "base64",
+    { x: 750, y: 350 },
+    { mode: "decode", alphabetPreset: "url_safe", label: "B64 URL-safe Decode" },
+  );
+  const outUrl = makeNode(
+    "output",
+    { x: 750, y: 180 },
+    { label: "URL-safe B64", outputFormat: "utf8" },
+  );
+  const outDec = makeNode("output", { x: 1100, y: 350 }, { label: "Decoded (round-trip match?)" });
+
+  // Path 3 — DIY custom alphabet
+  const b64Diy = makeNode(
+    "base64",
+    { x: 400, y: 480 },
+    {
+      mode: "encode",
+      alphabetPreset: "__custom__",
+      alphabetCustom: "ZYXWVUTSRQPONMLKJIHGFEDCBAabcdefghijklmnopqrstuvwxyz0123456789+/",
+      label: "B64 DIY Reversed Alpha",
+    },
+  );
+  const outDiy = makeNode(
+    "output",
+    { x: 750, y: 480 },
+    { label: "DIY Encoded", outputFormat: "utf8" },
+  );
+
+  return {
+    name: "Custom Base64 (Standard / Preset / DIY)",
+    nodes: [srcInput, b64Std, outStd, b64Url, b64Dec, outUrl, outDec, b64Diy, outDiy],
+    edges: [
+      { id: "p1", source: srcInput.id, target: b64Std.id, targetHandle: "data", animated: true },
+      { id: "p2", source: b64Std.id, target: outStd.id, targetHandle: "data", animated: true },
+      { id: "p3", source: srcInput.id, target: b64Url.id, targetHandle: "data", animated: true },
+      { id: "p4", source: b64Url.id, target: outUrl.id, targetHandle: "data", animated: true },
+      { id: "p5", source: b64Url.id, target: b64Dec.id, targetHandle: "data", animated: true },
+      { id: "p6", source: b64Dec.id, target: outDec.id, targetHandle: "data", animated: true },
+      { id: "p7", source: srcInput.id, target: b64Diy.id, targetHandle: "data", animated: true },
+      { id: "p8", source: b64Diy.id, target: outDiy.id, targetHandle: "data", animated: true },
+    ],
+  };
+}
+
 export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string }[] = [
   {
     label: "RNCryptor v3 Deep Dive (Hi + Lo)",
@@ -2612,6 +2678,11 @@ export const ALL_PRESETS: { label: string; seed: WorkflowSeed; keywords: string 
     label: "HTTPS Handshake Simulation",
     seed: getHttpsHandshakePreset(),
     keywords: "https handshake tls ecdh hkdf aes gcm",
+  },
+  {
+    label: "Custom Base64 (Standard / Preset / DIY)",
+    seed: getCustomBasePreset(),
+    keywords: "base64 custom alphabet url-safe diy standard encoding decoding round-trip",
   },
   {
     label: "Group Demo (Isolated + Connected)",

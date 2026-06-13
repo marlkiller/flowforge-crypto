@@ -79,6 +79,7 @@ const PRESET_ICONS: Record<string, typeof Fingerprint> = {
   "X.509 Certificate Parse": FileKey,
   "PEM to JWK Conversion": FileKey,
   "SSH Key Parse": FileKey,
+  "Custom Base64 (Standard / Preset / DIY)": FileKey,
 };
 
 function TemplateMenuButton() {
