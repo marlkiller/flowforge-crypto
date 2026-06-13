@@ -76,6 +76,7 @@ registerNodeDef("rsa", {
     const scheme = getField(node, "scheme", "RSA-OAEP");
     const hash = getField(node, "hash", "SHA-256");
     const data = inputs["data"] ?? new Uint8Array(0);
+    const keyMode = getField(node, "keyMode", "key") as string;
 
     const provider = getProvider(scheme) as RsaProvider;
     if (!provider) throw new Error(`RSA provider "${scheme}" not found`);
@@ -84,11 +85,11 @@ registerNodeDef("rsa", {
       const baseParams: Record<string, unknown> = {};
       if (scheme === "RSA-OAEP") baseParams.hash = hash;
 
-      const n = getRawInput(node as GraphNode, inputs, "modulusN");
-
-      if (action === "decrypt") {
-        const d = getRawInput(node as GraphNode, inputs, "privateExponentD");
-        if (n && d) {
+      if (keyMode === "components") {
+        const n = getRawInput(node as GraphNode, inputs, "modulusN")!;
+        if (action === "decrypt") {
+          const d = getRawInput(node as GraphNode, inputs, "privateExponentD");
+          if (!d) throw new Error("Components (n, d) required");
           const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
           return provider.decrypt(new Uint8Array(0), data, {
             ...baseParams,
@@ -97,22 +98,20 @@ registerNodeDef("rsa", {
             privateExponentD: d,
           });
         }
-        const key = getParamBytes(node as GraphNode, inputs, "privateKey", false);
-        if (key) return provider.decrypt(key, data, baseParams);
-        throw new Error("Private Key or components (n, d) required");
-      } else {
         const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
-        if (n && e) {
-          return provider.encrypt(new Uint8Array(0), data, {
-            ...baseParams,
-            modulusN: n,
-            publicExponentE: e,
-          });
-        }
-        const key = getParamBytes(node as GraphNode, inputs, "publicKey", false);
-        if (key) return provider.encrypt(key, data, baseParams);
-        throw new Error("Public Key or components (n, e) required");
+        return provider.encrypt(new Uint8Array(0), data, {
+          ...baseParams,
+          modulusN: n,
+          publicExponentE: e,
+        });
       }
+
+      if (action === "decrypt") {
+        const key = getParamBytes(node as GraphNode, inputs, "privateKey")!;
+        return provider.decrypt(key, data, baseParams);
+      }
+      const key = getParamBytes(node as GraphNode, inputs, "publicKey")!;
+      return provider.encrypt(key, data, baseParams);
     } catch (e) {
       throw new Error(`RSA ${action} failed: ${(e as Error).message}`);
     }
@@ -125,24 +124,26 @@ registerNodeDef("rsa_sign", {
     const data = inputs["data"] ?? new Uint8Array(0);
     const algo = getField(node, "algorithm", "RSASSA-PKCS1-v1_5");
     const hash = getField(node, "hash", "SHA-256");
+    const keyMode = getField(node, "keyMode", "key") as string;
 
     const provider = getProvider(algo) as MacProvider;
     if (!provider) throw new Error(`Provider for ${algo} not found`);
 
     const params: Record<string, unknown> = { hash };
 
-    const n = getRawInput(node as GraphNode, inputs, "modulusN");
-    const d = getRawInput(node as GraphNode, inputs, "privateExponentD");
-    if (n && d) {
-      const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
+    if (keyMode === "components") {
+      const n = getRawInput(node as GraphNode, inputs, "modulusN")!;
+      const d = getRawInput(node as GraphNode, inputs, "privateExponentD");
+      if (!d) throw new Error("Components (n, d) required");
       params.modulusN = n;
-      params.publicExponentE = e;
+      params.publicExponentE =
+        getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
       params.privateExponentD = d;
       return provider.sign(new Uint8Array(0), data, params);
     }
-    const key = getParamBytes(node as GraphNode, inputs, "privateKey", false);
-    if (key) return provider.sign(key, data, params);
-    throw new Error("Private Key or components (n, d) required");
+
+    const key = getParamBytes(node as GraphNode, inputs, "privateKey")!;
+    return provider.sign(key, data, params);
   },
 });
 
@@ -153,6 +154,7 @@ registerNodeDef("rsa_verify", {
     const signature = inputs["signature"] ?? new Uint8Array(0);
     const algo = getField(node, "algorithm", "RSASSA-PKCS1-v1_5");
     const hash = getField(node, "hash", "SHA-256");
+    const keyMode = getField(node, "keyMode", "key") as string;
 
     const fmt = (isValid: boolean) => {
       const f = getField(node, "outputFormat", "utf8");
@@ -165,16 +167,16 @@ registerNodeDef("rsa_verify", {
 
     const params: Record<string, unknown> = { hash };
 
-    const n = getRawInput(node as GraphNode, inputs, "modulusN");
-    const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
-    if (n && e) {
+    if (keyMode === "components") {
+      const n = getRawInput(node as GraphNode, inputs, "modulusN")!;
+      const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
       params.modulusN = n;
       params.publicExponentE = e;
       return fmt(await provider.verify(new Uint8Array(0), signature, data, params));
     }
-    const key = getParamBytes(node as GraphNode, inputs, "publicKey", false);
-    if (key) return fmt(await provider.verify(key, signature, data, params));
-    throw new Error("Public Key or components (n, e) required");
+
+    const key = getParamBytes(node as GraphNode, inputs, "publicKey")!;
+    return fmt(await provider.verify(key, signature, data, params));
   },
 });
 
