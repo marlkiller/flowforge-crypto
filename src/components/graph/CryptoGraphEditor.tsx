@@ -84,7 +84,12 @@ function InnerEditor({
   const selectedNode = active.nodes.find((n) => n.id === active.selectedNodeId) ?? null;
   const selectedEdgeId = active.selectedEdgeId;
 
-  const [edgeType, setEdgeType] = useState<"smoothstep" | "default">("smoothstep");
+  const [edgeType, setEdgeType] = useState<"smoothstep" | "default">(
+    () => (localStorage.getItem("flowforge-edge-type") as "smoothstep" | "default") || "smoothstep",
+  );
+  useEffect(() => {
+    localStorage.setItem("flowforge-edge-type", edgeType);
+  }, [edgeType]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [rf, setRf] = useState<ReactFlowInstance | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
