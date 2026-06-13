@@ -46,12 +46,33 @@ registerProvider({
   type: "rsa",
   name: "RSA-OAEP",
   async encrypt(keyRaw, data, params) {
+    if (params?.modulusN && params?.publicExponentE) {
+      const n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      const e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
+      const publicKey = forge.pki.rsa.setPublicKey(n, e);
+      const hash = (params?.hash as string) || "SHA-256";
+      const md = getForgeHash(hash);
+      const input = String.fromCharCode(...data);
+      const output = publicKey.encrypt(input, "RSA-OAEP", { md });
+      return Uint8Array.from(output, (c) => c.charCodeAt(0));
+    }
     const raw = ensureRawKey(keyRaw);
     const hash = (params?.hash as string) || "SHA-256";
     const key = await CryptoService.importRSAKey("spki", raw, "RSA-OAEP", hash, ["encrypt"]);
     return CryptoService.encrypt({ name: "RSA-OAEP" }, key, data);
   },
   async decrypt(keyRaw, data, params) {
+    if (params?.modulusN && params?.privateExponentD) {
+      const n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      const e = new forge.jsbn.BigInteger((params.publicExponentE as string) || "010001", 16);
+      const d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
+      const privateKey = makePrivateKey(n, e, d);
+      const hash = (params?.hash as string) || "SHA-256";
+      const md = getForgeHash(hash);
+      const input = String.fromCharCode(...data);
+      const output = privateKey.decrypt(input, "RSA-OAEP", { md });
+      return Uint8Array.from(output, (c) => c.charCodeAt(0));
+    }
     const raw = ensureRawKey(keyRaw);
     const hash = (params?.hash as string) || "SHA-256";
     const key = await CryptoService.importRSAKey("pkcs8", raw, "RSA-OAEP", hash, ["decrypt"]);
@@ -62,7 +83,15 @@ registerProvider({
 registerProvider({
   type: "rsa",
   name: "RSAES-PKCS1-V1_5",
-  async encrypt(keyRaw, data) {
+  async encrypt(keyRaw, data, params) {
+    if (params?.modulusN && params?.publicExponentE) {
+      const n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      const e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
+      const publicKey = forge.pki.rsa.setPublicKey(n, e);
+      const input = String.fromCharCode(...data);
+      const output = publicKey.encrypt(input, "RSAES-PKCS1-V1_5");
+      return Uint8Array.from(output, (c) => c.charCodeAt(0));
+    }
     const raw = ensureRawKey(keyRaw);
     const pem = toPEM(raw, "PUBLIC KEY");
     const key = forge.pki.publicKeyFromPem(pem);
@@ -70,7 +99,16 @@ registerProvider({
     const output = key.encrypt(input, "RSAES-PKCS1-V1_5");
     return Uint8Array.from(output, (c) => c.charCodeAt(0));
   },
-  async decrypt(keyRaw, data) {
+  async decrypt(keyRaw, data, params) {
+    if (params?.modulusN && params?.privateExponentD) {
+      const n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      const e = new forge.jsbn.BigInteger((params.publicExponentE as string) || "010001", 16);
+      const d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
+      const privateKey = makePrivateKey(n, e, d);
+      const input = String.fromCharCode(...data);
+      const output = privateKey.decrypt(input, "RSAES-PKCS1-V1_5");
+      return Uint8Array.from(output, (c) => c.charCodeAt(0));
+    }
     const raw = ensureRawKey(keyRaw);
     const pem = toPEM(raw, "PRIVATE KEY");
     const key = forge.pki.privateKeyFromPem(pem);
@@ -137,6 +175,14 @@ export function resolvePublicKey(
     publicKey = forge.pki.publicKeyFromPem(toPEM(raw, "PUBLIC KEY")) as forge.pki.rsa.PublicKey;
   }
   return { n: publicKey.n, e: publicKey.e };
+}
+
+function makePrivateKey(
+  n: forge.jsbn.BigInteger,
+  e: forge.jsbn.BigInteger,
+  d: forge.jsbn.BigInteger,
+): forge.pki.rsa.PrivateKey {
+  return (forge.pki.rsa.setPrivateKey as any)(n, e, d);
 }
 
 function getForgeHash(hashAlgo: string): forge.md.MessageDigest {
@@ -226,6 +272,17 @@ registerProvider({
   type: "mac",
   name: "RSASSA-PKCS1-v1_5",
   async sign(keyRaw, data, params) {
+    if (params?.modulusN && params?.privateExponentD) {
+      const n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      const e = new forge.jsbn.BigInteger((params.publicExponentE as string) || "010001", 16);
+      const d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
+      const privateKey = makePrivateKey(n, e, d);
+      const hashAlgo = (params?.hash as string) || "SHA-256";
+      const md = getForgeHash(hashAlgo);
+      md.update(forge.util.binary.raw.encode(data));
+      const signature = privateKey.sign(md);
+      return new Uint8Array(forge.util.binary.raw.decode(signature));
+    }
     const raw = ensureRawKey(keyRaw);
     const hashAlgo = (params?.hash as string) || "SHA-256";
 
@@ -265,6 +322,15 @@ registerProvider({
     }
   },
   async verify(keyRaw, signature, data, params) {
+    if (params?.modulusN && params?.publicExponentE) {
+      const n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      const e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
+      const publicKey = forge.pki.rsa.setPublicKey(n, e);
+      const hashAlgo = (params?.hash as string) || "SHA-256";
+      const md = getForgeHash(hashAlgo);
+      md.update(forge.util.binary.raw.encode(data));
+      return publicKey.verify(md.digest().bytes(), forge.util.binary.raw.encode(signature));
+    }
     const raw = ensureRawKey(keyRaw);
     const hashAlgo = (params?.hash as string) || "SHA-256";
 
@@ -318,6 +384,22 @@ function makeSignatureProvider(name: "RSA-PSS" | "ECDSA"): MacProvider {
     type: "mac",
     name,
     async sign(keyRaw, data, params) {
+      if (name === "RSA-PSS" && params?.modulusN && params?.privateExponentD) {
+        const n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+        const e = new forge.jsbn.BigInteger((params.publicExponentE as string) || "010001", 16);
+        const d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
+        const privateKey = makePrivateKey(n, e, d);
+        const hashAlgo = (params?.hash as string) || "SHA-256";
+        const md = getForgeHash(hashAlgo);
+        md.update(forge.util.binary.raw.encode(data));
+        const pss = forge.pss.create({
+          md,
+          mgf: forge.mgf.mgf1.create(md),
+          saltLength: 32,
+        });
+        const signature = privateKey.sign(md, pss);
+        return new Uint8Array(forge.util.binary.raw.decode(signature));
+      }
       const raw = ensureRawKey(keyRaw);
       const hash = (params?.hash as string) || "SHA-256";
       const isRSA = name.startsWith("RSA");
@@ -331,6 +413,20 @@ function makeSignatureProvider(name: "RSA-PSS" | "ECDSA"): MacProvider {
       return CryptoService.sign(signParams, key, data);
     },
     async verify(keyRaw, signature, data, params) {
+      if (name === "RSA-PSS" && params?.modulusN && params?.publicExponentE) {
+        const n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+        const e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
+        const publicKey = forge.pki.rsa.setPublicKey(n, e);
+        const hashAlgo = (params?.hash as string) || "SHA-256";
+        const md = getForgeHash(hashAlgo);
+        md.update(forge.util.binary.raw.encode(data));
+        const pss = forge.pss.create({
+          md,
+          mgf: forge.mgf.mgf1.create(md),
+          saltLength: 32,
+        });
+        return publicKey.verify(md.digest().bytes(), forge.util.binary.raw.encode(signature), pss);
+      }
       const raw = ensureRawKey(keyRaw);
       const hash = (params?.hash as string) || "SHA-256";
       const isRSA = name.startsWith("RSA");

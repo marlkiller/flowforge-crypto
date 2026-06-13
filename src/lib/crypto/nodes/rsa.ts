@@ -81,43 +81,37 @@ registerNodeDef("rsa", {
     if (!provider) throw new Error(`RSA provider "${scheme}" not found`);
 
     try {
-      const baseParams = scheme === "RSA-OAEP" ? { hash } : undefined;
+      const baseParams: Record<string, unknown> = {};
+      if (scheme === "RSA-OAEP") baseParams.hash = hash;
 
-      if (scheme === "RAW") {
-        const n = getRawInput(node as GraphNode, inputs, "modulusN");
-        if (action === "decrypt") {
-          const d = getRawInput(node as GraphNode, inputs, "privateExponentD");
-          if (n && d) {
-            return provider.decrypt(new Uint8Array(0), data, {
-              ...baseParams,
-              modulusN: n,
-              privateExponentD: d,
-            });
-          }
-          const key = getParamBytes(node as GraphNode, inputs, "privateKey", false);
-          if (key) return provider.decrypt(key, data, baseParams);
-          throw new Error("Private Key or components (n, d) required for RAW decrypt");
-        } else {
-          const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
-          if (n && e) {
-            return provider.encrypt(new Uint8Array(0), data, {
-              ...baseParams,
-              modulusN: n,
-              publicExponentE: e,
-            });
-          }
-          const key = getParamBytes(node as GraphNode, inputs, "publicKey", false);
-          if (key) return provider.encrypt(key, data, baseParams);
-          throw new Error("Public Key or components (n, e) required for RAW encrypt");
-        }
-      }
+      const n = getRawInput(node as GraphNode, inputs, "modulusN");
 
       if (action === "decrypt") {
-        const privateKeyBytes = getParamBytes(node as GraphNode, inputs, "privateKey")!;
-        return provider.decrypt(privateKeyBytes, data, baseParams);
+        const d = getRawInput(node as GraphNode, inputs, "privateExponentD");
+        if (n && d) {
+          const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
+          return provider.decrypt(new Uint8Array(0), data, {
+            ...baseParams,
+            modulusN: n,
+            publicExponentE: e,
+            privateExponentD: d,
+          });
+        }
+        const key = getParamBytes(node as GraphNode, inputs, "privateKey", false);
+        if (key) return provider.decrypt(key, data, baseParams);
+        throw new Error("Private Key or components (n, d) required");
       } else {
-        const publicKeyBytes = getParamBytes(node as GraphNode, inputs, "publicKey")!;
-        return provider.encrypt(publicKeyBytes, data, baseParams);
+        const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
+        if (n && e) {
+          return provider.encrypt(new Uint8Array(0), data, {
+            ...baseParams,
+            modulusN: n,
+            publicExponentE: e,
+          });
+        }
+        const key = getParamBytes(node as GraphNode, inputs, "publicKey", false);
+        if (key) return provider.encrypt(key, data, baseParams);
+        throw new Error("Public Key or components (n, e) required");
       }
     } catch (e) {
       throw new Error(`RSA ${action} failed: ${(e as Error).message}`);
@@ -137,21 +131,18 @@ registerNodeDef("rsa_sign", {
 
     const params: Record<string, unknown> = { hash };
 
-    if (algo === "RAW" || algo === "RAW-HASH") {
-      const n = getRawInput(node as GraphNode, inputs, "modulusN");
-      const d = getRawInput(node as GraphNode, inputs, "privateExponentD");
-      if (n && d) {
-        params.modulusN = n;
-        params.privateExponentD = d;
-        return provider.sign(new Uint8Array(0), data, params);
-      }
-      const key = getParamBytes(node as GraphNode, inputs, "privateKey", false);
-      if (key) return provider.sign(key, data, params);
-      throw new Error("Private Key or components (n, d) required for RAW sign");
+    const n = getRawInput(node as GraphNode, inputs, "modulusN");
+    const d = getRawInput(node as GraphNode, inputs, "privateExponentD");
+    if (n && d) {
+      const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
+      params.modulusN = n;
+      params.publicExponentE = e;
+      params.privateExponentD = d;
+      return provider.sign(new Uint8Array(0), data, params);
     }
-
-    const privateKeyBytes = getParamBytes(node as GraphNode, inputs, "privateKey")!;
-    return provider.sign(privateKeyBytes, data, params);
+    const key = getParamBytes(node as GraphNode, inputs, "privateKey", false);
+    if (key) return provider.sign(key, data, params);
+    throw new Error("Private Key or components (n, d) required");
   },
 });
 
@@ -174,21 +165,16 @@ registerNodeDef("rsa_verify", {
 
     const params: Record<string, unknown> = { hash };
 
-    if (algo === "RAW" || algo === "RAW-HASH") {
-      const n = getRawInput(node as GraphNode, inputs, "modulusN");
-      const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
-      if (n && e) {
-        params.modulusN = n;
-        params.publicExponentE = e;
-        return fmt(await provider.verify(new Uint8Array(0), signature, data, params));
-      }
-      const key = getParamBytes(node as GraphNode, inputs, "publicKey", false);
-      if (key) return fmt(await provider.verify(key, signature, data, params));
-      throw new Error("Public Key or components (n, e) required for RAW verify");
+    const n = getRawInput(node as GraphNode, inputs, "modulusN");
+    const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
+    if (n && e) {
+      params.modulusN = n;
+      params.publicExponentE = e;
+      return fmt(await provider.verify(new Uint8Array(0), signature, data, params));
     }
-
-    const publicKeyBytes = getParamBytes(node as GraphNode, inputs, "publicKey")!;
-    return fmt(await provider.verify(publicKeyBytes, signature, data, params));
+    const key = getParamBytes(node as GraphNode, inputs, "publicKey", false);
+    if (key) return fmt(await provider.verify(key, signature, data, params));
+    throw new Error("Public Key or components (n, e) required");
   },
 });
 
