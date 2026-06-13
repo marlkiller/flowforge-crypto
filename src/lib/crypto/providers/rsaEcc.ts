@@ -1,4 +1,11 @@
-import { registerProvider, CryptoService, toPEM, type MacProvider, parseBytes } from "../service";
+import {
+  registerProvider,
+  CryptoService,
+  toPEM,
+  type MacProvider,
+  type AlgorithmProvider,
+  parseBytes,
+} from "../service";
 import forge from "node-forge";
 
 type ForgePkiWithSubjectPublicKeyInfo = typeof forge.pki & {
@@ -100,7 +107,7 @@ function rawModPow(
 registerProvider({
   type: "rsa",
   name: "RAW",
-  async encrypt(keyRaw, data, params) {
+  async encrypt(keyRaw: Uint8Array, data: Uint8Array, params?: Record<string, unknown>) {
     let n: forge.jsbn.BigInteger;
     let e: forge.jsbn.BigInteger;
 
@@ -122,7 +129,7 @@ registerProvider({
 
     return rawModPow(data, n, e);
   },
-  async decrypt(keyRaw, data, params) {
+  async decrypt(keyRaw: Uint8Array, data: Uint8Array, params?: Record<string, unknown>) {
     let n: forge.jsbn.BigInteger;
     let d: forge.jsbn.BigInteger;
 
@@ -146,12 +153,7 @@ registerProvider({
 
     return rawModPow(data, n, d);
   },
-});
-
-registerProvider({
-  type: "mac",
-  name: "RAW",
-  async sign(keyRaw, data, params) {
+  async sign(keyRaw: Uint8Array, data: Uint8Array, params?: Record<string, unknown>) {
     let n: forge.jsbn.BigInteger;
     let d: forge.jsbn.BigInteger;
 
@@ -175,7 +177,12 @@ registerProvider({
 
     return rawModPow(data, n, d);
   },
-  async verify(keyRaw, signature, data, params) {
+  async verify(
+    keyRaw: Uint8Array,
+    signature: Uint8Array,
+    data: Uint8Array,
+    params?: Record<string, unknown>,
+  ) {
     let n: forge.jsbn.BigInteger;
     let e: forge.jsbn.BigInteger;
 
@@ -205,6 +212,102 @@ registerProvider({
       16,
     );
     return mPrimeInt.equals(mOrig);
+  },
+} as AlgorithmProvider);
+
+registerProvider({
+  type: "mac",
+  name: "RAW-HASH",
+  async sign(
+    keyRaw: Uint8Array,
+    data: Uint8Array,
+    params?: Record<string, unknown>,
+  ): Promise<Uint8Array> {
+    let n: forge.jsbn.BigInteger;
+    let d: forge.jsbn.BigInteger;
+
+    if (params?.modulusN && params?.privateExponentD) {
+      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
+    } else {
+      const raw = ensureRawKey(keyRaw);
+      let privateKey: forge.pki.rsa.PrivateKey;
+      try {
+        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
+        privateKey = forge.pki.privateKeyFromAsn1(asn1) as forge.pki.rsa.PrivateKey;
+      } catch {
+        privateKey = forge.pki.privateKeyFromPem(
+          toPEM(raw, "PRIVATE KEY"),
+        ) as forge.pki.rsa.PrivateKey;
+      }
+      n = privateKey.n;
+      d = privateKey.d;
+    }
+
+    const hashAlgo = (params?.hash as string) || "SHA-256";
+    const hashBytes = await CryptoService.digest(hashAlgo, data);
+    const keySize = (n.bitLength() + 7) >> 3;
+    const paddingLen = keySize - hashBytes.length - 3;
+
+    const padded = new Uint8Array(keySize);
+    padded[0] = 0x00;
+    padded[1] = 0x01;
+    padded.fill(0xff, 2, 2 + paddingLen);
+    padded[2 + paddingLen] = 0x00;
+    padded.set(hashBytes, 2 + paddingLen + 1);
+
+    return rawModPow(padded, n, d);
+  },
+  async verify(
+    keyRaw: Uint8Array,
+    signature: Uint8Array,
+    data: Uint8Array,
+    params?: Record<string, unknown>,
+  ): Promise<boolean> {
+    let n: forge.jsbn.BigInteger;
+    let e: forge.jsbn.BigInteger;
+
+    if (params?.modulusN && params?.publicExponentE) {
+      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
+      e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
+    } else {
+      const raw = ensureRawKey(keyRaw);
+      let publicKey: forge.pki.rsa.PublicKey;
+      try {
+        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
+        publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
+      } catch {
+        publicKey = forge.pki.publicKeyFromPem(toPEM(raw, "PUBLIC KEY")) as forge.pki.rsa.PublicKey;
+      }
+      n = publicKey.n;
+      e = publicKey.e;
+    }
+
+    const hashAlgo = (params?.hash as string) || "SHA-256";
+    const decrypted = rawModPow(signature, n, e);
+
+    if (decrypted[0] !== 0x00 || decrypted[1] !== 0x01) {
+      return false;
+    }
+
+    let sep = 2;
+    while (sep < decrypted.length && decrypted[sep] === 0xff) {
+      sep++;
+    }
+    if (sep >= decrypted.length || decrypted[sep] !== 0x00) {
+      return false;
+    }
+
+    const extractedHash = decrypted.slice(sep + 1);
+    const expectedHash = await CryptoService.digest(hashAlgo, data);
+
+    if (extractedHash.length !== expectedHash.length) {
+      return false;
+    }
+    for (let i = 0; i < extractedHash.length; i++) {
+      if (extractedHash[i] !== expectedHash[i]) return false;
+    }
+    return true;
   },
 });
 

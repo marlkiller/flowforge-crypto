@@ -137,7 +137,7 @@ registerNodeDef("rsa_sign", {
 
     const params: Record<string, unknown> = { hash };
 
-    if (algo === "RAW") {
+    if (algo === "RAW" || algo === "RAW-HASH") {
       const n = getRawInput(node as GraphNode, inputs, "modulusN");
       const d = getRawInput(node as GraphNode, inputs, "privateExponentD");
       if (n && d) {
@@ -168,7 +168,7 @@ registerNodeDef("rsa_verify", {
 
     const params: Record<string, unknown> = { hash };
 
-    if (algo === "RAW") {
+    if (algo === "RAW" || algo === "RAW-HASH") {
       const n = getRawInput(node as GraphNode, inputs, "modulusN");
       const e = getRawInput(node as GraphNode, inputs, "publicExponentE") || "010001";
       if (n && e) {
