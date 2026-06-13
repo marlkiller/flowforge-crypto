@@ -12,9 +12,6 @@ export const NODE_REGISTRY: Record<string, NodeDef> = _registry;
 export const NODE_KIND_META: Record<string, NodeKindMeta> = _kindMeta;
 
 export function registerNodeDef(kind: string, def: NodeDef) {
-  if (_registry[kind]) {
-    // console.warn(`[registry] Node kind "${kind}" is already registered — overwriting.`);
-  }
   _registry[kind] = def;
   _kindMeta[kind] = def.meta;
 }

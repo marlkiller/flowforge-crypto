@@ -87,7 +87,7 @@ registerProvider({
   },
 });
 
-function rawModPow(
+export function rawModPow(
   data: Uint8Array,
   n: forge.jsbn.BigInteger,
   exp: forge.jsbn.BigInteger,
@@ -104,77 +104,68 @@ function rawModPow(
   return new Uint8Array(resultHex.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
 }
 
+export function resolvePrivateKey(
+  keyRaw: Uint8Array,
+  params?: Record<string, unknown>,
+): { n: forge.jsbn.BigInteger; d: forge.jsbn.BigInteger } {
+  if (params?.modulusN && params?.privateExponentD) {
+    return {
+      n: new forge.jsbn.BigInteger(params.modulusN as string, 16),
+      d: new forge.jsbn.BigInteger(params.privateExponentD as string, 16),
+    };
+  }
+  const raw = ensureRawKey(keyRaw);
+  let privateKey: forge.pki.rsa.PrivateKey;
+  try {
+    const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
+    privateKey = forge.pki.privateKeyFromAsn1(asn1) as forge.pki.rsa.PrivateKey;
+  } catch {
+    privateKey = forge.pki.privateKeyFromPem(toPEM(raw, "PRIVATE KEY")) as forge.pki.rsa.PrivateKey;
+  }
+  return { n: privateKey.n, d: privateKey.d };
+}
+
+export function resolvePublicKey(
+  keyRaw: Uint8Array,
+  params?: Record<string, unknown>,
+): { n: forge.jsbn.BigInteger; e: forge.jsbn.BigInteger } {
+  if (params?.modulusN && params?.publicExponentE) {
+    return {
+      n: new forge.jsbn.BigInteger(params.modulusN as string, 16),
+      e: new forge.jsbn.BigInteger(params.publicExponentE as string, 16),
+    };
+  }
+  const raw = ensureRawKey(keyRaw);
+  let publicKey: forge.pki.rsa.PublicKey;
+  try {
+    const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
+    publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
+  } catch {
+    publicKey = forge.pki.publicKeyFromPem(toPEM(raw, "PUBLIC KEY")) as forge.pki.rsa.PublicKey;
+  }
+  return { n: publicKey.n, e: publicKey.e };
+}
+
+function getForgeHash(hashAlgo: string): forge.md.MessageDigest {
+  const name = hashAlgo.toLowerCase().replace("-", "");
+  const md = (forge.md as any)[name]?.create();
+  if (!md) throw new Error(`Unsupported hash algorithm: ${hashAlgo}`);
+  return md;
+}
+
 registerProvider({
   type: "rsa",
   name: "RAW",
-  async encrypt(keyRaw: Uint8Array, data: Uint8Array, params?: Record<string, unknown>) {
-    let n: forge.jsbn.BigInteger;
-    let e: forge.jsbn.BigInteger;
-
-    if (params?.modulusN && params?.publicExponentE) {
-      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
-      e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
-    } else {
-      const raw = ensureRawKey(keyRaw);
-      let publicKey: forge.pki.rsa.PublicKey;
-      try {
-        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
-        publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
-      } catch {
-        publicKey = forge.pki.publicKeyFromPem(toPEM(raw, "PUBLIC KEY")) as forge.pki.rsa.PublicKey;
-      }
-      n = publicKey.n;
-      e = publicKey.e;
-    }
-
+  async encrypt(keyRaw, data, params) {
+    const { n, e } = resolvePublicKey(keyRaw, params);
     return rawModPow(data, n, e);
   },
-  async decrypt(keyRaw: Uint8Array, data: Uint8Array, params?: Record<string, unknown>) {
-    let n: forge.jsbn.BigInteger;
-    let d: forge.jsbn.BigInteger;
-
-    if (params?.modulusN && params?.privateExponentD) {
-      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
-      d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
-    } else {
-      const raw = ensureRawKey(keyRaw);
-      let privateKey: forge.pki.rsa.PrivateKey;
-      try {
-        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
-        privateKey = forge.pki.privateKeyFromAsn1(asn1) as forge.pki.rsa.PrivateKey;
-      } catch {
-        privateKey = forge.pki.privateKeyFromPem(
-          toPEM(raw, "PRIVATE KEY"),
-        ) as forge.pki.rsa.PrivateKey;
-      }
-      n = privateKey.n;
-      d = privateKey.d;
-    }
-
+  async decrypt(keyRaw, data, params) {
+    const { n, d } = resolvePrivateKey(keyRaw, params);
     return rawModPow(data, n, d);
   },
   async sign(keyRaw: Uint8Array, data: Uint8Array, params?: Record<string, unknown>) {
-    let n: forge.jsbn.BigInteger;
-    let d: forge.jsbn.BigInteger;
-
-    if (params?.modulusN && params?.privateExponentD) {
-      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
-      d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
-    } else {
-      const raw = ensureRawKey(keyRaw);
-      let privateKey: forge.pki.rsa.PrivateKey;
-      try {
-        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
-        privateKey = forge.pki.privateKeyFromAsn1(asn1) as forge.pki.rsa.PrivateKey;
-      } catch {
-        privateKey = forge.pki.privateKeyFromPem(
-          toPEM(raw, "PRIVATE KEY"),
-        ) as forge.pki.rsa.PrivateKey;
-      }
-      n = privateKey.n;
-      d = privateKey.d;
-    }
-
+    const { n, d } = resolvePrivateKey(keyRaw, params);
     return rawModPow(data, n, d);
   },
   async verify(
@@ -183,25 +174,7 @@ registerProvider({
     data: Uint8Array,
     params?: Record<string, unknown>,
   ) {
-    let n: forge.jsbn.BigInteger;
-    let e: forge.jsbn.BigInteger;
-
-    if (params?.modulusN && params?.publicExponentE) {
-      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
-      e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
-    } else {
-      const raw = ensureRawKey(keyRaw);
-      let publicKey: forge.pki.rsa.PublicKey;
-      try {
-        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
-        publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
-      } catch {
-        publicKey = forge.pki.publicKeyFromPem(toPEM(raw, "PUBLIC KEY")) as forge.pki.rsa.PublicKey;
-      }
-      n = publicKey.n;
-      e = publicKey.e;
-    }
-
+    const { n, e } = resolvePublicKey(keyRaw, params);
     const mPrimed = rawModPow(signature, n, e);
     const mOrig = new forge.jsbn.BigInteger(
       forge.util.bytesToHex(forge.util.binary.raw.encode(data)),
@@ -218,32 +191,8 @@ registerProvider({
 registerProvider({
   type: "mac",
   name: "RAW-HASH",
-  async sign(
-    keyRaw: Uint8Array,
-    data: Uint8Array,
-    params?: Record<string, unknown>,
-  ): Promise<Uint8Array> {
-    let n: forge.jsbn.BigInteger;
-    let d: forge.jsbn.BigInteger;
-
-    if (params?.modulusN && params?.privateExponentD) {
-      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
-      d = new forge.jsbn.BigInteger(params.privateExponentD as string, 16);
-    } else {
-      const raw = ensureRawKey(keyRaw);
-      let privateKey: forge.pki.rsa.PrivateKey;
-      try {
-        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
-        privateKey = forge.pki.privateKeyFromAsn1(asn1) as forge.pki.rsa.PrivateKey;
-      } catch {
-        privateKey = forge.pki.privateKeyFromPem(
-          toPEM(raw, "PRIVATE KEY"),
-        ) as forge.pki.rsa.PrivateKey;
-      }
-      n = privateKey.n;
-      d = privateKey.d;
-    }
-
+  async sign(keyRaw, data, params) {
+    const { n, d } = resolvePrivateKey(keyRaw, params);
     const hashAlgo = (params?.hash as string) || "SHA-256";
     const hashBytes = await CryptoService.digest(hashAlgo, data);
     const keySize = (n.bitLength() + 7) >> 3;
@@ -258,52 +207,21 @@ registerProvider({
 
     return rawModPow(padded, n, d);
   },
-  async verify(
-    keyRaw: Uint8Array,
-    signature: Uint8Array,
-    data: Uint8Array,
-    params?: Record<string, unknown>,
-  ): Promise<boolean> {
-    let n: forge.jsbn.BigInteger;
-    let e: forge.jsbn.BigInteger;
-
-    if (params?.modulusN && params?.publicExponentE) {
-      n = new forge.jsbn.BigInteger(params.modulusN as string, 16);
-      e = new forge.jsbn.BigInteger(params.publicExponentE as string, 16);
-    } else {
-      const raw = ensureRawKey(keyRaw);
-      let publicKey: forge.pki.rsa.PublicKey;
-      try {
-        const asn1 = forge.asn1.fromDer(forgeDerBuffer(raw));
-        publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
-      } catch {
-        publicKey = forge.pki.publicKeyFromPem(toPEM(raw, "PUBLIC KEY")) as forge.pki.rsa.PublicKey;
-      }
-      n = publicKey.n;
-      e = publicKey.e;
-    }
-
+  async verify(keyRaw, signature, data, params) {
+    const { n, e } = resolvePublicKey(keyRaw, params);
     const hashAlgo = (params?.hash as string) || "SHA-256";
     const decrypted = rawModPow(signature, n, e);
 
-    if (decrypted[0] !== 0x00 || decrypted[1] !== 0x01) {
-      return false;
-    }
+    if (decrypted[0] !== 0x00 || decrypted[1] !== 0x01) return false;
 
     let sep = 2;
-    while (sep < decrypted.length && decrypted[sep] === 0xff) {
-      sep++;
-    }
-    if (sep >= decrypted.length || decrypted[sep] !== 0x00) {
-      return false;
-    }
+    while (sep < decrypted.length && decrypted[sep] === 0xff) sep++;
+    if (sep >= decrypted.length || decrypted[sep] !== 0x00) return false;
 
     const extractedHash = decrypted.slice(sep + 1);
     const expectedHash = await CryptoService.digest(hashAlgo, data);
 
-    if (extractedHash.length !== expectedHash.length) {
-      return false;
-    }
+    if (extractedHash.length !== expectedHash.length) return false;
     for (let i = 0; i < extractedHash.length; i++) {
       if (extractedHash[i] !== expectedHash[i]) return false;
     }
@@ -339,15 +257,13 @@ registerProvider({
         "sign",
       ]);
       return await CryptoService.sign({ name: "RSASSA-PKCS1-v1_5", hash: hashAlgo }, key, data);
-    } catch (e) {
-      console.warn("[rsa] WebCrypto sign failed, falling back to forge:", (e as Error).message);
+    } catch {
+      /* empty */
     }
 
-    // Fallback to forge
     try {
       const privateKey = forge.pki.privateKeyFromAsn1(forge.asn1.fromDer(forgeDerBuffer(raw)));
-      const md = (forge.md as any)[hashAlgo.toLowerCase().replace("-", "")]?.create();
-      if (!md) throw new Error(`Unsupported hash algorithm: ${hashAlgo}`);
+      const md = getForgeHash(hashAlgo);
       md.update(forge.util.binary.raw.encode(data));
       const signature = privateKey.sign(md);
       return new Uint8Array(forge.util.binary.raw.decode(signature));
@@ -389,15 +305,13 @@ registerProvider({
         signature,
         data,
       );
-    } catch (e) {
-      console.warn("[rsa] WebCrypto verify failed, falling back to forge:", (e as Error).message);
+    } catch {
+      /* empty */
     }
 
-    // Fallback to forge
     try {
       const publicKey = forge.pki.publicKeyFromAsn1(forge.asn1.fromDer(forgeDerBuffer(raw)));
-      const md = (forge.md as any)[hashAlgo.toLowerCase().replace("-", "")]?.create();
-      if (!md) throw new Error(`Unsupported hash algorithm: ${hashAlgo}`);
+      const md = getForgeHash(hashAlgo);
       md.update(forge.util.binary.raw.encode(data));
       return publicKey.verify(md.digest().bytes(), forge.util.binary.raw.encode(signature));
     } catch {

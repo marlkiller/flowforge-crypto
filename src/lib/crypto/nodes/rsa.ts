@@ -163,6 +163,12 @@ registerNodeDef("rsa_verify", {
     const algo = getField(node, "algorithm", "RSASSA-PKCS1-v1_5");
     const hash = getField(node, "hash", "SHA-256");
 
+    const fmt = (isValid: boolean) => {
+      const f = getField(node, "outputFormat", "utf8");
+      if (f === "bool") return isValid;
+      return utf8ToBytes(isValid ? "Valid Signature" : "Invalid Signature");
+    };
+
     const provider = getProvider(algo) as MacProvider;
     if (!provider) throw new Error(`Provider for ${algo} not found`);
 
@@ -174,26 +180,15 @@ registerNodeDef("rsa_verify", {
       if (n && e) {
         params.modulusN = n;
         params.publicExponentE = e;
-        const isValid = await provider.verify(new Uint8Array(0), signature, data, params);
-        const fmt = getField(node, "outputFormat", "utf8");
-        if (fmt === "bool") return isValid;
-        return utf8ToBytes(isValid ? "Valid Signature" : "Invalid Signature");
+        return fmt(await provider.verify(new Uint8Array(0), signature, data, params));
       }
       const key = getParamBytes(node as GraphNode, inputs, "publicKey", false);
-      if (key) {
-        const isValid = await provider.verify(key, signature, data, params);
-        const fmt = getField(node, "outputFormat", "utf8");
-        if (fmt === "bool") return isValid;
-        return utf8ToBytes(isValid ? "Valid Signature" : "Invalid Signature");
-      }
+      if (key) return fmt(await provider.verify(key, signature, data, params));
       throw new Error("Public Key or components (n, e) required for RAW verify");
     }
 
     const publicKeyBytes = getParamBytes(node as GraphNode, inputs, "publicKey")!;
-    const isValid = await provider.verify(publicKeyBytes, signature, data, params);
-    const fmt = getField(node, "outputFormat", "utf8");
-    if (fmt === "bool") return isValid;
-    return utf8ToBytes(isValid ? "Valid Signature" : "Invalid Signature");
+    return fmt(await provider.verify(publicKeyBytes, signature, data, params));
   },
 });
 
