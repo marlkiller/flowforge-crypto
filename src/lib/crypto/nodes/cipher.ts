@@ -208,8 +208,9 @@ registerNodeDef("aes", {
     const keyBytes = getParamBytes(node as GraphNode, inputs, "key")!;
     validateKeyLength(keyBytes);
 
-    const iv = getParamBytes(node as GraphNode, inputs, "iv", false);
-    validateIvLength(iv, provider.defaultIvSize, cipherMode);
+    const ivSize = provider.defaultIvSize;
+    const iv = ivSize > 0 ? getParamBytes(node as GraphNode, inputs, "iv", false) : undefined;
+    if (iv) validateIvLength(iv, ivSize, cipherMode);
 
     const params: Record<string, unknown> | undefined =
       cipherMode === "GCM"
@@ -218,16 +219,9 @@ registerNodeDef("aes", {
 
     try {
       if (action === "decrypt") {
-        return cipherDecrypt(provider, keyBytes, mainInput, iv, provider.defaultIvSize, params);
+        return cipherDecrypt(provider, keyBytes, mainInput, iv, ivSize, params);
       } else {
-        return await cipherEncrypt(
-          provider,
-          keyBytes,
-          mainInput,
-          iv,
-          provider.defaultIvSize,
-          params,
-        );
+        return await cipherEncrypt(provider, keyBytes, mainInput, iv, ivSize, params);
       }
     } catch (e) {
       throw new Error(`AES ${action} failed: ${(e as Error).message}`);
