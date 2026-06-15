@@ -373,6 +373,11 @@ export function Sidebar({
                 <Save className="w-3 h-3" /> Save
               </button>
             </div>
+            <div className="flex justify-center">
+              <span className="text-[9px] text-muted-foreground/50 select-none">
+                build: {__BUILD_TIME__}
+              </span>
+            </div>
           </div>
         </>
       )}

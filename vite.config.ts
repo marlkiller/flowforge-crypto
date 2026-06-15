@@ -7,6 +7,9 @@ import tsconfigPaths from "vite-tsconfig-paths";
 const isStaticExport = process.env.STATIC_EXPORT === "true";
 
 export default defineConfig({
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+  },
   worker: {
     format: "es",
   },

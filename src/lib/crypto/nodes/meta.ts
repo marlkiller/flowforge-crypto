@@ -98,7 +98,7 @@ export const RSA_META: NodeKindMeta = {
       connectable: true,
       acceptTypes: ["pem", "base64"],
       visible: (d) => d["keyMode"] !== "components" && d["action"] === "decrypt",
-      type: "password",
+      type: "text",
       placeholder: "Paste PKCS8 private key...",
     },
     {
@@ -193,7 +193,7 @@ export const RSA_SIGN_META: NodeKindMeta = {
       connectable: true,
       acceptTypes: ["pem", "base64"],
       visible: (d) => d["keyMode"] !== "components",
-      type: "password",
+      type: "text",
       placeholder: "Paste PKCS8 private key...",
     },
     {
@@ -377,7 +377,7 @@ export const SM2_SIGN_META: NodeKindMeta = {
       label: "Private Key",
       connectable: true,
       acceptTypes: ["hex", "base64"],
-      type: "password",
+      type: "text",
       placeholder: "64-char hex SM2 private key...",
     },
   ],
@@ -432,7 +432,7 @@ export const SM2_DECRYPT_META: NodeKindMeta = {
       label: "Private Key",
       connectable: true,
       acceptTypes: ["hex", "base64"],
-      type: "password",
+      type: "text",
       placeholder: "64-char hex SM2 private key...",
     },
   ],
@@ -708,7 +708,7 @@ export const DES_META: NodeKindMeta = {
       label: "Key",
       connectable: true,
       acceptTypes: ["hex", "base64"],
-      type: "password",
+      type: "text",
     },
     { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text" },
     {
@@ -749,7 +749,7 @@ export const TRIPLEDES_META: NodeKindMeta = {
       label: "Key",
       connectable: true,
       acceptTypes: ["hex", "base64"],
-      type: "password",
+      type: "text",
     },
     { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text" },
     {
@@ -790,7 +790,7 @@ export const BLOWFISH_META: NodeKindMeta = {
       label: "Key",
       connectable: true,
       acceptTypes: ["hex", "base64"],
-      type: "password",
+      type: "text",
     },
     {
       id: "iv",
@@ -838,7 +838,7 @@ export const RC4_META: NodeKindMeta = {
       label: "Key",
       connectable: true,
       acceptTypes: ["hex", "base64"],
-      type: "password",
+      type: "text",
     },
     {
       id: "action",
@@ -867,7 +867,7 @@ export const RABBIT_META: NodeKindMeta = {
       label: "Key",
       connectable: true,
       acceptTypes: ["hex", "base64"],
-      type: "password",
+      type: "text",
     },
     { id: "iv", label: "IV", connectable: true, acceptTypes: ["hex", "base64"], type: "text" },
     {

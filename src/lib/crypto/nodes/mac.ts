@@ -59,7 +59,7 @@ function makeMacNode(
           label: `${keyLabel}`,
           connectable: true,
           acceptTypes: ["hex", "base64"],
-          type: "password",
+          type: "text",
           placeholder: "Secret key...",
         },
         {
@@ -124,7 +124,7 @@ registerNodeDef("hmac", {
         label: "Key",
         connectable: true,
         acceptTypes: ["hex", "base64"],
-        type: "password",
+        type: "text",
         placeholder: "Shared secret key...",
       },
       {

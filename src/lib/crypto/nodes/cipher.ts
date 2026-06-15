@@ -39,7 +39,7 @@ const sm4NodeDef: NodeDef = {
         label: "Key",
         connectable: true,
         acceptTypes: ["HEX", "B64"],
-        type: "password",
+        type: "text",
         placeholder: "32-char hex (128-bit)...",
         validate: validateHex(16),
       },
@@ -133,7 +133,7 @@ registerNodeDef("aes", {
         label: "Key",
         connectable: true,
         acceptTypes: ["HEX", "B64"],
-        type: "password",
+        type: "text",
         placeholder: "32/48/64-char hex...",
         validate: validateHex([16, 24, 32]),
       },
@@ -243,7 +243,7 @@ registerNodeDef("chacha20poly1305", {
         label: "Key",
         connectable: true,
         acceptTypes: ["HEX", "B64"],
-        type: "password",
+        type: "text",
         placeholder: "64-char hex (256-bit)...",
       },
       {
@@ -299,7 +299,7 @@ registerNodeDef("xchacha20poly1305", {
         label: "Key",
         connectable: true,
         acceptTypes: ["HEX", "B64"],
-        type: "password",
+        type: "text",
         placeholder: "64-char hex (256-bit)...",
       },
       {
@@ -355,7 +355,7 @@ registerNodeDef("xsalsa20poly1305", {
         label: "Key",
         connectable: true,
         acceptTypes: ["HEX", "B64"],
-        type: "password",
+        type: "text",
         placeholder: "64-char hex (256-bit)...",
       },
       {
@@ -411,7 +411,7 @@ registerNodeDef("twofish", {
         label: "Key",
         connectable: true,
         acceptTypes: ["HEX", "B64"],
-        type: "password",
+        type: "text",
         placeholder: "32/48/64-char hex...",
       },
       {
@@ -487,7 +487,7 @@ registerNodeDef("salsa20", {
         label: "Key",
         connectable: true,
         acceptTypes: ["HEX", "B64"],
-        type: "password",
+        type: "text",
         placeholder: "64-char hex (256-bit)...",
       },
       {
@@ -529,7 +529,7 @@ registerNodeDef("aesGcmSiv", {
         label: "Key",
         connectable: true,
         acceptTypes: ["HEX", "B64"],
-        type: "password",
+        type: "text",
         placeholder: "32 or 64-char hex...",
       },
       {
