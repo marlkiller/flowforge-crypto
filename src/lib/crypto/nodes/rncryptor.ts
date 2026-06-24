@@ -18,13 +18,13 @@ registerNodeDef("rncryptor_encrypt", {
     label: "RNCryptor Encrypt",
     category: "protocol",
     description: "RNCryptor v3: PBKDF2 + AES-256-CBC + HMAC-SHA256.",
-    defaultOutput: "base64",
+    defaultOutput: "hex",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       {
         id: "password",
         label: "Password",
-        type: "password",
+        type: "text",
         connectable: true,
         acceptTypes: ["utf8"],
       },
@@ -78,7 +78,7 @@ registerNodeDef("rncryptor_decrypt", {
       {
         id: "password",
         label: "Password",
-        type: "password",
+        type: "text",
         connectable: true,
         acceptTypes: ["utf8"],
       },

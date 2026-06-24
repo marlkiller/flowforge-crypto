@@ -29,7 +29,7 @@ registerNodeDef("ed_sign", {
     label: "Ed25519 Sign",
     category: "signature",
     description: "Sign data using an Ed25519 private key.",
-    defaultOutput: "base64",
+    defaultOutput: "hex",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       {

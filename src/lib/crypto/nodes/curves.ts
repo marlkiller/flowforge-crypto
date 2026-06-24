@@ -32,7 +32,7 @@ registerNodeDef("secp256k1_sign", {
     label: "secp256k1 Sign",
     category: "signature",
     description: "Sign data using a secp256k1 private key (ECDSA).",
-    defaultOutput: "base64",
+    defaultOutput: "hex",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "privateKey", label: "Private Key", connectable: true, acceptTypes: ["hex", "base64"] },
@@ -153,7 +153,7 @@ registerNodeDef("ed448_sign", {
     label: "Ed448 Sign",
     category: "signature",
     description: "Sign data using an Ed448 private key.",
-    defaultOutput: "base64",
+    defaultOutput: "hex",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "privateKey", label: "Private Key", connectable: true, acceptTypes: ["hex", "base64"] },
@@ -273,7 +273,7 @@ registerNodeDef("bls_sign", {
     label: "BLS12-381 Sign",
     category: "signature",
     description: "Sign data using a BLS12-381 private key.",
-    defaultOutput: "base64",
+    defaultOutput: "hex",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "privateKey", label: "Private Key", connectable: true, acceptTypes: ["hex", "base64"] },

@@ -197,7 +197,7 @@ registerNodeDef("ml_dsa_sign", {
     label: "ML-DSA Sign",
     category: "pqc",
     description: "Sign data using an ML-DSA private key.",
-    defaultOutput: "base64",
+    defaultOutput: "hex",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "privateKey", label: "Private Key", connectable: true, acceptTypes: ["raw"] },
@@ -304,7 +304,7 @@ registerNodeDef("slh_dsa_sign", {
     label: "SLH-DSA Sign",
     category: "pqc",
     description: "Sign data using an SLH-DSA private key.",
-    defaultOutput: "base64",
+    defaultOutput: "hex",
     inputs: [
       { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
       { id: "privateKey", label: "Private Key", connectable: true, acceptTypes: ["raw"] },

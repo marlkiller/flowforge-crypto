@@ -69,7 +69,7 @@ export const RSA_META: NodeKindMeta = {
   label: "RSA",
   category: "asymmetric",
   description: "RSA encrypt/decrypt. Supports RSA-OAEP, RSAES-PKCS1-V1_5, RAW.",
-  defaultOutput: "base64",
+  defaultOutput: "hex",
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
     {
@@ -173,7 +173,7 @@ export const RSA_SIGN_META: NodeKindMeta = {
   label: "RSA Sign",
   category: "signature",
   description: "Digital signature generation using a private key.",
-  defaultOutput: "base64",
+  defaultOutput: "hex",
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
     {
@@ -1026,7 +1026,7 @@ export const ECDSA_SIGN_META: NodeKindMeta = {
   label: "ECDSA Sign",
   category: "signature",
   description: "Sign data using an ECDSA private key.",
-  defaultOutput: "base64",
+  defaultOutput: "hex",
   inputs: [
     { id: "data", label: "Data", connectable: true, acceptTypes: ["raw"] },
     {
