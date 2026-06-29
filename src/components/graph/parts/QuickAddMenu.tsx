@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { NODE_KIND_META } from "@/lib/crypto/registry";
+import { getActiveCategories, NODE_KIND_META } from "@/lib/crypto/registry";
 import { makeNode } from "@/lib/crypto/factory";
 import { graphStore } from "../store";
 import type { GraphEdge } from "@/lib/crypto/types";
@@ -55,9 +55,13 @@ export function QuickAddMenu({
       result.push({ kind, label: meta.label, category: meta.category });
     }
 
+    const catOrder = getActiveCategories();
+    const kindOrder = Object.keys(NODE_KIND_META);
     result.sort((a, b) => {
-      if (a.category !== b.category) return a.category.localeCompare(b.category);
-      return a.label.localeCompare(b.label);
+      const ca = catOrder.indexOf(a.category);
+      const cb = catOrder.indexOf(b.category);
+      if (ca !== cb) return ca - cb;
+      return kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind);
     });
 
     return result;
