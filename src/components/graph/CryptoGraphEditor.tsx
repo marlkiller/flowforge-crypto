@@ -40,6 +40,7 @@ import { GraphContextMenus } from "./parts/GraphContextMenus";
 import { Sidebar } from "./parts/Sidebar";
 import { PromptDialog } from "./parts/PromptDialog";
 import { SaveOutputBridge } from "./parts/SaveOutputBridge";
+import { QuickAddMenu } from "./parts/QuickAddMenu";
 
 import { useGraphExecution } from "./hooks/useGraphExecution";
 import { useGraphInteraction } from "./hooks/useGraphInteraction";
@@ -96,6 +97,15 @@ function InnerEditor({
 
   const [pluginDialogOpen, setPluginDialogOpen] = useState(false);
   const [promptDialogOpen, setPromptDialogOpen] = useState(false);
+
+  // Quick-add menu state (onConnectEnd with no valid target)
+  const [quickAdd, setQuickAdd] = useState<{
+    screenX: number;
+    screenY: number;
+    flowPosition: { x: number; y: number };
+    sourceInfo?: { nodeId: string; handleId: string | null; sourceType: string };
+    targetInfo?: { nodeId: string; handleId: string };
+  } | null>(null);
   const { groups, selectedGroup, setSelectedGroup, assignNodeToGroup, assignNodesToGroup } =
     useNodeGrouping(nodes);
 
@@ -196,6 +206,75 @@ function InnerEditor({
     },
     [edgeType],
   );
+
+  const onConnectEnd = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (event: MouseEvent | TouchEvent, connectionState: any) => {
+      if (connectionState.isValid) return;
+
+      const clientX = "clientX" in event ? (event as MouseEvent).clientX : 0;
+      const clientY = "clientY" in event ? (event as MouseEvent).clientY : 0;
+      const flowPos = rf ? rf.screenToFlowPosition({ x: clientX, y: clientY }) : { x: 0, y: 0 };
+      const from = connectionState.fromHandle as {
+        id: string | null;
+        type: "source" | "target";
+      } | null;
+      const fromNode = connectionState.fromNode as {
+        id: string;
+        data: Record<string, unknown>;
+      } | null;
+
+      if (!from || !fromNode) return;
+
+      // Reverse: drag started from a target handle → create I/O source node (only if empty)
+      if (from.type === "target") {
+        const targetNodeId = fromNode.id;
+        const targetHandleId = from.id ?? "data";
+        const alreadyConnected = edges.some(
+          (e) => e.target === targetNodeId && e.targetHandle === targetHandleId,
+        );
+        if (!alreadyConnected) {
+          setQuickAdd({
+            screenX: clientX,
+            screenY: clientY,
+            flowPosition: flowPos,
+            targetInfo: { nodeId: targetNodeId, handleId: targetHandleId },
+          });
+        }
+        return;
+      }
+
+      // Forward: drag started from a source handle → create non-I/O processing node (only if empty)
+      const sourceHandleId = from.id ?? "default";
+      const alreadyConnected = edges.some(
+        (e) => e.source === fromNode.id && (e.sourceHandle ?? "default") === sourceHandleId,
+      );
+      if (alreadyConnected) return;
+
+      const fromData = fromNode.data;
+      const sourceMeta = NODE_KIND_META[fromData.kind as string];
+      if (!sourceMeta) return;
+
+      let sourceType = (fromData.outputFormat as string) || sourceMeta.defaultOutput || "raw";
+      if (from.id && from.id !== "default") {
+        const outMeta = sourceMeta.outputs?.find((o) => o.id === from.id);
+        sourceType = outMeta?.type || sourceType;
+      }
+
+      setQuickAdd({
+        screenX: clientX,
+        screenY: clientY,
+        flowPosition: flowPos,
+        sourceInfo: {
+          nodeId: fromNode.id,
+          handleId: from.id,
+          sourceType,
+        },
+      });
+    },
+    [edges, rf],
+  );
+
   const onSelectionChange = useCallback(({ nodes: sel }: { nodes: RFNode[] }) => {
     graphStore.setSelected(sel[0]?.id ?? null);
   }, []);
@@ -421,6 +500,7 @@ function InnerEditor({
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              onConnectEnd={onConnectEnd}
               isValidConnection={isValidConnection}
               onSelectionChange={onSelectionChange}
               onPaneClick={interaction.onPaneClick}
@@ -659,6 +739,18 @@ function InnerEditor({
 
       <PluginManager open={pluginDialogOpen} onOpenChange={setPluginDialogOpen} />
       <PromptDialog open={promptDialogOpen} onOpenChange={setPromptDialogOpen} />
+
+      {/* Quick-add menu */}
+      {quickAdd && (
+        <QuickAddMenu
+          screenX={quickAdd.screenX}
+          screenY={quickAdd.screenY}
+          flowPosition={quickAdd.flowPosition}
+          sourceInfo={quickAdd.sourceInfo}
+          targetInfo={quickAdd.targetInfo}
+          onClose={() => setQuickAdd(null)}
+        />
+      )}
 
       {/* Pointer Event Drag Preview */}
       {draggedItem && (
